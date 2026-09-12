@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html class="docs-root" lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#f4f5f7" />
     <title>repyy documentation</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./docs.css" />
     <script src="./site.js" defer></script>
   </head>
   <body class="docs-page">
@@ -36,6 +37,10 @@
           <p class="docs-kicker">Documentation</p>
           <h1>Scan unfamiliar code.<br />Then decide what runs.</h1>
           <p>repyy is a read-only preflight scanner for local folders and Git remotes. It reports suspicious files, install behavior, dependencies, secrets, obfuscation, backdoors, and data theft patterns.</p>
+          <figure class="docs-hero-media reveal">
+            <img src="./assets/repyy-docs-review.webp" width="1200" height="760" loading="lazy" alt="Repository inspection dashboard showing scan stages, findings categories, and confidence evidence" />
+          </figure>
+          <div class="docs-summary" aria-label="Product summary"><span><b>0</b> target processes</span><span><b>Local</b> source and reports</span><span><b>MIT</b> free and open source</span></div>
           <div class="docs-callout"><strong>What repyy does not do</strong><p>It does not install packages, build the target, run tests, execute source, or upload your code.</p></div>
         </section>
 

@@ -1,24 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html class="landing-root" lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Scan unfamiliar take-home and interview repositories before you install dependencies or execute code." />
-    <meta name="theme-color" content="#f4f5f7" />
+    <meta name="theme-color" content="#f5f5f7" />
     <title>repyy | Inspect unfamiliar repositories before they run</title>
-    <link rel="preload" as="image" href="./assets/repyy-scan-stack.webp" fetchpriority="high" />
+    <link rel="preload" as="image" href="./assets/repyy-autopsy-hero.webp" fetchpriority="high" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./landing.css" />
     <script src="./site.js" defer></script>
   </head>
-  <body class="light-page">
+  <body class="light-page landing-page">
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="nav-wrap">
       <nav class="nav glass" aria-label="Primary navigation">
         <a class="brand" href="#top" aria-label="repyy home"><span class="brand-mark" aria-hidden="true">r/</span>repyy</a>
         <div class="nav-links">
           <a href="#workflow">Workflow</a>
-          <a href="#coverage">Checks</a>
-          <a href="#agent-skill">Agent skill</a>
+          <a href="#coverage">Coverage</a>
+          <a href="#outputs">Outputs</a>
         </div>
         <a class="variant-link nav-docs" href="./docs.html">Docs <span aria-hidden="true">↗</span></a>
       </nav>
@@ -27,161 +28,199 @@
     <main id="main">
       <section class="hero" id="top">
         <div class="hero-copy reveal">
-          <p class="eyebrow">For take-home assignments</p>
-          <h1><span>Inspect the repository.</span><br /><em>Before it runs.</em></h1>
-          <p class="hero-lede">A read-only preflight scan for unfamiliar code, without installing dependencies or executing the target.</p>
+          <p class="context-line"><span aria-hidden="true"></span>Repository preflight for take-home work</p>
+          <h1>Inspect the repository.<span>Before it runs.</span></h1>
+          <p class="hero-lede">Read unfamiliar code as data before installing dependencies, opening a trusted workspace, or executing the target.</p>
           <div class="hero-actions">
-            <a class="button primary magnetic" href="#install">Install repyy</a>
+            <a class="button primary" href="#install">Install repyy</a>
             <a class="text-link" href="./docs.html#getting-started">Read the quickstart <span aria-hidden="true">↗</span></a>
           </div>
         </div>
-        <figure class="hero-visual reveal" data-tilt>
-          <img src="./assets/repyy-scan-stack.webp" width="1586" height="992" alt="Layered graphite repository files intersected by a cobalt inspection plane" fetchpriority="high" />
-          <div class="scan-line" aria-hidden="true"></div>
+
+        <figure class="hero-image-stage reveal">
+          <img src="./assets/repyy-autopsy-hero.webp" width="1536" height="1024" alt="A repository folder under a structured inspection view with annotated scan artifacts" fetchpriority="high" />
+          <figcaption><i aria-hidden="true"></i><span><strong>Target remains inert</strong><small>0 processes · 84 files read as data</small></span></figcaption>
         </figure>
       </section>
 
       <section class="trust-band reveal" aria-label="Product summary">
-        <p>Nothing uploaded</p><p>Nothing executed</p><p>Free and MIT licensed</p>
+        <p><strong>0</strong><span>target processes</span></p>
+        <p><strong>Local</strong><span>source and reports</span></p>
+        <p><strong>MIT</strong><span>free and open source</span></p>
       </section>
 
-      <section class="process" id="how">
-        <div class="process-intro reveal">
-          <p class="section-label">Read-only preflight</p>
-          <h2>Scan before the first install.</h2>
-          <p>Point repyy at a Git remote or local folder. It reads files as data and reports findings with severity and confidence.</p>
+      <section class="preflight" id="how">
+        <div class="section-head reveal">
+          <p class="section-label"><span>01</span> Read-only preflight</p>
+          <h2>The repository never gets the first move.</h2>
+          <p>repyy creates an inspection boundary between receiving unfamiliar code and allowing that code to affect your machine.</p>
         </div>
-        <div class="command-stage reveal" aria-label="Example scan result">
-          <div class="command-top">
-            <span>Terminal</span>
-            <button class="copy-button" data-copy="repyy scan https://github.com/example/assignment" type="button">Copy command</button>
+
+        <div class="preflight-stage reveal">
+          <div class="preflight-window" aria-label="Example remote scan">
+            <div class="window-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><code>assignment.git</code><span>Read only</span></div>
+            <div class="preflight-visual" aria-hidden="true">
+              <div class="repository-object"><span></span><span></span><span></span><span></span></div>
+              <div class="inspection-plane"></div>
+              <div class="inspection-label"><i></i><span>Scanning as data</span></div>
+            </div>
+            <figure class="preflight-photo" aria-label="Repository evidence sample">
+              <img src="./assets/repyy-autopsy-profile.webp" width="1024" height="1024" loading="lazy" alt="Stacked repository evidence with terminal windows and file previews" />
+            </figure>
+            <div class="window-command"><code><span>$</span> repyy scan https://github.com/example/assignment</code><strong>84 files inspected</strong></div>
           </div>
-          <code><span class="prompt">$</span> repyy scan https://github.com/example/assignment</code>
-          <div class="verdict-row">
-            <strong>DO NOT RUN</strong>
-            <span>critical 1</span><span>high 2</span><span>medium 1</span><span>84 files</span>
-          </div>
+
+          <ol class="preflight-steps">
+            <li><span>01</span><div><strong>Fetch without trust</strong><p>Remote targets use a temporary shallow clone with hooks and submodules disabled.</p></div></li>
+            <li><span>02</span><div><strong>Read, never execute</strong><p>No package manager, build command, test runner, import, or workspace hook is started.</p></div></li>
+            <li><span>03</span><div><strong>Return reviewable evidence</strong><p>Every finding includes location, severity, confidence, context, and rule provenance.</p></div></li>
+          </ol>
         </div>
       </section>
 
       <section class="situations" id="workflow">
-        <div class="situations-heading reveal">
-          <div><p class="section-label">Interview workflow</p><h2>Review the assignment before it controls your machine.</h2></div>
+        <div class="section-head section-head-row reveal">
+          <div><p class="section-label"><span>02</span> Interview workflow</p><h2>Four steps before the first build.</h2></div>
           <p class="drag-hint"><span aria-hidden="true">←</span> Drag the sequence <span aria-hidden="true">→</span></p>
         </div>
         <div class="rail-viewport reveal" data-drag-rail tabindex="0" role="region" aria-label="Take-home repository review sequence. Drag horizontally or use the arrow keys.">
           <div class="situation-rail">
-            <article class="situation"><span>01 · Receive</span><h3>Start with the remote.</h3><p>Keep the repository unexecuted. You can scan its Git URL before making a working checkout.</p></article>
-            <article class="situation"><span>02 · Scan</span><h3>Read files as data.</h3><p>repyy does not install packages, build the project, run tests, import source, or execute hooks.</p></article>
-            <article class="situation"><span>03 · Review</span><h3>Follow the evidence.</h3><p>Inspect matched locations, rule rationale, confidence, context, and any reported coverage limits.</p></article>
-            <article class="situation"><span>04 · Decide</span><h3>Choose what runs next.</h3><p>Continue in isolation, ask the interviewer for context, or stop when the evidence warrants it.</p></article>
+            <article class="situation"><span>01 · Receive</span><h3>Keep the remote inert.</h3><p>Begin with the Git URL before creating a trusted working checkout.</p></article>
+            <article class="situation"><span>02 · Scan</span><h3>Read files as data.</h3><p>Inspect source, manifests, archives, automation, and repository metadata.</p></article>
+            <article class="situation"><span>03 · Review</span><h3>Follow the evidence.</h3><p>Check matched locations, confidence, context, and any reported coverage limits.</p></article>
+            <article class="situation"><span>04 · Decide</span><h3>Choose what runs next.</h3><p>Continue in isolation, ask for context, or stop when the evidence warrants it.</p></article>
           </div>
         </div>
       </section>
 
       <section class="coverage" id="coverage">
-        <div class="section-title reveal">
-          <p class="section-label">What the scan checks</p>
-          <h2>Signals across the repository.</h2>
-          <p>Rules inspect source, manifests, automation, metadata, and archives before target code runs.</p>
+        <div class="section-head reveal">
+          <p class="section-label"><span>03</span> What the scan checks</p>
+          <h2>A repository is more than its source files.</h2>
+          <p>Rules trace executable behavior across install paths, automation, encoded payloads, credentials, metadata, and archives.</p>
         </div>
-        <div class="bento">
-          <article class="feature feature-wide dark-cell reveal">
-            <span class="feature-index">01</span>
-            <h3>Install and execution paths.</h3>
-            <p>Lifecycle scripts, build hooks, custom registries, unsafe binaries, and download-to-execute chains.</p>
-            <div class="path-viz" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+        <div class="coverage-grid">
+          <article class="coverage-card coverage-primary reveal">
+            <div class="card-meta"><span>Execution graph</span><strong>Install paths</strong></div>
+            <figure class="coverage-photo" aria-label="Install-signal inspection capture">
+              <img src="./assets/repyy-scan-stack-diagram.webp" width="1536" height="980" loading="lazy" alt="Repository scan sequence with install hooks, scripts, and shell launch points" />
+            </figure>
+            <p>Lifecycle scripts, custom registries, unsafe binaries, and download-to-execute chains are evaluated together.</p>
           </article>
-          <article class="feature reveal">
-            <span class="feature-index">02</span>
-            <h3>Credential-shaped data.</h3>
-            <p>Tokens and secrets are identified without printing sensitive values.</p>
+
+          <article class="coverage-card coverage-confidence reveal">
+            <div class="card-meta"><span>Finding model</span><strong>Evidence, ranked</strong></div>
+            <div class="confidence-stack" aria-hidden="true"><i style="--level:92%"></i><i style="--level:68%"></i><i style="--level:41%"></i></div>
+            <p>Severity and confidence remain separate so review signals are not presented as proof of compromise.</p>
           </article>
-          <article class="feature signal-cell reveal">
-            <span class="feature-index">03</span>
-            <h3>Obfuscated behavior.</h3>
-            <p>Entropy, encoded payloads, eval chains, invisible characters, and string shufflers.</p>
+
+          <article class="coverage-card coverage-signal reveal">
+            <div class="card-meta"><span>Encoded behavior</span><strong>Obfuscation</strong></div>
+            <div class="signal-code" aria-hidden="true"><code>eval(atob(payload))</code><span>high entropy</span><span>invisible chars</span></div>
+            <figure class="coverage-photo coverage-photo--small" aria-label="Obfuscation inspection detail">
+              <img src="./assets/repyy-evidence-case-close.webp" width="1344" height="896" loading="lazy" alt="Evidence case image showing encoded string sequences and redacted tokens" />
+            </figure>
+            <p>Encoded payloads, dynamic execution, entropy, string shufflers, and invisible characters.</p>
           </article>
-          <article class="feature image-cell reveal">
-            <img src="./assets/repyy-evidence-case.webp" width="1448" height="1086" loading="lazy" alt="Silver evidence case containing repository layers under a cobalt inspection sheet" />
+
+          <article class="coverage-card coverage-secrets reveal">
+            <div class="card-meta"><span>Redacted evidence</span><strong>Credentials</strong></div>
+            <div class="redaction" aria-hidden="true"><span>ghp_</span><i></i><i></i><i></i></div>
+            <p>Credential-shaped values are detected without printing the sensitive value in reports.</p>
           </article>
-          <article class="feature feature-tall reveal">
-            <span class="feature-index">04</span>
-            <h3>Context for review.</h3>
-            <p>Documentation and test fixtures are recognized. Evidence is ranked instead of flattened into one warning level.</p>
-            <div class="rings" aria-hidden="true"><span></span><span></span><span></span></div>
+
+          <article class="coverage-card coverage-surface reveal">
+            <div class="surface-copy"><div class="card-meta"><span>Repository surfaces</span><strong>Beyond the app folder</strong></div><p>CI, editor tasks, agent instructions, containers, Git hooks, archives, and social-engineering signals remain in scope.</p></div>
+            <div class="surface-wheel" aria-hidden="true"><span>CI</span><span>IDE</span><span>Git</span><span>Agent</span><span>Archive</span><i>12</i></div>
           </article>
         </div>
       </section>
 
-      <section class="privacy-story">
-        <figure class="privacy-image reveal">
-          <img src="./assets/repyy-evidence-case.webp" width="1448" height="1086" loading="lazy" alt="Repository layers contained inside a local evidence case" />
-        </figure>
-        <div class="privacy-copy">
-          <div class="reveal"><p class="section-label">Local by default</p><h2>Your source stays where you put it.</h2><p>Local scans need no network access. Remote scans use the network only to clone the repository you requested.</p></div>
-          <dl class="privacy-facts reveal">
-            <div><dt>Uploads</dt><dd>None</dd></div>
-            <div><dt>Telemetry</dt><dd>None</dd></div>
-            <div><dt>Accounts</dt><dd>None</dd></div>
-            <div><dt>Automatic updates</dt><dd>None</dd></div>
-          </dl>
+      <section class="privacy-boundary">
+        <div class="section-head reveal">
+          <p class="section-label"><span>04</span> Privacy and network</p>
+          <h2>The review boundary is your machine.</h2>
+          <p>Local targets need no network access. Remote targets use the network only to clone the repository you requested.</p>
+        </div>
+
+        <div class="boundary-board reveal">
+          <div class="boundary-label">Local review boundary</div>
+          <div class="boundary-flow" aria-label="Source flows through repyy into a local report">
+            <article><span>01</span><strong>Source</strong><small>Local folder or requested clone</small></article>
+            <i aria-hidden="true"></i>
+            <article class="boundary-core"><span>02</span><strong>repyy</strong><small>Read-only static inspection</small></article>
+            <i aria-hidden="true"></i>
+            <article><span>03</span><strong>Report</strong><small>Terminal, JSON, SARIF, or HTML</small></article>
+          </div>
+          <dl class="boundary-facts"><div><dt>Source uploads</dt><dd>None</dd></div><div><dt>Telemetry</dt><dd>None</dd></div><div><dt>Account</dt><dd>Not required</dd></div><div><dt>Updates</dt><dd>Explicit only</dd></div></dl>
         </div>
       </section>
 
-      <section class="reports">
-        <div class="reports-heading reveal"><p class="section-label">Output</p><h2>Choose a report format.</h2><p>Review in the terminal, pass structured output to automation, or save a private offline artifact.</p></div>
-        <div class="report-format reveal is-selected" data-format="terminal"><b>Terminal</b><p>Prioritized output for a developer reviewing the repository now.</p><code>repyy scan ./assignment</code></div>
-        <div class="report-format reveal" data-format="json"><b>JSON</b><p>Structured findings with stable identifiers and provenance.</p><code>--format json</code></div>
-        <div class="report-format reveal" data-format="sarif"><b>SARIF</b><p>Code-scanning output for existing security workflows.</p><code>--format sarif</code></div>
-        <div class="report-format reveal" data-format="html"><b>HTML</b><p>A self-contained offline report with filters and redacted evidence.</p><code>--format html</code></div>
-      </section>
+      <section class="reports" id="outputs">
+        <div class="section-head reveal">
+          <p class="section-label"><span>05</span> Report formats</p>
+          <h2>One scan, four useful views.</h2>
+          <p>The underlying evidence stays consistent while the format changes for terminal review, automation, code scanning, or a private offline artifact.</p>
+        </div>
 
-      <section class="agent-skill" id="agent-skill">
-        <div class="skill-copy reveal">
-          <p class="section-label">Optional agent skill</p>
-          <h2>Give your coding agent the same preflight rule.</h2>
-          <p>The skill instructs an agent to scan unfamiliar repositories before execution and to report coverage limits. It does not install the repyy executable.</p>
-          <a class="text-link" href="./docs.html#agent-skill-docs">Read the skill setup <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="skill-card reveal">
-          <div class="skill-card-title"><span>Agent instructions</span><strong>repyy</strong></div>
-          <div class="skill-command"><code>npx skills add Kevin-Umali/repyy --skill repyy</code><button class="copy-button light" type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy">Copy</button></div>
-          <ul><li>Scan before target dependencies are installed.</li><li>Keep source and reports local.</li><li>Distinguish findings from proof of compromise.</li></ul>
-        </div>
-      </section>
+        <div class="report-lab reveal" data-report-lab>
+          <div class="report-tabs" role="tablist" aria-label="Report formats">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-report-format="terminal">Terminal</button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="json">JSON</button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="sarif">SARIF</button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="html">HTML</button>
+          </div>
+          <div class="report-screen">
+            <div class="report-screen-bar"><span><i></i><i></i><i></i></span><strong data-report-title>Terminal review</strong><button type="button" class="copy-button light" data-report-copy>Copy command</button></div>
+            <pre aria-live="polite"><code data-report-preview><span class="code-muted">$</span> repyy scan ./assignment
 
-      <section class="verdicts">
-        <div class="verdict-copy reveal">
-          <p class="section-label">Interpretation</p>
-          <h2>Four scan outcomes.</h2>
-          <p>A finding is evidence, not an accusation. Each verdict states what happened and whether coverage completed.</p>
-        </div>
-        <div class="verdict-stack reveal" data-stack>
-          <button class="verdict-card is-active" type="button" data-verdict="clear"><span>No findings</span><small>No enabled rule matched in completed coverage.</small></button>
-          <button class="verdict-card" type="button" data-verdict="review"><span>Review required</span><small>Evidence needs human context.</small></button>
-          <button class="verdict-card" type="button" data-verdict="stop"><span>Do not run</span><small>High-confidence critical behavior was found.</small></button>
-          <button class="verdict-card" type="button" data-verdict="incomplete"><span>Scan incomplete</span><small>A limit or error reduced coverage.</small></button>
+<b>REVIEW REQUIRED</b>
+2 findings need context
+
+HIGH  PKG-014   package.json:12
+MED   OBF-003   src/setup.js:48</code></pre>
+          </div>
+          <aside class="report-notes"><div><strong data-report-use>Human review</strong><p data-report-description>Prioritized findings with context and a clear verdict.</p></div><code data-report-command>repyy scan ./assignment</code><a href="./docs.html#reports-docs">Report reference <span aria-hidden="true">↗</span></a></aside>
         </div>
       </section>
 
-      <section class="intelligence">
-        <div class="intelligence-copy reveal">
-          <p class="section-label">Rule provenance</p>
-          <h2>Signed offline intelligence snapshots.</h2>
-          <p>Scans do not update themselves. You choose when to download a signed public snapshot, inspect its status, or roll back.</p>
-          <a class="button signal-button" href="./docs.html#intelligence">Read intelligence docs</a>
-        </div>
-        <div class="intel-console reveal">
-          <code><span>$</span> repyy intel status</code>
-          <div class="intel-result"><i aria-hidden="true"></i><strong>Signature verified</strong><small>Active offline snapshot</small></div>
-          <code><span>$</span> repyy rules explain CICD-003</code>
-          <p>See the rationale, legitimate-use context, matching scope, and recommended action behind a rule.</p>
+      <section class="merge-story" id="confidence" aria-label="From agent instruction to scan decision">
+        <div class="merge-sticky">
+          <div class="merge-heading">
+            <p class="section-label"><span>06</span> One review system</p>
+            <h2>Instruction, interpretation, provenance.</h2>
+            <p>Three layers move together because a useful scan depends on all three.</p>
+          </div>
+
+          <div class="merge-viewport">
+            <div class="merge-deck">
+              <article class="merge-panel merge-skill">
+                <div class="panel-index">01</div>
+                <div><p class="panel-label">Optional agent skill</p><h3>Start with the same preflight rule.</h3><p>The skill instructs an agent to scan before execution and to report incomplete coverage. It installs instructions only.</p></div>
+                <div class="panel-command"><code>npx skills add Kevin-Umali/repyy --skill repyy</code><button class="copy-button light" type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy">Copy</button></div>
+              </article>
+
+              <article class="merge-panel merge-verdict">
+                <div class="panel-index">02</div>
+                <div><p class="panel-label">Interpretation</p><h3>Four outcomes, without false certainty.</h3></div>
+                <div class="mini-verdicts"><span><b>No findings</b><small>No enabled rule matched.</small></span><span><b>Review required</b><small>Evidence needs context.</small></span><span class="is-critical"><b>Do not run</b><small>Critical behavior found.</small></span><span><b>Scan incomplete</b><small>Coverage was reduced.</small></span></div>
+              </article>
+
+              <article class="merge-panel merge-provenance">
+                <div class="panel-index">03</div>
+                <div><p class="panel-label">Rule provenance</p><h3>Signed offline intelligence.</h3><p>Updates are explicit. Inspect the active snapshot, explain a rule, or roll back locally.</p></div>
+                <div class="provenance-console"><code><span>$</span> repyy intel status</code><p><i></i><strong>Signature verified</strong><small>Active offline snapshot</small></p><code><span>$</span> repyy rules explain CICD-003</code></div>
+              </article>
+            </div>
+          </div>
+
+          <div class="merge-progress" aria-hidden="true"><span></span><i></i><i></i><i></i></div>
         </div>
       </section>
 
       <section class="limits">
-        <div class="limits-heading reveal"><p class="section-label">Coverage limits</p><h2>Incomplete is reported as incomplete.</h2><p>A timeout, file limit, permission error, or unreadable archive prevents a clean conclusion.</p></div>
+        <div class="section-head limits-heading reveal"><p class="section-label"><span>07</span> Coverage limits</p><h2>Incomplete is reported as incomplete.</h2><p>A timeout, file limit, permission error, or unreadable archive prevents a clean conclusion.</p></div>
         <div class="limit-grid">
           <div class="limit reveal"><strong>10 min</strong><span>Default timeout</span></div>
           <div class="limit reveal"><strong>100,000</strong><span>Default file limit</span></div>
@@ -192,7 +231,7 @@
       </section>
 
       <section class="faq">
-        <div class="faq-heading reveal"><p class="section-label">Before the scan</p><h2>Common questions.</h2></div>
+        <div class="section-head faq-heading reveal"><p class="section-label"><span>08</span> Before the scan</p><h2>Common questions.</h2></div>
         <div class="faq-list reveal">
           <details><summary>Does “No findings” mean the repository is safe?</summary><p>No. It means the completed scan matched no enabled rule. Static analysis can miss malicious behavior and can report harmless code.</p></details>
           <details><summary>Does repyy execute target code?</summary><p>No. It reads target files as data. It does not install packages, build the project, run tests, or import source.</p></details>
@@ -202,12 +241,14 @@
       </section>
 
       <section class="install" id="install">
-        <div class="install-copy reveal">
-          <p class="section-label">Install the scanner</p>
-          <h2>Run repyy before the repository.</h2>
-          <p>Choose an installation method, then scan the assignment from its URL or local folder.</p>
+        <div class="install-glow" aria-hidden="true"></div>
+        <div class="section-head install-copy reveal">
+          <p class="section-label"><span>09</span> Install the scanner</p>
+          <h2>Make the scan your first command.</h2>
+          <p>Install repyy, inspect the assignment, and decide what you are comfortable executing.</p>
         </div>
-        <div class="install-panel glass-dark reveal" data-install-tabs>
+
+        <div class="install-panel reveal" data-install-tabs>
           <div class="install-tabs" role="tablist" aria-label="Installation methods">
             <button class="is-active" type="button" role="tab" aria-selected="true" data-install-command="brew install --cask Kevin-Umali/tap/repyy">Homebrew</button>
             <button type="button" role="tab" aria-selected="false" data-install-command="scoop install repyy/repyy">Scoop</button>
@@ -215,9 +256,11 @@
           </div>
           <div class="install-command">
             <code><span>$</span> <b data-install-output>brew install --cask Kevin-Umali/tap/repyy</b></code>
-            <button class="copy-button light" data-install-copy type="button">Copy</button>
+            <button class="install-copy-button" data-install-copy type="button"><span data-copy-label>Copy command</span><i aria-hidden="true">↗</i></button>
           </div>
         </div>
+
+        <div class="install-links reveal"><a href="./docs.html#getting-started">Installation guide <span aria-hidden="true">↗</span></a><a href="https://github.com/Kevin-Umali/repyy">Read the source <span aria-hidden="true">↗</span></a></div>
       </section>
     </main>
 

@@ -9,6 +9,26 @@ permissions:
   contents: read
 
 jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Smoke test static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for path in index.html docs.html styles.css landing.css docs.css site.js \
+            assets/repyy-autopsy-hero.webp assets/repyy-autopsy-profile.webp \
+            assets/repyy-scan-stack-diagram.webp assets/repyy-evidence-case-close.webp \
+            assets/repyy-docs-review.webp; do
+            curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$path" >/dev/null
+          done
+
   test:
     runs-on: ubuntu-latest
     steps:
