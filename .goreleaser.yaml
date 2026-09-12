@@ -29,9 +29,8 @@ nfpms:
     formats: [deb, rpm, apk]
     bindir: /usr/bin
 
-homebrew_casks:
+brews:
   - name: repyy
-    binaries: [repyy]
     repository:
       owner: Kevin-Umali
       name: homebrew-tap
@@ -39,6 +38,7 @@ homebrew_casks:
     homepage: https://github.com/Kevin-Umali/repyy
     description: Scan unfamiliar source repositories before running their code
     license: MIT
+    test: system "#{bin}/repyy", "version"
 
 scoops:
   - name: repyy
