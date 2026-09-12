@@ -29,7 +29,7 @@ nfpms:
     formats: [deb, rpm, apk]
     bindir: /usr/bin
 
-brews:
+homebrew_casks:
   - name: repyy
     repository:
       owner: Kevin-Umali
@@ -37,8 +37,12 @@ brews:
       token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
     homepage: https://github.com/Kevin-Umali/repyy
     description: Scan unfamiliar source repositories before running their code
-    license: MIT
-    test: system "#{bin}/repyy", "version"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/repyy"]
+          end
 
 scoops:
   - name: repyy
