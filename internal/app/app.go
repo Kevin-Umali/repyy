@@ -31,6 +31,9 @@ Usage:
   repyy rules validate <rules.yaml>
   repyy rules check
   repyy rules list [--format terminal|json]
+  repyy intel status [--format terminal|json]
+  repyy intel update
+  repyy intel rollback
   repyy version
 
 Scan options:
@@ -63,10 +66,87 @@ func Run(args []string, stdout, stderr io.Writer, version string) (int, error) {
 		return 0, nil
 	case "rules":
 		return runRules(args[1:], stdout)
+	case "intel":
+		return runIntel(args[1:], stdout)
 	case "scan":
 		return runScan(args[1:], stdout, stderr, version)
 	default:
 		return 3, fmt.Errorf("unknown command %q; use 'repyy help'", args[0])
+	}
+}
+
+func runIntel(args []string, stdout io.Writer) (int, error) {
+	store, err := intel.NewDefaultStore()
+	if err != nil {
+		return 2, err
+	}
+	if len(args) == 0 {
+		return 3, errors.New("usage: repyy intel status [--format terminal|json] | update | rollback")
+	}
+	switch args[0] {
+	case "status":
+		format := "terminal"
+		if len(args) == 3 && args[1] == "--format" {
+			format = args[2]
+		} else if len(args) != 1 {
+			return 3, errors.New("usage: repyy intel status [--format terminal|json]")
+		}
+		status := store.Inspect(time.Now().UTC())
+		if format == "json" {
+			return encodeJSON(stdout, status)
+		}
+		if format != "terminal" {
+			return 3, errors.New("--format must be terminal or json")
+		}
+		printIntelStatus(stdout, status)
+		return 0, nil
+	case "update":
+		if len(args) != 1 {
+			return 3, errors.New("usage: repyy intel update")
+		}
+		status, err := store.Update(context.Background(), time.Now().UTC())
+		if err != nil {
+			return 2, err
+		}
+		printIntelStatus(stdout, status)
+		return 0, nil
+	case "rollback":
+		if len(args) != 1 {
+			return 3, errors.New("usage: repyy intel rollback")
+		}
+		status, err := store.Rollback(time.Now().UTC())
+		if err != nil {
+			return 2, err
+		}
+		printIntelStatus(stdout, status)
+		return 0, nil
+	case "export":
+		if len(args) != 1 {
+			return 3, errors.New("usage: repyy intel export")
+		}
+		return encodeJSON(stdout, intel.BuiltinSnapshot())
+	default:
+		return 3, fmt.Errorf("unknown intel command %q", args[0])
+	}
+}
+
+func encodeJSON(stdout io.Writer, value any) (int, error) {
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(value); err != nil {
+		return 2, err
+	}
+	return 0, nil
+}
+
+func printIntelStatus(stdout io.Writer, status intel.Status) {
+	freshness := "current"
+	if status.Stale {
+		freshness = "stale"
+	}
+	fmt.Fprintf(stdout, "intelligence %s (%s) — %s, %s, verified; %d packages, %d hashes\n", status.SnapshotVersion, status.SnapshotDate, status.Source, freshness, status.Packages, status.FileHashes)
+	if status.Warning != "" {
+		fmt.Fprintf(stdout, "warning: %s\n", status.Warning)
 	}
 }
 
@@ -78,7 +158,12 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		} else if len(args) != 1 {
 			return 3, errors.New("usage: repyy rules list [--format terminal|json]")
 		}
-		packages := append([]intel.Package(nil), intel.Packages...)
+		store, err := intel.NewDefaultStore()
+		if err != nil {
+			return 2, err
+		}
+		snapshot, status := store.LoadActiveSnapshot(time.Now().UTC())
+		packages := append([]intel.Package(nil), snapshot.Packages...)
 		sort.Slice(packages, func(i, j int) bool {
 			if packages[i].Ecosystem != packages[j].Ecosystem {
 				return packages[i].Ecosystem < packages[j].Ecosystem
@@ -92,7 +177,7 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 				Stale           bool             `json:"stale"`
 				Packages        []intel.Package  `json:"packages"`
 				FileHashes      []intel.FileHash `json:"file_hashes"`
-			}{intel.SnapshotVersion, intel.SnapshotDate, intel.Stale(time.Now().UTC()), packages, intel.FileHashes}
+			}{snapshot.SnapshotVersion, snapshot.SnapshotDate, status.Stale, packages, snapshot.FileHashes}
 			enc := json.NewEncoder(stdout)
 			enc.SetIndent("", "  ")
 			if err := enc.Encode(payload); err != nil {
@@ -103,7 +188,7 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		if format != "terminal" {
 			return 3, fmt.Errorf("unsupported format %q; use terminal or json", format)
 		}
-		fmt.Fprintf(stdout, "Intelligence snapshot %s (%s) — %d packages, %d file hashes\n\n", intel.SnapshotVersion, intel.SnapshotDate, len(packages), len(intel.FileHashes))
+		fmt.Fprintf(stdout, "Intelligence snapshot %s (%s, %s) — %d packages, %d file hashes\n\n", snapshot.SnapshotVersion, snapshot.SnapshotDate, status.Source, len(packages), len(snapshot.FileHashes))
 		for _, p := range packages {
 			affected := "review resolved version"
 			if len(p.Affected) > 0 {
@@ -114,11 +199,16 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		return 0, nil
 	}
 	if len(args) == 1 && args[0] == "check" {
-		freshness := "current"
-		if intel.Stale(time.Now().UTC()) {
-			freshness = "stale; refresh before relying on package-name IOCs"
+		store, err := intel.NewDefaultStore()
+		if err != nil {
+			return 2, err
 		}
-		fmt.Fprintf(stdout, "embedded ruleset %s; intelligence %s (%s, %d packages, %d hashes); automatic network updates are disabled\n", scan.BuiltinRulesVersion, intel.SnapshotVersion, freshness, len(intel.Packages), len(intel.FileHashes))
+		status := store.Inspect(time.Now().UTC())
+		freshness := "current"
+		if status.Stale {
+			freshness = "stale; run 'repyy intel update' before relying on package-name IOCs"
+		}
+		fmt.Fprintf(stdout, "embedded ruleset %s; intelligence %s (%s, %s, %d packages, %d hashes); automatic network updates are disabled\n", scan.BuiltinRulesVersion, status.SnapshotVersion, status.Source, freshness, status.Packages, status.FileHashes)
 		return 0, nil
 	}
 	if len(args) == 2 && args[0] == "validate" {
@@ -139,6 +229,7 @@ type scanArgs struct {
 	timeout                                       time.Duration
 	limits                                        scan.Limits
 	targets                                       []string
+	intelligence                                  *intel.Database
 }
 
 func parseScanArgs(args []string) (scanArgs, error) {
@@ -224,7 +315,27 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 		rules = append(rules, cfg.Rules...)
 		suppressions = config.ActiveSuppressions(cfg, time.Now())
 	}
-	report := model.Report{SchemaVersion: "1", ToolVersion: version, GeneratedAt: time.Now().UTC(), Results: make([]model.RepoResult, len(opts.targets))}
+	store, err := intel.NewDefaultStore()
+	if err != nil {
+		return 2, err
+	}
+	intelligence, intelStatus := store.LoadActive(time.Now().UTC())
+	opts.intelligence = intelligence
+	if intelStatus.Warning != "" {
+		fmt.Fprintln(stderr, "repyy:", intelStatus.Warning)
+	}
+	report := model.Report{
+		SchemaVersion: "1",
+		ToolVersion:   version,
+		RulesVersion:  scan.BuiltinRulesVersion,
+		Intelligence: model.IntelligenceInfo{
+			Version: intelStatus.SnapshotVersion,
+			Date:    intelStatus.SnapshotDate,
+			Source:  intelStatus.Source,
+		},
+		GeneratedAt: time.Now().UTC(),
+		Results:     make([]model.RepoResult, len(opts.targets)),
+	}
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for range opts.jobs {
@@ -293,7 +404,7 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 	if opts.keep && prepared.Remote {
 		result.Resolved = prepared.Path
 	}
-	scanner := scan.New(scan.Options{Rules: rules, IncludeDependencies: opts.includeDeps, Limits: opts.limits})
+	scanner := scan.New(scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits})
 	result.Coverage, result.Findings = scanner.Scan(ctx, prepared.Path)
 	filtered := result.Findings[:0]
 	for _, finding := range result.Findings {

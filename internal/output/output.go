@@ -25,7 +25,8 @@ func Write(w io.Writer, format string, report model.Report) error {
 }
 
 func terminal(w io.Writer, report model.Report) error {
-	fmt.Fprintf(w, "repyy %s — read-only repository preflight\n\n", report.ToolVersion)
+	fmt.Fprintf(w, "repyy %s — read-only repository preflight\n", report.ToolVersion)
+	fmt.Fprintf(w, "rules %s; intelligence %s (%s, %s)\n\n", report.RulesVersion, report.Intelligence.Version, report.Intelligence.Date, report.Intelligence.Source)
 	for _, result := range report.Results {
 		fmt.Fprintf(w, "%s  %s\n", result.Verdict, result.Target)
 		if result.Error != "" {
@@ -152,7 +153,11 @@ func sarifOut(w io.Writer, report model.Report) error {
 		ruleList = append(ruleList, r)
 	}
 	sort.Slice(ruleList, func(i, j int) bool { return ruleList[i].ID < ruleList[j].ID })
-	doc := sarif{Version: "2.1.0", Schema: "https://json.schemastore.org/sarif-2.1.0.json", Runs: []sarifRun{{Tool: sarifTool{Driver: sarifDriver{Name: "repyy", Version: report.ToolVersion, InformationURI: "https://github.com/Kevin-Umali/repyy", Rules: ruleList}}, Results: results, Invocations: []sarifInvocation{{ExecutionSuccessful: success}}}}}
+	properties := map[string]any{
+		"rulesVersion": report.RulesVersion,
+		"intelligence": report.Intelligence,
+	}
+	doc := sarif{Version: "2.1.0", Schema: "https://json.schemastore.org/sarif-2.1.0.json", Runs: []sarifRun{{Tool: sarifTool{Driver: sarifDriver{Name: "repyy", Version: report.ToolVersion, InformationURI: "https://github.com/Kevin-Umali/repyy", Rules: ruleList}}, Results: results, Invocations: []sarifInvocation{{ExecutionSuccessful: success, Properties: properties}}}}}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(doc)

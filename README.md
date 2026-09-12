@@ -27,9 +27,21 @@ NO FINDINGS  ./another-repo
 
 ## Install
 
-Download a release archive for macOS, Linux, or Windows from
-[GitHub Releases](https://github.com/Kevin-Umali/repyy/releases), or install it
-with Go:
+You do not need Go to install a release.
+
+```sh
+# macOS or Linux with Homebrew
+brew install Kevin-Umali/tap/repyy
+
+# Windows with Scoop
+scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket
+scoop install repyy/repyy
+```
+
+Linux releases also include `.deb`, `.rpm`, and `.apk` packages. macOS, Linux,
+and Windows archives are available from
+[GitHub Releases](https://github.com/Kevin-Umali/repyy/releases). If you already
+use Go, this remains available:
 
 ```sh
 go install github.com/Kevin-Umali/repyy/cmd/repyy@latest
@@ -93,6 +105,9 @@ Exit code `0` means no finding reached `--fail-on` (default: `high`), `1` means
 the threshold was reached, `2` means a target could not be fully scanned, and
 `3` means the command or configuration was invalid.
 
+Terminal, JSON, and SARIF reports identify the scanner, ruleset, and verified
+intelligence snapshot used, so a result can be reproduced and audited later.
+
 Documentation, tests, fixtures, and security-rule files are identified as
 context and downgraded where appropriate. Private IPs, generated lockfiles,
 source maps, and commit-SHA-pinned GitHub Actions also have targeted exclusions
@@ -110,14 +125,32 @@ automatic accusation.
 - File, archive, timeout, and symlink limits are enforced and incomplete scans
   are reported honestly.
 
-The scanner contains a dated offline intelligence snapshot. Inspect its age and
-contents without contacting an external service:
+The scanner contains a dated offline intelligence snapshot. Scans never update
+it automatically. Inspect its status or contents without contacting an
+external service:
 
 ```sh
+repyy intel status
+repyy intel status --format json
 repyy rules check
 repyy rules list
 repyy rules list --format json
 ```
+
+Updating is an explicit action. It downloads only the public snapshot and its
+signature from the latest GitHub release; it does not upload source, paths,
+findings, file hashes, or usage data. A snapshot is activated only after its
+Ed25519 signature, schema, dates, and records pass validation.
+
+```sh
+repyy intel update
+repyy intel rollback  # restore the previous verified cached snapshot
+```
+
+Updates are stored atomically in the user cache. If the cache is missing,
+damaged, or fails verification, repyy warns and safely uses the snapshot
+embedded in the executable. The public verification key is published at
+[`keys/intelligence-ed25519.pem`](keys/intelligence-ed25519.pem).
 
 Package-name-only or uncertain-version matches require review. A sourced
 affected version or exact published file hash provides stronger evidence, but

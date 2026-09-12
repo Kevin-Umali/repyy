@@ -3,6 +3,25 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
+## [0.3.0] - 2026-09-12
+
+### Added
+
+- Added explicit signed intelligence lifecycle commands: `intel status`,
+  `intel update`, and `intel rollback`.
+- Added signature verification, strict snapshot validation, downgrade
+  protection, a content-addressed last-known-good cache, and embedded fallback.
+- Added Homebrew and Scoop publishing plus native `.deb`, `.rpm`, and `.apk`
+  release packages, so installing a release does not require Go.
+- Added release-time snapshot signing and binary smoke checks.
+- Added ruleset and intelligence-snapshot identity to scan reports.
+
+### Privacy
+
+- Normal scans and status checks remain offline. Intelligence updates download
+  two public release assets and never upload source, paths, findings, hashes, or
+  telemetry.
+
 ## [0.2.2] - 2026-09-12
 
 - Recognize inline scanner signature tables as detection definitions instead of
@@ -26,5 +45,6 @@ Versioning after the first published release.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.3.0]: https://github.com/Kevin-Umali/repyy/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/Kevin-Umali/repyy/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Kevin-Umali/repyy/releases/tag/v0.2.1

@@ -59,6 +59,18 @@ contain dangerous-looking strings. Do not silence those matches globally;
 classify and downgrade their context. Never use comment language or contributor
 nationality as a malicious signal.
 
+### Intelligence changes
+
+Every package or file-hash indicator needs a stable advisory identifier,
+affected versions when published, a description, dates, and an HTTPS primary
+source. Run `make intel` only when intentionally refreshing the curated GitHub
+advisory metadata; it performs network requests through your authenticated
+`gh` CLI. Review the generated diff and run the full checks afterward.
+
+Never add an intelligence signing private key to a commit, fixture, issue, or
+pull request. Releases sign the exported snapshot in GitHub Actions; the public
+verification key is intentionally committed under `keys/`.
+
 ## Pull requests
 
 `CONTRIBUTING.md` is guidance; it does not fill in a pull request automatically.

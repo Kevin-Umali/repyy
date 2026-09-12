@@ -51,6 +51,24 @@ type FileHash struct {
 	SnapshotVersion string   `json:"snapshot_version"`
 }
 
+// Snapshot is the signed, machine-readable intelligence update format.
+type Snapshot struct {
+	SnapshotVersion string     `json:"snapshot_version"`
+	SnapshotDate    string     `json:"snapshot_date"`
+	Packages        []Package  `json:"packages"`
+	FileHashes      []FileHash `json:"file_hashes"`
+}
+
+// BuiltinSnapshot returns a copy of the intelligence embedded in the binary.
+func BuiltinSnapshot() Snapshot {
+	return Snapshot{
+		SnapshotVersion: SnapshotVersion,
+		SnapshotDate:    SnapshotDate,
+		Packages:        append([]Package(nil), Packages...),
+		FileHashes:      append([]FileHash(nil), FileHashes...),
+	}
+}
+
 // Packages is a bounded snapshot of malware advisories returned by GitHub's
 // Global Security Advisory API on SnapshotDate. Package identity is a review
 // signal rather than proof about every possible version of a reused name.

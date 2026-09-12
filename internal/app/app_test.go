@@ -11,6 +11,7 @@ import (
 )
 
 func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
 	clean, risky := t.TempDir(), t.TempDir()
 	if err := os.WriteFile(filepath.Join(clean, "main.go"), []byte("package main\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -38,6 +39,9 @@ func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
 	if len(report.Results) != 2 {
 		t.Fatalf("got %d results", len(report.Results))
 	}
+	if report.RulesVersion == "" || report.Intelligence.Version == "" || report.Intelligence.Source != "embedded" {
+		t.Fatalf("missing scan provenance: %+v", report)
+	}
 	if report.Results[0].Verdict != model.VerdictNoFindings {
 		t.Fatalf("clean verdict: %s", report.Results[0].Verdict)
 	}
@@ -47,6 +51,7 @@ func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
 }
 
 func TestOperationalFailureWinsExitCode(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
 	var stdout, stderr bytes.Buffer
 	code, err := Run([]string{"scan", "/path/that/does/not/exist", "--format=json"}, &stdout, &stderr, "test")
 	if err != nil {
@@ -65,6 +70,7 @@ func TestDisplayTargetRedactsURLCredentials(t *testing.T) {
 }
 
 func TestRulesListJSONIncludesProvenance(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
 	var stdout bytes.Buffer
 	code, err := Run([]string{"rules", "list", "--format", "json"}, &stdout, &bytes.Buffer{}, "test")
 	if err != nil || code != 0 {
@@ -83,5 +89,19 @@ func TestRulesListJSONIncludesProvenance(t *testing.T) {
 	}
 	if len(result.Packages) == 0 || result.Packages[0].Source == "" || result.Packages[0].SourceURL == "" || result.Packages[0].Description == "" {
 		t.Fatalf("missing provenance: %#v", result.Packages)
+	}
+}
+
+func TestIntelStatusAndExportAreOffline(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	for _, args := range [][]string{{"intel", "status", "--format", "json"}, {"intel", "export"}} {
+		var stdout bytes.Buffer
+		code, err := Run(args, &stdout, &bytes.Buffer{}, "test")
+		if err != nil || code != 0 {
+			t.Fatalf("%v: code=%d err=%v", args, code, err)
+		}
+		if !json.Valid(stdout.Bytes()) {
+			t.Fatalf("%v returned invalid JSON: %s", args, stdout.String())
+		}
 	}
 }

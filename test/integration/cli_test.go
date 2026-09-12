@@ -35,6 +35,7 @@ func TestCleanRepositoryFromBuiltCLI(t *testing.T) {
 	}
 
 	scan := exec.Command(binary, "scan", target)
+	scan.Env = append(os.Environ(), "REPYY_CACHE_DIR="+filepath.Join(root, "cache"))
 	output, err := scan.CombinedOutput()
 	if err != nil {
 		t.Fatalf("scan clean fixture: %v\n%s", err, output)

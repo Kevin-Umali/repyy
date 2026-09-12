@@ -14,7 +14,7 @@ type PackageMatch struct {
 	DeclaredVersion string
 }
 
-// Database provides indexed access to the immutable built-in snapshot.
+// Database provides indexed access to a validated intelligence snapshot.
 type Database struct {
 	packages map[string][]Package
 	hashes   map[string]FileHash
@@ -22,12 +22,17 @@ type Database struct {
 
 // Builtin indexes a copy of the embedded package and hash indicators.
 func Builtin() *Database {
+	return NewDatabase(Packages, FileHashes)
+}
+
+// NewDatabase indexes copies of validated package and file-hash indicators.
+func NewDatabase(packages []Package, hashes []FileHash) *Database {
 	d := &Database{packages: make(map[string][]Package), hashes: make(map[string]FileHash)}
-	for _, p := range Packages {
+	for _, p := range packages {
 		key := strings.ToLower(p.Ecosystem + "\x00" + p.Name)
 		d.packages[key] = append(d.packages[key], p)
 	}
-	for _, h := range FileHashes {
+	for _, h := range hashes {
 		d.hashes[strings.ToLower(h.SHA256)] = h
 	}
 	return d

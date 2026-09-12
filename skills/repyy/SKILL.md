@@ -20,8 +20,8 @@ separately, and neither command installs dependencies from a scanned target.
 
 1. Confirm the user is authorized to inspect every target, especially private repositories.
 2. Prefer an already-installed `repyy`. Check with `repyy version`.
-   Use `repyy rules check` to disclose snapshot age and `repyy rules list` when
-   the user needs package/hash provenance.
+   Use `repyy intel status` to disclose snapshot age and `repyy rules list`
+   when the user needs package/hash provenance. Both commands are offline.
 3. If it is absent and this is a trusted checkout of repyy, use `go run ./cmd/repyy version` or build with `make build`. Otherwise, ask the user to install a signed release. Never install a package from the repository being scanned.
 4. Scan all requested targets in one command when possible:
 
@@ -38,7 +38,13 @@ separately, and neither command installs dependencies from a scanned target.
 - Do not run, import, evaluate, build, or test target code.
 - Do not install target dependencies.
 - Do not upload source or findings to another service.
-- Do not enable online reputation checks unless the user explicitly requests a future feature that clearly identifies its data disclosure.
+- Do not run `repyy intel update` unless the user explicitly asks to update the
+  local intelligence snapshot. That command downloads a signed public snapshot
+  from GitHub Releases and uploads nothing.
+- If an update causes a regression, use `repyy intel rollback` to activate the
+  previous verified cached snapshot.
+- Do not enable online reputation checks unless the user explicitly requests a
+  future feature that clearly identifies its data disclosure.
 - Keep remote scans shallow unless history is needed, and do not retain temporary clones unless requested.
 - Do not paste credential-shaped evidence into chat; repyy redacts it, but verify before quoting.
 - Treat documentation, tests, and signature corpora as context, not automatic proof of malware.

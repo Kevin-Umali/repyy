@@ -74,12 +74,21 @@ type RepoResult struct {
 	Duration time.Duration `json:"duration_ns"`
 }
 
+// IntelligenceInfo identifies the verified snapshot used for a scan.
+type IntelligenceInfo struct {
+	Version string `json:"version"`
+	Date    string `json:"date"`
+	Source  string `json:"source"`
+}
+
 // Report is the stable top-level document emitted by JSON and SARIF workflows.
 type Report struct {
-	SchemaVersion string       `json:"schema_version"`
-	ToolVersion   string       `json:"tool_version"`
-	GeneratedAt   time.Time    `json:"generated_at"`
-	Results       []RepoResult `json:"results"`
+	SchemaVersion string           `json:"schema_version"`
+	ToolVersion   string           `json:"tool_version"`
+	RulesVersion  string           `json:"rules_version"`
+	Intelligence  IntelligenceInfo `json:"intelligence"`
+	GeneratedAt   time.Time        `json:"generated_at"`
+	Results       []RepoResult     `json:"results"`
 }
 
 // Repository verdicts summarize findings without claiming that code is safe.
