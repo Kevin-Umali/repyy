@@ -31,15 +31,18 @@ nfpms:
 
 homebrew_casks:
   - name: repyy
-    # GoReleaser still emits Homebrew's deprecated `postflight` DSL. Generate
-    # the cask here, then publish the postflight_steps version in release.yml.
-    skip_upload: true
     repository:
       owner: Kevin-Umali
       name: homebrew-tap
       token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
     homepage: https://github.com/Kevin-Umali/repyy
     description: Scan unfamiliar source repositories before running their code
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/repyy"]
+          end
 
 scoops:
   - name: repyy
