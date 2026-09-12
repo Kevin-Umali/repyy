@@ -118,6 +118,29 @@ func TestSignatureCorpusIsAggregatedAndDowngraded(t *testing.T) {
 	}
 }
 
+func TestScannerImplementationPatternsAreDowngraded(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "scanner.go", `package scanner
+
+func signatures() {
+	for _, needle := range []string{"eval(", "exec(", "curl ", "/dev/tcp/"} {
+		_ = needle
+	}
+}
+`)
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	if len(findings) == 0 {
+		t.Fatal("expected contextual findings for scanner signatures")
+	}
+	for _, finding := range findings {
+		if finding.Context != "detection-definition" || finding.Confidence != model.ConfidenceLow || finding.Severity == model.SeverityCritical {
+			t.Fatalf("scanner signature was not safely contextualized: %+v", finding)
+		}
+	}
+}
+
 func TestRepositoryHygieneIsInformational(t *testing.T) {
 	root := t.TempDir()
 	writeFixture(t, root, "main.go", "package main\n")

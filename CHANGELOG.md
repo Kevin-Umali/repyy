@@ -3,6 +3,12 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
+## [0.2.2] - 2026-09-12
+
+- Recognize inline scanner signature tables as detection definitions instead of
+  executable malware.
+- Apply context and confidence handling to long-line and entropy findings.
+
 ## [0.2.1] - 2026-09-12
 
 - First public release of the local, read-only multi-repository scanner.
@@ -20,4 +26,5 @@ Versioning after the first published release.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.2.2]: https://github.com/Kevin-Umali/repyy/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Kevin-Umali/repyy/releases/tag/v0.2.1
