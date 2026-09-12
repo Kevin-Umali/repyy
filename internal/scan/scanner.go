@@ -315,10 +315,19 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			break
 		}
 		if len(line) > 600 {
-			add(s.finding("OBFS-004", "minified-or-obfuscated", model.SeverityLow, model.ConfidenceLow, path, i+1, "Very long single line", fmt.Sprintf("line length: %d bytes", len(line)), "Review generated or minified content and its provenance."))
+			finding := s.finding("OBFS-004", "minified-or-obfuscated", model.SeverityLow, model.ConfidenceLow, path, i+1, "Very long single line", fmt.Sprintf("line length: %d bytes", len(line)), "Review generated or minified content and its provenance.")
+			finding.Context = classifyContext(path, line)
+			add(finding)
 		}
 		if len(line) >= 80 && entropy(line) >= 4.8 && dangerousContext(data) {
-			add(s.finding("OBFS-005", "high-entropy-code", model.SeverityMedium, model.ConfidenceMedium, path, i+1, "High-entropy content beside an execution primitive", fmt.Sprintf("entropy: %.2f; length: %d", entropy(line), len(line)), "Decode and inspect the content in an isolated analysis environment."))
+			severity, confidence := model.SeverityMedium, model.ConfidenceMedium
+			findingContext := classifyContext(path, line)
+			if findingContext != "executable" {
+				confidence = model.ConfidenceLow
+			}
+			finding := s.finding("OBFS-005", "high-entropy-code", severity, confidence, path, i+1, "High-entropy content beside an execution primitive", fmt.Sprintf("entropy: %.2f; length: %d", entropy(line), len(line)), "Decode and inspect the content in an isolated analysis environment.")
+			finding.Context = findingContext
+			add(finding)
 		}
 	}
 	s.scanStructured(path, data, add)
@@ -566,6 +575,12 @@ func suspiciousCommand(v string) bool {
 func looksLikeSignatureDefinition(line []byte) bool {
 	l := strings.TrimSpace(string(line))
 	if strings.HasPrefix(l, "#") || strings.Contains(l, `\s`) || strings.Contains(l, `\(`) || strings.Contains(l, `[^\n]`) || strings.Contains(l, "Pattern:") {
+		return true
+	}
+	if strings.Contains(l, "needle := range []string{") || strings.Contains(l, "regexp.MustCompile(") || strings.Contains(l, ".finding(") {
+		return true
+	}
+	if strings.Contains(l, "string(data[:") && (strings.Contains(l, `\x7fELF`) || strings.Contains(l, `\xcf\xfa\xed\xfe`)) {
 		return true
 	}
 	if strings.Count(l, "|") >= 4 && (strings.Contains(l, "curl") || strings.Contains(l, "eval")) {
