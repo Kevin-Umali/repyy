@@ -3,6 +3,11 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
+## [0.3.1] - 2026-09-12
+
+- Publish a Homebrew Formula for the CLI instead of an unsigned Cask, avoiding
+  macOS quarantine failures without bypassing Gatekeeper.
+
 ## [0.3.0] - 2026-09-12
 
 ### Added
@@ -45,6 +50,7 @@ Versioning after the first published release.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.3.1]: https://github.com/Kevin-Umali/repyy/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Kevin-Umali/repyy/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/Kevin-Umali/repyy/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Kevin-Umali/repyy/releases/tag/v0.2.1
