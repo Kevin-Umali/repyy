@@ -1,0 +1,18 @@
+version: 1
+
+rules:
+  - id: LOCAL-001
+    category: organization-policy
+    severity: high
+    confidence: high
+    description: An unapproved bootstrap host is referenced
+    pattern: 'bootstrap\.example\.invalid'
+    globs:
+      - '*.sh'
+      - '*.ps1'
+    remediation: Verify the host with the assignment owner before running it.
+
+suppressions:
+  - fingerprint: sha256:replace-with-a-finding-fingerprint
+    reason: Reviewed vendored test fixture
+    expires: '2026-12-31'

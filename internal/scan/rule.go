@@ -1,0 +1,70 @@
+package scan
+
+import (
+	"fmt"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"github.com/Kevin-Umali/repyy/internal/model"
+)
+
+// Rule defines one declarative, non-executing content matcher.
+type Rule struct {
+	ID          string           `yaml:"id" json:"id"`
+	Category    string           `yaml:"category" json:"category"`
+	Severity    model.Severity   `yaml:"severity" json:"severity"`
+	Confidence  model.Confidence `yaml:"confidence" json:"confidence"`
+	Description string           `yaml:"description" json:"description"`
+	Pattern     string           `yaml:"pattern" json:"pattern"`
+	Globs       []string         `yaml:"globs,omitempty" json:"globs,omitempty"`
+	Remediation string           `yaml:"remediation,omitempty" json:"remediation,omitempty"`
+	re          *regexp.Regexp
+}
+
+// Compile validates a rule and prepares its regular expression.
+func (r *Rule) Compile() error {
+	if strings.TrimSpace(r.ID) == "" || strings.TrimSpace(r.Category) == "" || strings.TrimSpace(r.Description) == "" {
+		return fmt.Errorf("rule id, category, and description are required")
+	}
+	switch r.Severity {
+	case model.SeverityLow, model.SeverityMedium, model.SeverityHigh, model.SeverityCritical:
+	default:
+		return fmt.Errorf("rule %s has invalid severity %q", r.ID, r.Severity)
+	}
+	switch r.Confidence {
+	case model.ConfidenceLow, model.ConfidenceMedium, model.ConfidenceHigh:
+	default:
+		return fmt.Errorf("rule %s has invalid confidence %q", r.ID, r.Confidence)
+	}
+	re, err := regexp.Compile(r.Pattern)
+	if err != nil {
+		return fmt.Errorf("rule %s: %w", r.ID, err)
+	}
+	r.re = re
+	return nil
+}
+
+// Applies reports whether the rule's optional globs include path.
+func (r Rule) Applies(path string) bool {
+	if len(r.Globs) == 0 {
+		return true
+	}
+	path = filepath.ToSlash(path)
+	base := filepath.Base(path)
+	for _, glob := range r.Globs {
+		glob = filepath.ToSlash(glob)
+		if ok, _ := filepath.Match(glob, base); ok {
+			return true
+		}
+		if ok, _ := filepath.Match(glob, path); ok {
+			return true
+		}
+		if strings.HasPrefix(glob, "**/") {
+			if ok, _ := filepath.Match(strings.TrimPrefix(glob, "**/"), base); ok {
+				return true
+			}
+		}
+	}
+	return false
+}

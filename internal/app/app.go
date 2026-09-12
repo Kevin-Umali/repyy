@@ -1,0 +1,359 @@
+// Package app implements repyy's command-line orchestration and exit policy.
+package app
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Kevin-Umali/repyy/internal/config"
+	"github.com/Kevin-Umali/repyy/internal/intel"
+	"github.com/Kevin-Umali/repyy/internal/model"
+	"github.com/Kevin-Umali/repyy/internal/output"
+	"github.com/Kevin-Umali/repyy/internal/scan"
+	"github.com/Kevin-Umali/repyy/internal/source"
+)
+
+const usage = `repyy — inspect unfamiliar repositories without running them
+
+Usage:
+  repyy scan [options] <path-or-git-url>...
+  repyy rules validate <rules.yaml>
+  repyy rules check
+  repyy rules list [--format terminal|json]
+  repyy version
+
+Scan options:
+  --file PATH              read additional targets, one per line
+  --format terminal|json|sarif
+  --output PATH            write the report to a file
+  --jobs N                 concurrent repositories (default 4)
+  --config PATH            trusted external config/rules/suppressions
+  --include-dependencies   include dependency and cache directories
+  --history N|all          remote Git history depth (default 1)
+  --keep-workdir           retain remote checkouts after scanning
+  --fail-on LEVEL          low|medium|high|critical (default high)
+  --timeout DURATION       per-repository timeout (default 10m)
+  --max-files N            maximum files per repository
+  --max-file-size BYTES    maximum bytes per file
+`
+
+// Run executes the CLI command and returns its documented process exit code.
+func Run(args []string, stdout, stderr io.Writer, version string) (int, error) {
+	if len(args) == 0 {
+		fmt.Fprint(stdout, usage)
+		return 3, nil
+	}
+	switch args[0] {
+	case "help", "--help", "-h":
+		fmt.Fprint(stdout, usage)
+		return 0, nil
+	case "version", "--version":
+		fmt.Fprintf(stdout, "repyy %s (rules %s)\n", version, scan.BuiltinRulesVersion)
+		return 0, nil
+	case "rules":
+		return runRules(args[1:], stdout)
+	case "scan":
+		return runScan(args[1:], stdout, stderr, version)
+	default:
+		return 3, fmt.Errorf("unknown command %q; use 'repyy help'", args[0])
+	}
+}
+
+func runRules(args []string, stdout io.Writer) (int, error) {
+	if len(args) >= 1 && args[0] == "list" {
+		format := "terminal"
+		if len(args) == 3 && args[1] == "--format" {
+			format = args[2]
+		} else if len(args) != 1 {
+			return 3, errors.New("usage: repyy rules list [--format terminal|json]")
+		}
+		packages := append([]intel.Package(nil), intel.Packages...)
+		sort.Slice(packages, func(i, j int) bool {
+			if packages[i].Ecosystem != packages[j].Ecosystem {
+				return packages[i].Ecosystem < packages[j].Ecosystem
+			}
+			return strings.ToLower(packages[i].Name) < strings.ToLower(packages[j].Name)
+		})
+		if format == "json" {
+			payload := struct {
+				SnapshotVersion string           `json:"snapshot_version"`
+				SnapshotDate    string           `json:"snapshot_date"`
+				Stale           bool             `json:"stale"`
+				Packages        []intel.Package  `json:"packages"`
+				FileHashes      []intel.FileHash `json:"file_hashes"`
+			}{intel.SnapshotVersion, intel.SnapshotDate, intel.Stale(time.Now().UTC()), packages, intel.FileHashes}
+			enc := json.NewEncoder(stdout)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(payload); err != nil {
+				return 3, err
+			}
+			return 0, nil
+		}
+		if format != "terminal" {
+			return 3, fmt.Errorf("unsupported format %q; use terminal or json", format)
+		}
+		fmt.Fprintf(stdout, "Intelligence snapshot %s (%s) — %d packages, %d file hashes\n\n", intel.SnapshotVersion, intel.SnapshotDate, len(packages), len(intel.FileHashes))
+		for _, p := range packages {
+			affected := "review resolved version"
+			if len(p.Affected) > 0 {
+				affected = strings.Join(p.Affected, ", ")
+			}
+			fmt.Fprintf(stdout, "%-10s %-34s %-25s %s\n  %s\n  affected: %s\n  source: %s\n", p.Ecosystem, p.Name, p.AdvisoryID, p.Severity, p.Description, affected, p.SourceURL)
+		}
+		return 0, nil
+	}
+	if len(args) == 1 && args[0] == "check" {
+		freshness := "current"
+		if intel.Stale(time.Now().UTC()) {
+			freshness = "stale; refresh before relying on package-name IOCs"
+		}
+		fmt.Fprintf(stdout, "embedded ruleset %s; intelligence %s (%s, %d packages, %d hashes); automatic network updates are disabled\n", scan.BuiltinRulesVersion, intel.SnapshotVersion, freshness, len(intel.Packages), len(intel.FileHashes))
+		return 0, nil
+	}
+	if len(args) == 2 && args[0] == "validate" {
+		cfg, err := config.Load(args[1])
+		if err != nil {
+			return 3, err
+		}
+		fmt.Fprintf(stdout, "valid config: %d custom rules, %d suppressions\n", len(cfg.Rules), len(cfg.Suppressions))
+		return 0, nil
+	}
+	return 3, errors.New("usage: repyy rules validate <rules.yaml> | repyy rules check | repyy rules list [--format terminal|json]")
+}
+
+type scanArgs struct {
+	format, output, file, config, history, failOn string
+	jobs                                          int
+	includeDeps, keep                             bool
+	timeout                                       time.Duration
+	limits                                        scan.Limits
+	targets                                       []string
+}
+
+func parseScanArgs(args []string) (scanArgs, error) {
+	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
+	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.StringVar(&o.file, "file", "", "")
+	fs.StringVar(&o.format, "format", o.format, "")
+	fs.StringVar(&o.output, "output", "", "")
+	fs.IntVar(&o.jobs, "jobs", o.jobs, "")
+	fs.StringVar(&o.config, "config", "", "")
+	fs.BoolVar(&o.includeDeps, "include-dependencies", false, "")
+	fs.StringVar(&o.history, "history", o.history, "")
+	fs.BoolVar(&o.keep, "keep-workdir", false, "")
+	fs.StringVar(&o.failOn, "fail-on", o.failOn, "")
+	fs.DurationVar(&o.timeout, "timeout", o.timeout, "")
+	fs.IntVar(&o.limits.MaxFiles, "max-files", o.limits.MaxFiles, "")
+	fs.Int64Var(&o.limits.MaxFileBytes, "max-file-size", o.limits.MaxFileBytes, "")
+	// Permit flags before or after targets by separating known value and boolean flags.
+	var flagArgs []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if !strings.HasPrefix(a, "-") {
+			o.targets = append(o.targets, a)
+			continue
+		}
+		flagArgs = append(flagArgs, a)
+		if strings.Contains(a, "=") || a == "--include-dependencies" || a == "--keep-workdir" {
+			continue
+		}
+		if i+1 >= len(args) {
+			return o, fmt.Errorf("missing value for %s", a)
+		}
+		i++
+		flagArgs = append(flagArgs, args[i])
+	}
+	if err := fs.Parse(flagArgs); err != nil {
+		return o, err
+	}
+	if o.jobs < 1 || o.jobs > 128 {
+		return o, errors.New("--jobs must be between 1 and 128")
+	}
+	if o.timeout <= 0 || o.limits.MaxFiles <= 0 || o.limits.MaxFileBytes <= 0 {
+		return o, errors.New("resource limits must be positive")
+	}
+	if o.format != "terminal" && o.format != "json" && o.format != "sarif" {
+		return o, errors.New("--format must be terminal, json, or sarif")
+	}
+	if o.history != "all" {
+		if n, err := strconv.Atoi(o.history); err != nil || n < 1 {
+			return o, errors.New("--history must be a positive number or all")
+		}
+	}
+	if _, err := parseSeverity(o.failOn); err != nil {
+		return o, err
+	}
+	return o, nil
+}
+
+func runScan(args []string, stdout, stderr io.Writer, version string) (int, error) {
+	opts, err := parseScanArgs(args)
+	if err != nil {
+		return 3, err
+	}
+	if opts.file != "" {
+		targets, err := readTargets(opts.file)
+		if err != nil {
+			return 3, err
+		}
+		opts.targets = append(opts.targets, targets...)
+	}
+	if len(opts.targets) == 0 {
+		return 3, errors.New("provide at least one target or --file")
+	}
+
+	rules := scan.BuiltinRules()
+	suppressions := map[string]bool{}
+	if opts.config != "" {
+		cfg, err := config.Load(opts.config)
+		if err != nil {
+			return 3, err
+		}
+		rules = append(rules, cfg.Rules...)
+		suppressions = config.ActiveSuppressions(cfg, time.Now())
+	}
+	report := model.Report{SchemaVersion: "1", ToolVersion: version, GeneratedAt: time.Now().UTC(), Results: make([]model.RepoResult, len(opts.targets))}
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for range opts.jobs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range jobs {
+				report.Results[i] = scanOne(opts.targets[i], opts, rules, suppressions)
+			}
+		}()
+	}
+	for i := range opts.targets {
+		jobs <- i
+	}
+	close(jobs)
+	wg.Wait()
+
+	w := stdout
+	var file *os.File
+	if opts.output != "" {
+		file, err = os.OpenFile(opts.output, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+		if err != nil {
+			return 3, err
+		}
+		defer file.Close()
+		w = file
+	}
+	if err := output.Write(w, opts.format, report); err != nil {
+		return 3, err
+	}
+	threshold, _ := parseSeverity(opts.failOn)
+	hasFinding, hasError := false, false
+	for _, result := range report.Results {
+		if result.Error != "" {
+			hasError = true
+		}
+		for _, finding := range result.Findings {
+			if finding.Severity.Rank() >= threshold.Rank() {
+				hasFinding = true
+			}
+		}
+	}
+	if hasError {
+		return 2, nil
+	}
+	if hasFinding {
+		return 1, nil
+	}
+	return 0, nil
+}
+
+func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool) model.RepoResult {
+	started := time.Now()
+	result := model.RepoResult{Target: displayTarget(target), Findings: []model.Finding{}}
+	ctx, cancel := context.WithTimeout(context.Background(), opts.timeout)
+	defer cancel()
+	prepared, err := source.Prepare(ctx, target, source.Options{History: opts.history, Keep: opts.keep})
+	if err != nil {
+		result.Error = err.Error()
+		result.Verdict = model.VerdictIncomplete
+		result.Coverage.Complete = false
+		result.Duration = time.Since(started)
+		return result
+	}
+	defer prepared.Cleanup()
+	if opts.keep && prepared.Remote {
+		result.Resolved = prepared.Path
+	}
+	scanner := scan.New(scan.Options{Rules: rules, IncludeDependencies: opts.includeDeps, Limits: opts.limits})
+	result.Coverage, result.Findings = scanner.Scan(ctx, prepared.Path)
+	filtered := result.Findings[:0]
+	for _, finding := range result.Findings {
+		if !suppressions[finding.Fingerprint] {
+			filtered = append(filtered, finding)
+		}
+	}
+	result.Findings = filtered
+	result.Verdict = verdict(result.Coverage, result.Findings)
+	result.Duration = time.Since(started)
+	return result
+}
+
+func displayTarget(target string) string {
+	if i := strings.Index(target, "://"); i >= 0 {
+		rest := target[i+3:]
+		if at := strings.Index(rest, "@"); at >= 0 {
+			return target[:i+3] + "[REDACTED]@" + rest[at+1:]
+		}
+	}
+	return target
+}
+
+func verdict(coverage model.Coverage, findings []model.Finding) string {
+	for _, f := range findings {
+		if f.Severity == model.SeverityCritical && f.Confidence == model.ConfidenceHigh && (f.Context == "executable" || f.Context == "manifest-hook" || f.Context == "confirmed-ioc") {
+			return model.VerdictDoNotRun
+		}
+	}
+	if !coverage.Complete {
+		return model.VerdictIncomplete
+	}
+	if len(findings) > 0 {
+		return model.VerdictReview
+	}
+	return model.VerdictNoFindings
+}
+
+func readTargets(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var out []string
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		line := strings.TrimSpace(s.Text())
+		if line != "" && !strings.HasPrefix(line, "#") {
+			out = append(out, line)
+		}
+	}
+	return out, s.Err()
+}
+
+func parseSeverity(v string) (model.Severity, error) {
+	s := model.Severity(strings.ToLower(v))
+	switch s {
+	case model.SeverityLow, model.SeverityMedium, model.SeverityHigh, model.SeverityCritical:
+		return s, nil
+	}
+	return "", errors.New("--fail-on must be low, medium, high, or critical")
+}

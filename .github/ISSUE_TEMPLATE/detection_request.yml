@@ -1,0 +1,24 @@
+name: Detection request
+description: Propose a new behavior-based detection
+title: "detection: "
+labels: [detection]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Authoritative public source
+      description: Link to the vendor advisory or primary threat research.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Behavior and safe reproduction
+    validations:
+      required: true
+  - type: textarea
+    id: negatives
+    attributes:
+      label: Likely benign matches
+    validations:
+      required: true

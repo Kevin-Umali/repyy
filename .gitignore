@@ -1,0 +1,13 @@
+/bin/
+/dist/
+/work/
+/outputs/
+*.sarif
+*.scan.json
+coverage.out
+coverage.html
+*.prof
+*.test
+.idea/
+.vscode/
+.DS_Store
