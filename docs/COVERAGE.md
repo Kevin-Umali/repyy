@@ -45,5 +45,7 @@ heuristics can produce both false positives and false negatives.
 
 Non-English comments are not evidence of malware and are not scored. GitHub
 account age, follower count, and activity require online collection and remain
-outside the private offline scanner. Run `repyy rules check` to see the embedded
+outside the private offline scanner. Run `repyy intel status` to see the active
 offline snapshot's age, or `repyy rules list` to inspect its sources and entries.
+`repyy intel update` is an explicit download of a signed public snapshot; scans
+never contact the update service or upload repository data.

@@ -17,6 +17,39 @@ archives:
       - goos: windows
         formats: [zip]
 
+nfpms:
+  - id: repyy-packages
+    package_name: repyy
+    ids: [repyy]
+    vendor: repyy contributors
+    homepage: https://github.com/Kevin-Umali/repyy
+    maintainer: Kevin <kevinumali0999@gmail.com>
+    description: Offline-first malware and supply-chain scanner for source repositories
+    license: MIT
+    formats: [deb, rpm, apk]
+    bindir: /usr/bin
+
+homebrew_casks:
+  - name: repyy
+    binaries: [repyy]
+    repository:
+      owner: Kevin-Umali
+      name: homebrew-tap
+      token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
+    homepage: https://github.com/Kevin-Umali/repyy
+    description: Scan unfamiliar source repositories before running their code
+    license: MIT
+
+scoops:
+  - name: repyy
+    repository:
+      owner: Kevin-Umali
+      name: scoop-bucket
+      token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
+    homepage: https://github.com/Kevin-Umali/repyy
+    description: Scan unfamiliar source repositories before running their code
+    license: MIT
+
 checksum:
   name_template: checksums.txt
 

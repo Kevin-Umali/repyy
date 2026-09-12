@@ -20,12 +20,60 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Verify release source
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race ./...
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
       - uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+      - name: Create and verify signed intelligence snapshot
+        env:
+          REPYY_INTEL_SIGNING_KEY: ${{ secrets.REPYY_INTEL_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$REPYY_INTEL_SIGNING_KEY"
+          key="$RUNNER_TEMP/repyy-intelligence.pem"
+          trap 'rm -f "$key"' EXIT
+          printf '%s' "$REPYY_INTEL_SIGNING_KEY" > "$key"
+          chmod 600 "$key"
+          go run ./cmd/repyy intel export > repyy-intelligence.json
+          openssl pkeyutl -sign -rawin \
+            -inkey "$key" \
+            -in repyy-intelligence.json \
+            -out repyy-intelligence.json.sig
+          openssl pkeyutl -verify -rawin -pubin \
+            -inkey keys/intelligence-ed25519.pem \
+            -in repyy-intelligence.json \
+            -sigfile repyy-intelligence.json.sig
+          rm -f "$key"
+          trap - EXIT
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: 'v2.18.0'
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Fine-grained PAT limited to contents:write on the tap and bucket.
+          REPYY_RELEASE_TOKEN: ${{ secrets.REPYY_RELEASE_TOKEN }}
+      - name: Smoke-test released binary
+        run: |
+          set -euo pipefail
+          binary=""
+          while IFS= read -r candidate; do
+            if file "$candidate" | grep -q 'ELF 64-bit.*x86-64'; then
+              binary="$candidate"
+              break
+            fi
+          done < <(find dist -type f -name repyy -perm -111)
+          test -n "$binary"
+          "$binary" version
+          REPYY_CACHE_DIR="$RUNNER_TEMP/repyy-cache" "$binary" intel status --format json
+      - name: Attach signed intelligence snapshot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" repyy-intelligence.json repyy-intelligence.json.sig --clobber
