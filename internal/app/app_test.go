@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Kevin-Umali/repyy/internal/model"
@@ -59,6 +60,50 @@ func TestOperationalFailureWinsExitCode(t *testing.T) {
 	}
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
+	}
+}
+
+func TestTerminalScanReportsProgressOnStderr(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	target := t.TempDir()
+	if err := os.WriteFile(filepath.Join(target, "main.go"), []byte("package main\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code, err := Run([]string{"scan", target}, &stdout, &stderr, "test")
+	if err != nil || code != 0 {
+		t.Fatalf("code=%d err=%v", code, err)
+	}
+	progress := stderr.String()
+	if !strings.Contains(progress, "repyy: scanning ") || !strings.Contains(progress, "repyy: scanned ") {
+		t.Fatalf("missing scan progress on stderr: %q", progress)
+	}
+}
+
+func TestMachineReadableScanDoesNotReportProgress(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	target := t.TempDir()
+	if err := os.WriteFile(filepath.Join(target, "main.go"), []byte("package main\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code, err := Run([]string{"scan", target, "--format=json"}, &stdout, &stderr, "test")
+	if err != nil || code != 0 {
+		t.Fatalf("code=%d err=%v", code, err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("machine-readable scan wrote progress to stderr: %q", stderr.String())
+	}
+}
+
+func TestScanProgressUpdateIncludesWorkCompleted(t *testing.T) {
+	var stderr bytes.Buffer
+	progress := &scanProgress{w: &stderr, enabled: true, active: map[int]*scanProgressState{}}
+	progress.start(0, "fixture")
+	progress.update(0, 12, 1536)
+	progress.printUpdates()
+	if !strings.Contains(stderr.String(), "12 files, 1.5 KiB") {
+		t.Fatalf("missing progress counters: %q", stderr.String())
 	}
 }
 
