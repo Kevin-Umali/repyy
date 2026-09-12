@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Install, configure, and understand repyy repository scans." />
-    <meta name="theme-color" content="#eef0ed" />
+    <meta name="theme-color" content="#f4f5f7" />
     <title>repyy documentation</title>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./site.js" defer></script>
@@ -21,9 +21,9 @@
       <aside class="docs-sidebar">
         <nav aria-label="Documentation navigation">
           <strong>Start</strong>
-          <a href="#overview">Overview</a><a href="#getting-started">Install and scan</a><a href="#verdicts-docs">Read a verdict</a>
+          <a href="#overview">Overview</a><a href="#getting-started">Install and scan</a><a href="#take-home">Take-home workflow</a><a href="#verdicts-docs">Read a verdict</a>
           <strong>Use repyy</strong>
-          <a href="#targets">Targets and history</a><a href="#reports-docs">Reports</a><a href="#configuration">Configuration</a><a href="#automation">Automation</a>
+          <a href="#targets">Targets and history</a><a href="#reports-docs">Reports</a><a href="#configuration">Configuration</a><a href="#automation">Automation</a><a href="#agent-skill-docs">Agent skill</a>
           <strong>Trust model</strong>
           <a href="#privacy">Privacy</a><a href="#intelligence">Intelligence</a><a href="#coverage-docs">Detection coverage</a><a href="#limits-docs">Limits</a>
           <strong>Reference</strong>
@@ -34,21 +34,32 @@
       <main class="docs-main" id="docs-main">
         <section class="docs-hero docs-searchable" id="overview" data-search="overview local read-only malware supply-chain scanner">
           <p class="docs-kicker">Documentation</p>
-          <h1>Inspect first.<br />Decide second.</h1>
-          <p>repyy statically scans local folders and Git remotes for suspicious files, install behavior, dependencies, secrets, obfuscation, backdoors, and data theft patterns.</p>
+          <h1>Scan unfamiliar code.<br />Then decide what runs.</h1>
+          <p>repyy is a read-only preflight scanner for local folders and Git remotes. It reports suspicious files, install behavior, dependencies, secrets, obfuscation, backdoors, and data theft patterns.</p>
           <div class="docs-callout"><strong>What repyy does not do</strong><p>It does not install packages, build the target, run tests, execute source, or upload your code.</p></div>
         </section>
 
         <section class="docs-section docs-searchable" id="getting-started" data-search="getting started install homebrew scoop go github releases first scan command">
-          <h2>Install and run your first scan</h2>
+          <h2>Install and run a first scan</h2>
           <p>Install only the scanner. The target repository remains data throughout the scan.</p>
           <div class="docs-command"><div><span>Homebrew</span><button type="button" data-copy="brew install --cask Kevin-Umali/tap/repyy">Copy</button></div><code>brew install --cask Kevin-Umali/tap/repyy</code></div>
           <div class="docs-command"><div><span>Go</span><button type="button" data-copy="go install github.com/Kevin-Umali/repyy/cmd/repyy@latest">Copy</button></div><code>go install github.com/Kevin-Umali/repyy/cmd/repyy@latest</code></div>
           <h3>Scan a local folder</h3>
           <div class="docs-command"><div><span>Terminal</span><button type="button" data-copy="repyy scan ./assignment">Copy</button></div><code>repyy scan ./assignment</code></div>
           <h3>Scan a remote repository</h3>
-          <div class="docs-command"><div><span>Terminal</span><button type="button" data-copy="repyy scan https://github.com/org/repo">Copy</button></div><code>repyy scan https://github.com/org/repo</code></div>
+          <div class="docs-command"><div><span>Terminal</span><button type="button" data-copy="repyy scan https://github.com/org/assignment">Copy</button></div><code>repyy scan https://github.com/org/assignment</code></div>
           <div class="docs-note"><strong>Private remotes</strong><p>HTTPS clones can use GITHUB_TOKEN, GITLAB_TOKEN, or BITBUCKET_TOKEN. SSH remotes use your existing SSH agent.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="take-home" data-search="take home interview assignment coding challenge clone install build test workflow remote scan">
+          <h2>Use repyy for a take-home assignment</h2>
+          <p>Keep the target unexecuted until you have reviewed the scan. A remote scan lets you inspect an assignment before creating a working checkout.</p>
+          <div class="workflow-list">
+            <article><b>1</b><div><strong>Scan the Git URL</strong><p>Start with <code>repyy scan URL</code>. Remote targets use a temporary shallow clone by default.</p></div></article>
+            <article><b>2</b><div><strong>Review the evidence</strong><p>Read blocking and review findings first. Check every location, confidence level, and reported coverage limit.</p></div></article>
+            <article><b>3</b><div><strong>Choose the next action</strong><p>Continue in an isolated environment, ask the interviewer for context, or stop. A scan does not prove that code is safe.</p></div></article>
+          </div>
+          <div class="docs-callout"><strong>Keep the boundary clear</strong><p>Do not install dependencies, open the repository with workspace trust enabled, build it, or run its tests before review.</p></div>
         </section>
 
         <section class="docs-section docs-searchable" id="verdicts-docs" data-search="verdict no findings review required do not run scan incomplete meaning">
@@ -99,13 +110,21 @@
           <div class="docs-command"><div><span>Focused review</span><button type="button" data-copy="repyy scan ./repo --min-severity high --min-confidence high">Copy</button></div><code>repyy scan ./repo --min-severity high --min-confidence high</code></div>
         </section>
 
+        <section class="docs-section docs-searchable" id="agent-skill-docs" data-search="agent skill codex instructions npx skills add install global">
+          <h2>Install the optional agent skill</h2>
+          <p>The skill tells a coding agent to scan unfamiliar repositories before execution, keep source local, and report incomplete coverage. It installs instructions only. Install the repyy executable separately.</p>
+          <div class="docs-command"><div><span>Interactive</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy</code></div>
+          <div class="docs-command"><div><span>Codex, global</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y</code></div>
+          <div class="docs-note"><strong>Separate installs</strong><p>These commands do not install repyy and do not install dependencies from the repository being scanned.</p></div>
+        </section>
+
         <section class="docs-section docs-searchable" id="privacy" data-search="privacy offline no telemetry upload network local remote tokens credentials clone">
           <h2>Privacy and network behavior</h2>
           <ul class="docs-list"><li>No telemetry, analytics, accounts, or source upload.</li><li>Local targets need no network access.</li><li>Remote targets use the network only to clone the repository you requested.</li><li>Scans never update intelligence automatically.</li><li>Provider tokens stay out of clone URLs and use process-local Git configuration.</li></ul>
         </section>
 
         <section class="docs-section docs-searchable" id="intelligence" data-search="intelligence snapshot status update rollback ed25519 signature verify rules explain list check">
-          <h2>Inspect intelligence and rules</h2>
+          <h2>Inspect signed offline intelligence</h2>
           <p>repyy ships with a dated offline intelligence snapshot. Updates are explicit and activate only after signature, schema, date, and record validation.</p>
           <div class="docs-command"><div><span>Status</span><button type="button" data-copy="repyy intel status">Copy</button></div><code>repyy intel status</code></div>
           <div class="docs-command"><div><span>Update</span><button type="button" data-copy="repyy intel update">Copy</button></div><code>repyy intel update</code></div>
@@ -122,7 +141,7 @@
         </section>
 
         <section class="docs-section docs-searchable" id="limits-docs" data-search="limits timeout max files file size incomplete archive dependency cache">
-          <h2>Know the default limits</h2>
+          <h2>Review the default limits</h2>
           <div class="docs-table compact" role="table" aria-label="Default scan limits"><div role="row"><b role="cell">Timeout</b><span role="cell">10 minutes per repository</span></div><div role="row"><b role="cell">Files</b><span role="cell">100,000 per repository</span></div><div role="row"><b role="cell">File size</b><span role="cell">50 MiB per file</span></div><div role="row"><b role="cell">Archive depth</b><span role="cell">3 nested levels</span></div></div>
           <p>Dependency and cache directories are excluded by default. Add <code>--include-dependencies</code> when those files belong in your review.</p>
         </section>

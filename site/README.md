@@ -1,11 +1,14 @@
-# repyy landing page concepts
+# repyy website
 
-Three standalone directions and a documentation site are included:
+The canonical landing page and documentation site are:
 
-- `index.html`: Forensic Calm, a bright silver product story.
-- `variant-b.html`: Threat Cutaway, a darker and more editorial alternative.
-- `variant-c.html`: Repository Autopsy, a hard-edged safety-orange direction.
+- `index.html`: the silver and cobalt product site for take-home and interview repository review.
 - `docs.html`: searchable installation, usage, trust-model, and CLI reference.
+
+Two earlier design studies remain available for reference:
+
+- `variant-b.html`: Threat Cutaway.
+- `variant-c.html`: Repository Autopsy.
 
 Preview them from the repository root:
 
