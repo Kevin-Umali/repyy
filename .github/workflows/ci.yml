@@ -22,7 +22,7 @@ jobs:
           python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for path in index.html docs.html styles.css landing.css docs.css site.js \
+          for path in index.html docs.html styles.css landing.css docs.css site.js landing.js \
             assets/repyy-autopsy-hero.webp assets/repyy-autopsy-profile.webp \
             assets/repyy-scan-stack-diagram.webp assets/repyy-evidence-case-close.webp \
             assets/repyy-docs-review.webp; do
