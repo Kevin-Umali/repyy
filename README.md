@@ -31,7 +31,7 @@ You do not need Go to install a release.
 
 ```sh
 # macOS or Linux with Homebrew
-brew install Kevin-Umali/tap/repyy
+brew install --cask Kevin-Umali/tap/repyy
 
 # Windows with Scoop
 scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket

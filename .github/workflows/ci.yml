@@ -72,6 +72,7 @@ jobs:
             go.mod \
             go.sum \
             .goreleaser.yaml \
+            scripts/prepare-homebrew-cask.sh \
             .github/workflows/ci.yml \
             .github/workflows/release.yml; then
             echo "release=false" >> "$GITHUB_OUTPUT"
@@ -89,3 +90,6 @@ jobs:
           distribution: goreleaser
           version: 'v2.18.0'
           args: release --snapshot --clean --skip=sign,sbom,publish
+      - name: Prepare Homebrew cask
+        if: steps.changes.outputs.release == 'true'
+        run: scripts/prepare-homebrew-cask.sh
