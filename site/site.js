@@ -180,14 +180,42 @@ if (docsSearch) {
   });
 
   const links = [...document.querySelectorAll('.docs-sidebar a[href^="#"]')];
+  const sidebarNav = document.querySelector('.docs-sidebar nav');
+  sidebarNav?.addEventListener('keydown', (event) => {
+    if (sidebarNav.scrollHeight <= sidebarNav.clientHeight || event.altKey || event.ctrlKey || event.metaKey) return;
+    const distance = {
+      ArrowUp: -40, ArrowDown: 40,
+      PageUp: -sidebarNav.clientHeight, PageDown: sidebarNav.clientHeight,
+      Home: -sidebarNav.scrollHeight, End: sidebarNav.scrollHeight,
+    }[event.key];
+    if (distance === undefined) return;
+    event.preventDefault();
+    sidebarNav.scrollBy({ top: distance, behavior: 'instant' });
+  });
   const linkById = new Map(links.map((link) => [link.hash.slice(1), link]));
+  const markCurrent = (current) => {
+    links.forEach((link) => {
+      link.classList.toggle('is-current', link === current);
+      if (link === current) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  };
+  links.forEach((link) => {
+    link.addEventListener('click', () => {
+      // Restore hidden sections before the browser follows the anchor.
+      if (docsSearch.value) {
+        docsSearch.value = '';
+        docsSearch.dispatchEvent(new Event('input'));
+      }
+      markCurrent(link);
+    });
+  });
   const sectionObserver = new IntersectionObserver((entries) => {
     const visible = entries
       .filter((entry) => entry.isIntersecting)
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
     if (!visible) return;
-    links.forEach((link) => link.classList.remove('is-current'));
-    linkById.get(visible.target.id)?.classList.add('is-current');
+    markCurrent(linkById.get(visible.target.id));
   }, { rootMargin: '-18% 0px -68%', threshold: [0, .2, .5] });
   sections.forEach((section) => sectionObserver.observe(section));
 }
