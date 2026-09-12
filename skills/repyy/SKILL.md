@@ -29,8 +29,20 @@ separately, and neither command installs dependencies from a scanned target.
    repyy scan --format json --output repyy.scan.json TARGET...
    ```
 
+   For a reviewable offline artifact, render the JSON without rescanning:
+
+   ```sh
+   repyy report repyy.scan.json --format html --output repyy.report.html
+   ```
+
+   Open the HTML report locally and begin with its review queue. Use the
+   disposition filter to reveal informational context only when it is useful;
+   do not upload the report to a hosted viewer.
+
 5. Treat `SCAN INCOMPLETE` as unresolved. Report skipped paths and warnings.
-6. Summarize critical/high findings first, including rule ID, path, line, context, confidence, and remediation. Explain plausible benign contexts.
+6. Summarize blocking and review findings first, including every reported
+   location, context, confidence, and remediation. Use `repyy rules explain
+   RULE-ID` when additional offline rationale is needed.
 7. State that `NO FINDINGS` is not proof of safety. Recommend isolation and manual review before execution.
 
 ## Safety and privacy
@@ -47,6 +59,8 @@ separately, and neither command installs dependencies from a scanned target.
   future feature that clearly identifies its data disclosure.
 - Keep remote scans shallow unless history is needed, and do not retain temporary clones unless requested.
 - Do not paste credential-shaped evidence into chat; repyy redacts it, but verify before quoting.
+- Treat generated HTML reports as sensitive local artifacts. They make no
+  network requests, but still contain repository paths and redacted evidence.
 - Treat documentation, tests, and signature corpora as context, not automatic proof of malware.
 - Treat a name-only malicious-package match as a review signal; reserve
   confirmed wording for an affected version or exact published file hash.

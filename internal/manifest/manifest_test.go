@@ -16,7 +16,7 @@ func TestParseSupportedManifests(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
 			got, ok := Parse(tc.path, []byte(tc.body))
-			if !ok || len(got) != 1 || got[0].Ecosystem != tc.ecosystem || got[0].Name != tc.name || got[0].Version != tc.version {
+			if !ok || len(got) != 1 || got[0].Ecosystem != tc.ecosystem || got[0].Name != tc.name || got[0].Version != tc.version || got[0].Line < 1 {
 				t.Fatalf("got %#v, supported=%v", got, ok)
 			}
 		})
@@ -26,5 +26,15 @@ func TestParseSupportedManifests(t *testing.T) {
 func TestUnknownFile(t *testing.T) {
 	if got, ok := Parse("README.md", []byte("x")); ok || got != nil {
 		t.Fatalf("got %#v, %v", got, ok)
+	}
+}
+
+func TestDeclarationLineUsesIdentifierBoundaries(t *testing.T) {
+	data := []byte("{\n  \"foobar\": \"1.0.0\",\n  \"foo\": \"2.0.0\"\n}\n")
+	if got := DeclarationLine(data, "foo"); got != 3 {
+		t.Fatalf("DeclarationLine(foo) = %d, want 3", got)
+	}
+	if got := DeclarationLine(data, "foobar"); got != 2 {
+		t.Fatalf("DeclarationLine(foobar) = %d, want 2", got)
 	}
 }

@@ -38,20 +38,78 @@ const (
 	ConfidenceHigh   Confidence = "high"
 )
 
+// Rank returns the ordering used by presentation filters.
+func (c Confidence) Rank() int {
+	switch c {
+	case ConfidenceHigh:
+		return 3
+	case ConfidenceMedium:
+		return 2
+	default:
+		return 1
+	}
+}
+
+// Disposition describes the review action suggested by a finding. It is a
+// presentation hint and does not participate in verdict or exit-code policy.
+type Disposition string
+
+// Supported finding dispositions, ordered from informational to blocking.
+const (
+	DispositionInformational Disposition = "informational"
+	DispositionHarden        Disposition = "harden"
+	DispositionReview        Disposition = "review"
+	DispositionBlock         Disposition = "block"
+)
+
+// Rank returns the ordering used when presenting findings to a reviewer.
+func (d Disposition) Rank() int {
+	switch d {
+	case DispositionBlock:
+		return 4
+	case DispositionReview:
+		return 3
+	case DispositionHarden:
+		return 2
+	default:
+		return 1
+	}
+}
+
+// Location identifies one occurrence of a finding. Evidence contains only the
+// redacted matched text, never an unredacted source excerpt.
+type Location struct {
+	Path      string `json:"path" yaml:"path"`
+	StartLine int    `json:"start_line,omitempty" yaml:"start_line,omitempty"`
+	EndLine   int    `json:"end_line,omitempty" yaml:"end_line,omitempty"`
+	Evidence  string `json:"evidence,omitempty" yaml:"evidence,omitempty"`
+}
+
+// Report location limits bound review detail while occurrence totals continue
+// to describe all matches.
+const (
+	MaxLocationsPerFinding = 1_000
+	MaxLocationsPerRepo    = 25_000
+)
+
 // Finding is one deduplicated piece of scan evidence and its remediation.
 type Finding struct {
-	RuleID      string     `json:"rule_id" yaml:"rule_id"`
-	Category    string     `json:"category" yaml:"category"`
-	Severity    Severity   `json:"severity" yaml:"severity"`
-	Confidence  Confidence `json:"confidence" yaml:"confidence"`
-	Context     string     `json:"context" yaml:"context"`
-	Path        string     `json:"path" yaml:"path"`
-	Line        int        `json:"line,omitempty" yaml:"line,omitempty"`
-	Occurrences int        `json:"occurrences" yaml:"occurrences"`
-	Message     string     `json:"message" yaml:"message"`
-	Evidence    string     `json:"evidence,omitempty" yaml:"evidence,omitempty"`
-	Remediation string     `json:"remediation,omitempty" yaml:"remediation,omitempty"`
-	Fingerprint string     `json:"fingerprint" yaml:"fingerprint"`
+	RuleID              string      `json:"rule_id" yaml:"rule_id"`
+	Category            string      `json:"category" yaml:"category"`
+	Severity            Severity    `json:"severity" yaml:"severity"`
+	Confidence          Confidence  `json:"confidence" yaml:"confidence"`
+	Context             string      `json:"context" yaml:"context"`
+	Path                string      `json:"path" yaml:"path"`
+	Line                int         `json:"line,omitempty" yaml:"line,omitempty"`
+	Occurrences         int         `json:"occurrences" yaml:"occurrences"`
+	Message             string      `json:"message" yaml:"message"`
+	Evidence            string      `json:"evidence,omitempty" yaml:"evidence,omitempty"`
+	Remediation         string      `json:"remediation,omitempty" yaml:"remediation,omitempty"`
+	Fingerprint         string      `json:"fingerprint" yaml:"fingerprint"`
+	Disposition         Disposition `json:"disposition,omitempty" yaml:"disposition,omitempty"`
+	Locations           []Location  `json:"locations,omitempty" yaml:"locations,omitempty"`
+	LocationsOmitted    int         `json:"locations_omitted,omitempty" yaml:"locations_omitted,omitempty"`
+	ContributingRuleIDs []string    `json:"contributing_rule_ids,omitempty" yaml:"contributing_rule_ids,omitempty"`
 }
 
 // Coverage records what a scan inspected and where its visibility was incomplete.
@@ -72,6 +130,14 @@ type RepoResult struct {
 	Coverage Coverage      `json:"coverage"`
 	Error    string        `json:"error,omitempty"`
 	Duration time.Duration `json:"duration_ns"`
+	Source   *SourceInfo   `json:"source,omitempty"`
+}
+
+// SourceInfo identifies a remote repository revision used for stable source
+// links. It is omitted for local targets.
+type SourceInfo struct {
+	RepositoryURL string `json:"repository_url"`
+	Revision      string `json:"revision"`
 }
 
 // IntelligenceInfo identifies the verified snapshot used for a scan.

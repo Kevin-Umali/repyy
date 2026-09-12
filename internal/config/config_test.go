@@ -33,6 +33,20 @@ suppressions:
 	if len(cfg.Rules) != 1 || !ActiveSuppressions(cfg, time.Now())["sha256:abc"] {
 		t.Fatalf("unexpected config: %+v", cfg)
 	}
+	if cfg.Rules[0].MatchScope != "raw" {
+		t.Fatalf("custom rules must default to raw matching, got %q", cfg.Rules[0].MatchScope)
+	}
+}
+
+func TestRejectsStructuredCustomRule(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "rules.yaml")
+	body := "version: 1\nrules:\n  - id: LOCAL-001\n    category: local\n    severity: high\n    confidence: high\n    description: local marker\n    pattern: marker\n    match_scope: structured\n"
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(path); err == nil {
+		t.Fatal("structured custom rule should be rejected")
+	}
 }
 
 func TestRejectsExecutableRuleConcepts(t *testing.T) {

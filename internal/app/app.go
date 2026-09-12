@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -28,9 +29,11 @@ const usage = `repyy — inspect unfamiliar repositories without running them
 
 Usage:
   repyy scan [options] <path-or-git-url>...
+  repyy report [options] <report.json|->
   repyy rules validate <rules.yaml>
   repyy rules check
   repyy rules list [--format terminal|json]
+  repyy rules explain <rule-id> [--format terminal|json]
   repyy intel status [--format terminal|json]
   repyy intel update
   repyy intel rollback
@@ -38,7 +41,7 @@ Usage:
 
 Scan options:
   --file PATH              read additional targets, one per line
-  --format terminal|json|sarif
+  --format terminal|json|sarif|html
   --output PATH            write the report to a file
   --jobs N                 concurrent repositories (default 4)
   --config PATH            trusted external config/rules/suppressions
@@ -49,6 +52,18 @@ Scan options:
   --timeout DURATION       per-repository timeout (default 10m)
   --max-files N            maximum files per repository
   --max-file-size BYTES    maximum bytes per file
+  --detail summary|review|all
+  --progress auto|plain|quiet
+  --color auto|always|never
+  --min-severity LEVEL     display filter only
+  --min-confidence LEVEL   low|medium|high display filter only
+  --group-by severity|file|rule
+
+Report options:
+  --format terminal|html|sarif (default html)
+  --output PATH
+  --detail summary|review|all
+  --color auto|always|never
 `
 
 // Run executes the CLI command and returns its documented process exit code.
@@ -66,6 +81,8 @@ func Run(args []string, stdout, stderr io.Writer, version string) (int, error) {
 		return 0, nil
 	case "rules":
 		return runRules(args[1:], stdout)
+	case "report":
+		return runReport(args[1:], stdout)
 	case "intel":
 		return runIntel(args[1:], stdout)
 	case "scan":
@@ -151,6 +168,53 @@ func printIntelStatus(stdout io.Writer, status intel.Status) {
 }
 
 func runRules(args []string, stdout io.Writer) (int, error) {
+	if len(args) >= 1 && args[0] == "explain" {
+		if len(args) < 2 {
+			return 3, errors.New("usage: repyy rules explain <rule-id> [--format terminal|json]")
+		}
+		id, format := args[1], "terminal"
+		if len(args) == 4 && args[2] == "--format" {
+			format = args[3]
+		} else if len(args) != 2 {
+			return 3, errors.New("usage: repyy rules explain <rule-id> [--format terminal|json]")
+		}
+		info, ok := scan.LookupRuleInfo(id)
+		if !ok {
+			return 3, fmt.Errorf("unknown rule %q", id)
+		}
+		if strings.HasPrefix(id, "IOC-PKG-") {
+			store, err := intel.NewDefaultStore()
+			if err != nil {
+				return 2, err
+			}
+			snapshot, _ := store.LoadActiveSnapshot(time.Now().UTC())
+			advisoryID := strings.TrimPrefix(id, "IOC-PKG-")
+			for _, record := range snapshot.Packages {
+				if record.AdvisoryID != advisoryID {
+					continue
+				}
+				if record.Description != "" {
+					info.Description = record.Description
+				}
+				info.Rationale = fmt.Sprintf("The active offline intelligence snapshot attributes %s in %s to advisory %s from %s.", record.Name, record.Ecosystem, record.AdvisoryID, record.Source)
+				if len(record.Affected) > 0 {
+					info.LegitimateUse = "Only the sourced affected versions are confirmed; other versions still require package-identity review."
+				} else {
+					info.LegitimateUse = "The package name is a review signal until the resolved version and artifact are verified."
+				}
+				info.Remediation = "Do not install the package until the advisory and resolved artifact are reviewed: " + record.SourceURL
+				break
+			}
+		}
+		if format == "json" {
+			return encodeJSON(stdout, info)
+		}
+		if format != "terminal" {
+			return 3, errors.New("--format must be terminal or json")
+		}
+		fmt.Fprintf(stdout, "%s — %s\n\nseverity: %s\nconfidence: %s\ndisposition: %s\ncategory: %s\nmatch scope: %s\npaths: %s\n\nWhy it matters\n  %s\n\nCommon legitimate use\n  %s\n\nRecommended action\n  %s\n", info.ID, info.Description, info.Severity, info.Confidence, info.Disposition, info.Category, info.MatchScope, strings.Join(info.ApplicablePaths, ", "), info.Rationale, info.LegitimateUse, info.Remediation)
+		return 0, nil
+	}
 	if len(args) >= 1 && args[0] == "list" {
 		format := "terminal"
 		if len(args) == 3 && args[1] == "--format" {
@@ -219,17 +283,184 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		fmt.Fprintf(stdout, "valid config: %d custom rules, %d suppressions\n", len(cfg.Rules), len(cfg.Suppressions))
 		return 0, nil
 	}
-	return 3, errors.New("usage: repyy rules validate <rules.yaml> | repyy rules check | repyy rules list [--format terminal|json]")
+	return 3, errors.New("usage: repyy rules validate <rules.yaml> | check | list [--format terminal|json] | explain <rule-id> [--format terminal|json]")
+}
+
+const maxReportInputBytes = 64 << 20
+
+type reportArgs struct {
+	input, format, output, detail, color, minSeverity, minConfidence, groupBy string
+}
+
+func runReport(args []string, stdout io.Writer) (int, error) {
+	opts := reportArgs{format: "html", detail: "review", color: "auto", minSeverity: "low", minConfidence: "low", groupBy: "severity"}
+	fs := flag.NewFlagSet("report", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.StringVar(&opts.format, "format", opts.format, "")
+	fs.StringVar(&opts.output, "output", "", "")
+	fs.StringVar(&opts.detail, "detail", opts.detail, "")
+	fs.StringVar(&opts.color, "color", opts.color, "")
+	fs.StringVar(&opts.minSeverity, "min-severity", opts.minSeverity, "")
+	fs.StringVar(&opts.minConfidence, "min-confidence", opts.minConfidence, "")
+	fs.StringVar(&opts.groupBy, "group-by", opts.groupBy, "")
+	var flagArgs []string
+	for i := 0; i < len(args); i++ {
+		argument := args[i]
+		if argument == "-" || !strings.HasPrefix(argument, "-") {
+			if opts.input != "" {
+				return 3, errors.New("repyy report accepts exactly one input")
+			}
+			opts.input = argument
+			continue
+		}
+		flagArgs = append(flagArgs, argument)
+		if strings.Contains(argument, "=") {
+			continue
+		}
+		if i+1 >= len(args) {
+			return 3, fmt.Errorf("missing value for %s", argument)
+		}
+		i++
+		flagArgs = append(flagArgs, args[i])
+	}
+	if err := fs.Parse(flagArgs); err != nil {
+		return 3, err
+	}
+	if opts.input == "" {
+		return 3, errors.New("usage: repyy report [options] <report.json|->")
+	}
+	if opts.format != "terminal" && opts.format != "html" && opts.format != "sarif" {
+		return 3, errors.New("--format must be terminal, html, or sarif")
+	}
+	if opts.detail != "summary" && opts.detail != "review" && opts.detail != "all" {
+		return 3, errors.New("--detail must be summary, review, or all")
+	}
+	if opts.color != "auto" && opts.color != "always" && opts.color != "never" {
+		return 3, errors.New("--color must be auto, always, or never")
+	}
+	if opts.groupBy != "severity" && opts.groupBy != "file" && opts.groupBy != "rule" {
+		return 3, errors.New("--group-by must be severity, file, or rule")
+	}
+
+	var reader io.Reader
+	var inputFile *os.File
+	if opts.input == "-" {
+		reader = os.Stdin
+	} else {
+		file, err := os.Open(opts.input)
+		if err != nil {
+			return 3, err
+		}
+		inputFile = file
+		defer inputFile.Close()
+		reader = inputFile
+	}
+	data, err := io.ReadAll(io.LimitReader(reader, maxReportInputBytes+1))
+	if err != nil {
+		return 3, err
+	}
+	if len(data) > maxReportInputBytes {
+		return 3, fmt.Errorf("report input exceeds %d MiB", maxReportInputBytes>>20)
+	}
+	var report model.Report
+	if err := json.Unmarshal(data, &report); err != nil {
+		return 3, fmt.Errorf("invalid report JSON: %w", err)
+	}
+	if err := normalizeAndValidateReport(&report); err != nil {
+		return 3, err
+	}
+
+	writer := stdout
+	var outputFile *os.File
+	if opts.output != "" {
+		file, err := openPrivateOutput(opts.output)
+		if err != nil {
+			return 3, err
+		}
+		outputFile = file
+		defer outputFile.Close()
+		writer = outputFile
+	}
+	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, writer)
+	if err != nil {
+		return 3, err
+	}
+	if err := output.WriteWithOptions(writer, opts.format, report, presentation); err != nil {
+		return 3, err
+	}
+	return 0, nil
+}
+
+func normalizeAndValidateReport(report *model.Report) error {
+	if report.SchemaVersion != "1" {
+		return fmt.Errorf("unsupported report schema %q", report.SchemaVersion)
+	}
+	for resultIndex := range report.Results {
+		result := &report.Results[resultIndex]
+		locationsStored := 0
+		locationsTruncated := false
+		switch result.Verdict {
+		case model.VerdictNoFindings, model.VerdictReview, model.VerdictDoNotRun, model.VerdictIncomplete:
+		default:
+			return fmt.Errorf("result %d has invalid verdict %q", resultIndex, result.Verdict)
+		}
+		for findingIndex := range result.Findings {
+			finding := &result.Findings[findingIndex]
+			if finding.RuleID == "" || finding.Path == "" {
+				return fmt.Errorf("result %d finding %d is missing rule_id or path", resultIndex, findingIndex)
+			}
+			if _, err := parseSeverity(string(finding.Severity)); err != nil {
+				return fmt.Errorf("result %d finding %d has invalid severity", resultIndex, findingIndex)
+			}
+			if _, err := parseConfidence(string(finding.Confidence)); err != nil {
+				return fmt.Errorf("result %d finding %d has invalid confidence", resultIndex, findingIndex)
+			}
+			if finding.Disposition != "" {
+				switch finding.Disposition {
+				case model.DispositionBlock, model.DispositionReview, model.DispositionHarden, model.DispositionInformational:
+				default:
+					return fmt.Errorf("result %d finding %d has invalid disposition", resultIndex, findingIndex)
+				}
+			}
+			if finding.Occurrences < 0 || finding.LocationsOmitted < 0 {
+				return fmt.Errorf("result %d finding %d has invalid occurrence counts", resultIndex, findingIndex)
+			}
+			for _, location := range finding.Locations {
+				if location.Path == "" || location.StartLine < 0 || location.EndLine < 0 || location.EndLine > 0 && location.EndLine < location.StartLine {
+					return fmt.Errorf("result %d finding %d has an invalid location", resultIndex, findingIndex)
+				}
+			}
+			scan.NormalizeFinding(finding)
+			allowed := model.MaxLocationsPerRepo - locationsStored
+			if allowed > model.MaxLocationsPerFinding {
+				allowed = model.MaxLocationsPerFinding
+			}
+			if allowed < 0 {
+				allowed = 0
+			}
+			if len(finding.Locations) > allowed {
+				finding.LocationsOmitted += len(finding.Locations) - allowed
+				finding.Locations = finding.Locations[:allowed]
+				locationsTruncated = true
+			}
+			locationsStored += len(finding.Locations)
+		}
+		if locationsTruncated {
+			result.Coverage.Warnings = append(result.Coverage.Warnings, "finding location detail was truncated by report limits; occurrence totals remain complete")
+		}
+	}
+	return nil
 }
 
 type scanArgs struct {
-	format, output, file, config, history, failOn string
-	jobs                                          int
-	includeDeps, keep                             bool
-	timeout                                       time.Duration
-	limits                                        scan.Limits
-	targets                                       []string
-	intelligence                                  *intel.Database
+	format, output, file, config, history, failOn                string
+	detail, progress, color, minSeverity, minConfidence, groupBy string
+	jobs                                                         int
+	includeDeps, keep                                            bool
+	timeout                                                      time.Duration
+	limits                                                       scan.Limits
+	targets                                                      []string
+	intelligence                                                 *intel.Database
 }
 
 type scanProgressState struct {
@@ -242,15 +473,15 @@ type scanProgressState struct {
 type scanProgress struct {
 	mu      sync.Mutex
 	w       io.Writer
-	enabled bool
+	mode    string
 	active  map[int]*scanProgressState
 	stop    chan struct{}
 	stopped chan struct{}
 }
 
-func newScanProgress(w io.Writer, enabled bool) *scanProgress {
-	p := &scanProgress{w: w, enabled: enabled, active: map[int]*scanProgressState{}}
-	if enabled {
+func newScanProgress(w io.Writer, mode string) *scanProgress {
+	p := &scanProgress{w: w, mode: mode, active: map[int]*scanProgressState{}}
+	if mode != "quiet" {
 		p.stop = make(chan struct{})
 		p.stopped = make(chan struct{})
 		go p.loop()
@@ -260,7 +491,11 @@ func newScanProgress(w io.Writer, enabled bool) *scanProgress {
 
 func (p *scanProgress) loop() {
 	defer close(p.stopped)
-	ticker := time.NewTicker(2 * time.Second)
+	interval := 2 * time.Second
+	if p.mode == "interactive" {
+		interval = 250 * time.Millisecond
+	}
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -273,17 +508,21 @@ func (p *scanProgress) loop() {
 }
 
 func (p *scanProgress) start(index int, target string) {
-	if !p.enabled {
+	if p.mode == "quiet" {
 		return
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.active[index] = &scanProgressState{target: target, started: time.Now()}
-	fmt.Fprintf(p.w, "repyy: scanning %s...\n", target)
+	if p.mode == "interactive" {
+		p.renderInteractive()
+	} else {
+		fmt.Fprintf(p.w, "repyy: scanning %s...\n", target)
+	}
 }
 
 func (p *scanProgress) update(index, files int, bytes int64) {
-	if !p.enabled {
+	if p.mode == "quiet" {
 		return
 	}
 	p.mu.Lock()
@@ -295,7 +534,7 @@ func (p *scanProgress) update(index, files int, bytes int64) {
 }
 
 func (p *scanProgress) finish(index int, result model.RepoResult) {
-	if !p.enabled {
+	if p.mode == "quiet" {
 		return
 	}
 	p.mu.Lock()
@@ -305,11 +544,17 @@ func (p *scanProgress) finish(index int, result model.RepoResult) {
 	if state == nil {
 		return
 	}
+	if p.mode == "interactive" {
+		fmt.Fprint(p.w, "\r\x1b[2K")
+	}
 	if result.Error != "" {
 		fmt.Fprintf(p.w, "repyy: scan failed for %s after %s\n", state.target, formatDuration(result.Duration))
 		return
 	}
 	fmt.Fprintf(p.w, "repyy: scanned %s (%d files, %s) in %s\n", state.target, result.Coverage.FilesScanned, formatBytes(result.Coverage.BytesScanned), formatDuration(result.Duration))
+	if p.mode == "interactive" && len(p.active) > 0 {
+		p.renderInteractive()
+	}
 }
 
 func (p *scanProgress) printUpdates() {
@@ -320,18 +565,47 @@ func (p *scanProgress) printUpdates() {
 		indexes = append(indexes, index)
 	}
 	sort.Ints(indexes)
+	if p.mode == "interactive" {
+		p.renderInteractive()
+		return
+	}
 	for _, index := range indexes {
 		state := p.active[index]
 		fmt.Fprintf(p.w, "repyy: scanning %s (%d files, %s, %s elapsed)\n", state.target, state.files, formatBytes(state.bytes), formatDuration(time.Since(state.started)))
 	}
 }
 
+func (p *scanProgress) renderInteractive() {
+	if len(p.active) == 0 {
+		return
+	}
+	if len(p.active) == 1 {
+		for _, state := range p.active {
+			fmt.Fprintf(p.w, "\r\x1b[2Krepyy: scanning %s · %d files · %s · %s", state.target, state.files, formatBytes(state.bytes), formatDuration(time.Since(state.started)))
+		}
+		return
+	}
+	files, bytes := 0, int64(0)
+	oldest := time.Now()
+	for _, state := range p.active {
+		files += state.files
+		bytes += state.bytes
+		if state.started.Before(oldest) {
+			oldest = state.started
+		}
+	}
+	fmt.Fprintf(p.w, "\r\x1b[2Krepyy: scanning %d repositories · %d files · %s · %s", len(p.active), files, formatBytes(bytes), formatDuration(time.Since(oldest)))
+}
+
 func (p *scanProgress) close() {
-	if !p.enabled {
+	if p.mode == "quiet" {
 		return
 	}
 	close(p.stop)
 	<-p.stopped
+	if p.mode == "interactive" {
+		fmt.Fprint(p.w, "\r\x1b[2K")
+	}
 }
 
 func formatBytes(bytes int64) string {
@@ -358,7 +632,7 @@ func formatDuration(duration time.Duration) string {
 }
 
 func parseScanArgs(args []string) (scanArgs, error) {
-	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
+	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", detail: "review", progress: "auto", color: "auto", minSeverity: "low", minConfidence: "low", groupBy: "severity", timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&o.file, "file", "", "")
@@ -373,6 +647,12 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	fs.DurationVar(&o.timeout, "timeout", o.timeout, "")
 	fs.IntVar(&o.limits.MaxFiles, "max-files", o.limits.MaxFiles, "")
 	fs.Int64Var(&o.limits.MaxFileBytes, "max-file-size", o.limits.MaxFileBytes, "")
+	fs.StringVar(&o.detail, "detail", o.detail, "")
+	fs.StringVar(&o.progress, "progress", o.progress, "")
+	fs.StringVar(&o.color, "color", o.color, "")
+	fs.StringVar(&o.minSeverity, "min-severity", o.minSeverity, "")
+	fs.StringVar(&o.minConfidence, "min-confidence", o.minConfidence, "")
+	fs.StringVar(&o.groupBy, "group-by", o.groupBy, "")
 	// Permit flags before or after targets by separating known value and boolean flags.
 	var flagArgs []string
 	for i := 0; i < len(args); i++ {
@@ -400,8 +680,20 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	if o.timeout <= 0 || o.limits.MaxFiles <= 0 || o.limits.MaxFileBytes <= 0 {
 		return o, errors.New("resource limits must be positive")
 	}
-	if o.format != "terminal" && o.format != "json" && o.format != "sarif" {
-		return o, errors.New("--format must be terminal, json, or sarif")
+	if o.format != "terminal" && o.format != "json" && o.format != "sarif" && o.format != "html" {
+		return o, errors.New("--format must be terminal, json, sarif, or html")
+	}
+	if o.detail != "summary" && o.detail != "review" && o.detail != "all" {
+		return o, errors.New("--detail must be summary, review, or all")
+	}
+	if o.progress != "auto" && o.progress != "plain" && o.progress != "quiet" {
+		return o, errors.New("--progress must be auto, plain, or quiet")
+	}
+	if o.color != "auto" && o.color != "always" && o.color != "never" {
+		return o, errors.New("--color must be auto, always, or never")
+	}
+	if o.groupBy != "severity" && o.groupBy != "file" && o.groupBy != "rule" {
+		return o, errors.New("--group-by must be severity, file, or rule")
 	}
 	if o.history != "all" {
 		if n, err := strconv.Atoi(o.history); err != nil || n < 1 {
@@ -409,6 +701,12 @@ func parseScanArgs(args []string) (scanArgs, error) {
 		}
 	}
 	if _, err := parseSeverity(o.failOn); err != nil {
+		return o, err
+	}
+	if _, err := parseDisplaySeverity(o.minSeverity); err != nil {
+		return o, err
+	}
+	if _, err := parseConfidence(o.minConfidence); err != nil {
 		return o, err
 	}
 	return o, nil
@@ -461,7 +759,7 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 		GeneratedAt: time.Now().UTC(),
 		Results:     make([]model.RepoResult, len(opts.targets)),
 	}
-	progress := newScanProgress(stderr, opts.format == "terminal")
+	progress := newScanProgress(stderr, resolveProgressMode(opts, stderr))
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for range opts.jobs {
@@ -488,14 +786,18 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	w := stdout
 	var file *os.File
 	if opts.output != "" {
-		file, err = os.OpenFile(opts.output, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+		file, err = openPrivateOutput(opts.output)
 		if err != nil {
 			return 3, err
 		}
 		defer file.Close()
 		w = file
 	}
-	if err := output.Write(w, opts.format, report); err != nil {
+	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, w)
+	if err != nil {
+		return 3, err
+	}
+	if err := output.WriteWithOptions(w, opts.format, report, presentation); err != nil {
 		return 3, err
 	}
 	threshold, _ := parseSeverity(opts.failOn)
@@ -536,6 +838,9 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 	if opts.keep && prepared.Remote {
 		result.Resolved = prepared.Path
 	}
+	if prepared.Remote && prepared.RepositoryURL != "" && prepared.Revision != "" {
+		result.Source = &model.SourceInfo{RepositoryURL: prepared.RepositoryURL, Revision: prepared.Revision}
+	}
 	scanner := scan.New(scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress})
 	result.Coverage, result.Findings = scanner.Scan(ctx, prepared.Path)
 	filtered := result.Findings[:0]
@@ -551,18 +856,22 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 }
 
 func displayTarget(target string) string {
-	if i := strings.Index(target, "://"); i >= 0 {
-		rest := target[i+3:]
-		if at := strings.Index(rest, "@"); at >= 0 {
-			return target[:i+3] + "[REDACTED]@" + rest[at+1:]
-		}
+	u, err := url.Parse(target)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return target
 	}
-	return target
+	if u.User != nil {
+		u.User = url.User("[REDACTED]")
+	}
+	u.RawQuery = ""
+	u.ForceQuery = false
+	u.Fragment = ""
+	return strings.Replace(u.String(), "%5BREDACTED%5D@", "[REDACTED]@", 1)
 }
 
 func verdict(coverage model.Coverage, findings []model.Finding) string {
 	for _, f := range findings {
-		if f.Severity == model.SeverityCritical && f.Confidence == model.ConfidenceHigh && (f.Context == "executable" || f.Context == "manifest-hook" || f.Context == "confirmed-ioc") {
+		if f.Severity == model.SeverityCritical && f.Confidence == model.ConfidenceHigh && (f.Context == "executable" || f.Context == "manifest-hook" || f.Context == "ci-workflow" || f.Context == "confirmed-ioc") {
 			return model.VerdictDoNotRun
 		}
 	}
@@ -599,4 +908,76 @@ func parseSeverity(v string) (model.Severity, error) {
 		return s, nil
 	}
 	return "", errors.New("--fail-on must be low, medium, high, or critical")
+}
+
+func parseDisplaySeverity(v string) (model.Severity, error) {
+	severity, err := parseSeverity(v)
+	if err != nil {
+		return "", errors.New("--min-severity must be low, medium, high, or critical")
+	}
+	return severity, nil
+}
+
+func parseConfidence(v string) (model.Confidence, error) {
+	confidence := model.Confidence(strings.ToLower(v))
+	switch confidence {
+	case model.ConfidenceLow, model.ConfidenceMedium, model.ConfidenceHigh:
+		return confidence, nil
+	}
+	return "", errors.New("--min-confidence must be low, medium, or high")
+}
+
+func presentationOptions(detail, minSeverity, minConfidence, groupBy, color string, writer io.Writer) (output.Options, error) {
+	severity, err := parseDisplaySeverity(minSeverity)
+	if err != nil {
+		return output.Options{}, err
+	}
+	confidence, err := parseConfidence(minConfidence)
+	if err != nil {
+		return output.Options{}, err
+	}
+	_, noColor := os.LookupEnv("NO_COLOR")
+	colorEnabled := resolveColorMode(color, isTerminalWriter(writer), noColor)
+	return output.Options{Detail: detail, MinSeverity: severity, MinConfidence: confidence, GroupBy: groupBy, Color: colorEnabled}, nil
+}
+
+func resolveColorMode(mode string, terminal, noColor bool) bool {
+	return mode == "always" || mode == "auto" && terminal && !noColor
+}
+
+func openPrivateOutput(path string) (*os.File, error) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
+		return nil, err
+	}
+	if err := file.Chmod(0o600); err != nil {
+		file.Close()
+		return nil, err
+	}
+	return file, nil
+}
+
+func resolveProgressMode(opts scanArgs, writer io.Writer) string {
+	if opts.progress == "quiet" {
+		return "quiet"
+	}
+	if opts.progress == "plain" {
+		return "plain"
+	}
+	if isTerminalWriter(writer) && (opts.format == "terminal" || opts.output != "") {
+		return "interactive"
+	}
+	if opts.format == "terminal" {
+		return "plain"
+	}
+	return "quiet"
+}
+
+func isTerminalWriter(writer io.Writer) bool {
+	file, ok := writer.(*os.File)
+	if !ok || os.Getenv("TERM") == "dumb" {
+		return false
+	}
+	info, err := file.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }

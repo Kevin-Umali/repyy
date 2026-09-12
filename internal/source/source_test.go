@@ -47,3 +47,22 @@ func TestRejectsCredentialsInURL(t *testing.T) {
 		t.Fatalf("expected redacted rejection, got %v", err)
 	}
 }
+
+func TestRejectsQueryAndFragmentInURL(t *testing.T) {
+	_, err := Prepare(context.Background(), "https://example.com/repo.git?token=secret#fragment", Options{})
+	if err == nil || strings.Contains(err.Error(), "secret") || strings.Contains(err.Error(), "token=") || strings.Contains(err.Error(), "#fragment") {
+		t.Fatalf("expected redacted rejection, got %v", err)
+	}
+}
+
+func TestCanonicalRemoteURL(t *testing.T) {
+	for input, want := range map[string]string{
+		"https://github.com/Example/Repo.git":   "https://github.com/Example/Repo",
+		"git@gitlab.com:group/repo.git":         "https://gitlab.com/group/repo",
+		"ssh://git@bitbucket.org/team/repo.git": "https://bitbucket.org/team/repo",
+	} {
+		if got := canonicalRemoteURL(input); got != want {
+			t.Errorf("canonicalRemoteURL(%q) = %q, want %q", input, got, want)
+		}
+	}
+}

@@ -41,6 +41,9 @@ func Load(path string) (File, error) {
 		if err := cfg.Rules[i].Compile(); err != nil {
 			return File{}, err
 		}
+		if cfg.Rules[i].MatchScope == "structured" {
+			return File{}, fmt.Errorf("custom rule %s cannot use structured match scope", cfg.Rules[i].ID)
+		}
 	}
 	for _, s := range cfg.Suppressions {
 		if s.Fingerprint == "" || s.Reason == "" {

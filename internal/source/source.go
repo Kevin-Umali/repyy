@@ -21,10 +21,12 @@ type Options struct {
 
 // Prepared is a local scan target and an idempotent cleanup function.
 type Prepared struct {
-	Target  string
-	Path    string
-	Remote  bool
-	Cleanup func() error
+	Target        string
+	Path          string
+	Remote        bool
+	RepositoryURL string
+	Revision      string
+	Cleanup       func() error
 }
 
 // Prepare validates a local directory or clones a remote without running hooks.
@@ -41,6 +43,9 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 	}
 	if hasURLCredentials(target) {
 		return Prepared{}, fmt.Errorf("credentials in Git URLs are not allowed; use an SSH agent or provider token environment variable")
+	}
+	if hasURLQueryOrFragment(target) {
+		return Prepared{}, fmt.Errorf("query strings and fragments in Git URLs are not allowed; use a provider token environment variable")
 	}
 	tmp, err := os.MkdirTemp("", "repyy-clone-*")
 	if err != nil {
@@ -69,7 +74,42 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 		_ = os.RemoveAll(tmp)
 		return Prepared{}, fmt.Errorf("safe clone failed: %s", sanitizeGitError(string(output)))
 	}
-	return Prepared{Target: target, Path: dest, Remote: true, Cleanup: cleanup}, nil
+	revisionCmd := exec.CommandContext(ctx, "git", "-c", "core.hooksPath="+nullDevice(), "-C", dest, "rev-parse", "HEAD")
+	revisionCmd.Env = secureGitEnv(target)
+	revisionOutput, err := revisionCmd.Output()
+	if err != nil {
+		_ = os.RemoveAll(tmp)
+		return Prepared{}, fmt.Errorf("resolve cloned revision: %w", err)
+	}
+	return Prepared{
+		Target: target, Path: dest, Remote: true,
+		RepositoryURL: canonicalRemoteURL(target),
+		Revision:      strings.TrimSpace(string(revisionOutput)),
+		Cleanup:       cleanup,
+	}, nil
+}
+
+func canonicalRemoteURL(target string) string {
+	if strings.HasPrefix(target, "git@") {
+		parts := strings.SplitN(strings.TrimPrefix(target, "git@"), ":", 2)
+		if len(parts) == 2 {
+			return "https://" + strings.ToLower(parts[0]) + "/" + strings.TrimSuffix(parts[1], ".git")
+		}
+		return ""
+	}
+	u, err := url.Parse(target)
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	if u.Scheme != "https" && u.Scheme != "ssh" {
+		return ""
+	}
+	host := strings.ToLower(u.Hostname())
+	path := strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), ".git")
+	if path == "" {
+		return ""
+	}
+	return "https://" + host + "/" + path
 }
 
 func isRemote(v string) bool {
@@ -144,6 +184,11 @@ func tokenFor(target string) (string, string) {
 func hasURLCredentials(target string) bool {
 	u, err := url.Parse(target)
 	return err == nil && u.User != nil
+}
+
+func hasURLQueryOrFragment(target string) bool {
+	u, err := url.Parse(target)
+	return err == nil && (u.RawQuery != "" || u.Fragment != "")
 }
 
 func nullDevice() string {

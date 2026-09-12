@@ -16,6 +16,7 @@ type Dependency struct {
 	Name      string `json:"name"`
 	Version   string `json:"version,omitempty"`
 	Scope     string `json:"scope,omitempty"`
+	Line      int    `json:"line,omitempty"`
 }
 
 var (
@@ -29,29 +30,79 @@ var (
 
 // Parse recognizes common dependency manifests. The bool reports whether the path is supported.
 func Parse(path string, data []byte) ([]Dependency, bool) {
+	if separator := strings.LastIndex(path, "!"); separator >= 0 {
+		path = path[separator+1:]
+	}
 	base := filepath.Base(path)
+	var dependencies []Dependency
+	var supported bool
 	switch {
 	case base == "package.json":
-		return parseJSONMaps("npm", data, "dependencies", "devDependencies", "optionalDependencies", "peerDependencies"), true
+		dependencies, supported = parseJSONMaps("npm", data, "dependencies", "devDependencies", "optionalDependencies", "peerDependencies"), true
 	case base == "composer.json":
-		return parseJSONMaps("composer", data, "require", "require-dev"), true
+		dependencies, supported = parseJSONMaps("composer", data, "require", "require-dev"), true
 	case base == "pom.xml":
-		return parseMaven(data), true
+		dependencies, supported = parseMaven(data), true
 	case base == "packages.config" || strings.HasSuffix(base, ".csproj") || strings.HasSuffix(base, ".fsproj") || strings.HasSuffix(base, ".vbproj"):
-		return parseXMLPackages(data), true
+		dependencies, supported = parseXMLPackages(data), true
 	case base == "go.mod":
-		return parseGoMod(data), true
+		dependencies, supported = parseGoMod(data), true
 	case base == "Cargo.toml":
-		return parseTOMLSections("rust", data, "dependencies", "dev-dependencies", "build-dependencies"), true
+		dependencies, supported = parseTOMLSections("rust", data, "dependencies", "dev-dependencies", "build-dependencies"), true
 	case base == "Gemfile":
-		return parseGemfile(data), true
+		dependencies, supported = parseGemfile(data), true
 	case strings.HasPrefix(base, "requirements") && strings.HasSuffix(base, ".txt"):
-		return parseRequirements(data), true
+		dependencies, supported = parseRequirements(data), true
 	case base == "pyproject.toml":
-		return parsePyProject(data), true
+		dependencies, supported = parsePyProject(data), true
 	default:
 		return nil, false
 	}
+	attachLines(data, dependencies)
+	return dependencies, supported
+}
+
+func attachLines(data []byte, dependencies []Dependency) {
+	for i := range dependencies {
+		needles := []string{dependencies[i].Name}
+		if separator := strings.LastIndex(dependencies[i].Name, ":"); separator >= 0 {
+			needles = append(needles, dependencies[i].Name[separator+1:])
+		}
+		for _, needle := range needles {
+			if dependencies[i].Line = DeclarationLine(data, needle); dependencies[i].Line > 0 {
+				break
+			}
+		}
+	}
+}
+
+// DeclarationLine returns the first line containing token as a complete
+// manifest identifier or quoted value, avoiding package-name substrings.
+func DeclarationLine(data []byte, token string) int {
+	if token == "" {
+		return 0
+	}
+	for lineIndex, line := range strings.Split(string(data), "\n") {
+		for offset := 0; ; {
+			found := strings.Index(line[offset:], token)
+			if found < 0 {
+				break
+			}
+			found += offset
+			leftOK := found == 0 || !manifestTokenByte(line[found-1])
+			right := found + len(token)
+			rightOK := right == len(line) || !manifestTokenByte(line[right])
+			if leftOK && rightOK {
+				return lineIndex + 1
+			}
+			offset = found + 1
+		}
+	}
+	return 0
+}
+
+func manifestTokenByte(value byte) bool {
+	return value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z' || value >= '0' && value <= '9' || strings.ContainsRune("_.@/-:", rune(value))
 }
 
 func parseJSONMaps(ecosystem string, data []byte, keys ...string) []Dependency {
@@ -66,7 +117,7 @@ func parseJSONMaps(ecosystem string, data []byte, keys ...string) []Dependency {
 			continue
 		}
 		for name, version := range deps {
-			out = append(out, Dependency{ecosystem, name, version, key})
+			out = append(out, Dependency{Ecosystem: ecosystem, Name: name, Version: version, Scope: key})
 		}
 	}
 	return sorted(out)
@@ -92,7 +143,7 @@ func parseGoMod(data []byte) []Dependency {
 		}
 		fields := strings.Fields(line)
 		if len(fields) >= 2 {
-			out = append(out, Dependency{"go", fields[0], fields[1], "require"})
+			out = append(out, Dependency{Ecosystem: "go", Name: fields[0], Version: fields[1], Scope: "require"})
 		}
 	}
 	return sorted(out)
@@ -119,7 +170,7 @@ func parseTOMLSections(ecosystem string, data []byte, allowed ...string) []Depen
 			m = inlineVersion.FindStringSubmatch(line)
 		}
 		if len(m) == 3 {
-			out = append(out, Dependency{ecosystem, m[1], m[2], section})
+			out = append(out, Dependency{Ecosystem: ecosystem, Name: m[1], Version: m[2], Scope: section})
 		}
 	}
 	return sorted(out)
@@ -134,7 +185,7 @@ func parseRequirements(data []byte) []Dependency {
 		}
 		m := requirement.FindStringSubmatch(line)
 		if len(m) > 1 && m[1] != "" {
-			out = append(out, Dependency{"pip", m[1], m[2] + m[3], "requirement"})
+			out = append(out, Dependency{Ecosystem: "pip", Name: m[1], Version: m[2] + m[3], Scope: "requirement"})
 		}
 	}
 	return sorted(out)
@@ -156,7 +207,7 @@ func parsePyProject(data []byte) []Dependency {
 func parseGemfile(data []byte) []Dependency {
 	var out []Dependency
 	for _, m := range gemCall.FindAllStringSubmatch(string(data), -1) {
-		out = append(out, Dependency{"rubygems", m[1], m[2], "gem"})
+		out = append(out, Dependency{Ecosystem: "rubygems", Name: m[1], Version: m[2], Scope: "gem"})
 	}
 	return sorted(out)
 }
@@ -186,7 +237,7 @@ func parseXMLPackages(data []byte) []Dependency {
 			version = n.Version2
 		}
 		if name != "" {
-			out = append(out, Dependency{"nuget", name, version, "package"})
+			out = append(out, Dependency{Ecosystem: "nuget", Name: name, Version: version, Scope: "package"})
 		}
 	}
 	return sorted(out)
@@ -208,7 +259,7 @@ func parseMaven(data []byte) []Dependency {
 	var out []Dependency
 	for _, d := range project.Dependencies {
 		if d.GroupID != "" && d.ArtifactID != "" {
-			out = append(out, Dependency{"maven", d.GroupID + ":" + d.ArtifactID, d.Version, d.Scope})
+			out = append(out, Dependency{Ecosystem: "maven", Name: d.GroupID + ":" + d.ArtifactID, Version: d.Version, Scope: d.Scope})
 		}
 	}
 	return sorted(out)
