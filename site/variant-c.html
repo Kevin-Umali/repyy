@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Inspect the repository before it gets permission to execute." />
+    <meta name="theme-color" content="#f1f0ec" />
+    <title>repyy - repository autopsy concept</title>
+    <link rel="preload" as="image" href="./assets/repyy-autopsy.webp" fetchpriority="high" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./site.js" defer></script>
+  </head>
+  <body class="autopsy-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="autopsy-nav">
+      <a class="autopsy-brand" href="#top">REPYY<span>/</span></a>
+      <nav aria-label="Primary navigation"><a href="#inside">Inside the scan</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></nav>
+      <a class="concept-counter" href="./index.html">Concept 1/3</a>
+    </header>
+    <main id="main">
+      <section class="autopsy-hero" id="top">
+        <div class="autopsy-title reveal">
+          <p>Repository preflight</p>
+          <h1>Open the code.<br />Not the risk.</h1>
+          <div><a class="autopsy-button" href="#install">Install repyy</a><a href="#inside">See what it catches ↓</a></div>
+        </div>
+        <figure class="autopsy-image reveal" data-tilt><img src="./assets/repyy-autopsy.webp" width="1536" height="1024" alt="Acrylic repository core split open to expose a hazardous fragment" fetchpriority="high" /></figure>
+        <p class="autopsy-lede reveal">Static analysis for cloned repositories, coding assignments, and source you do not trust yet.</p>
+      </section>
+
+      <section class="autopsy-statement reveal">
+        <span>READ</span><span>RANK</span><span>REVIEW</span><strong>DO NOT EXECUTE</strong>
+      </section>
+
+      <section class="autopsy-anatomy" id="inside">
+        <div class="anatomy-copy reveal"><h2>The repository is treated as evidence.</h2><p>Every file stays inert while repyy follows install behavior, suspicious code paths, secret material, and supply-chain indicators.</p></div>
+        <div class="anatomy-parts">
+          <article class="reveal"><b>Manifest</b><span>Package identity, versions, scripts, registries</span></article>
+          <article class="reveal"><b>Source</b><span>Execution bridges, obfuscation, backdoors</span></article>
+          <article class="reveal"><b>Environment</b><span>Credentials, wallets, browser data, host profiling</span></article>
+          <article class="reveal"><b>Automation</b><span>CI interpolation, hooks, devcontainers, agent instructions</span></article>
+        </div>
+      </section>
+
+      <section class="autopsy-verdict">
+        <div class="reveal"><p>Result language that refuses false certainty.</p><h2>No findings is not the same as safe.</h2></div>
+        <div class="autopsy-codes reveal"><span><b>0</b>Below your threshold</span><span><b>1</b>Threshold reached</span><span><b>2</b>Scan incomplete</span><span><b>3</b>Invalid command</span></div>
+      </section>
+
+      <section class="autopsy-private reveal">
+        <div><h2>Your code does not become someone else’s dataset.</h2><p>No source upload, telemetry, account, or automatic network update.</p></div>
+        <a href="./docs.html#privacy">Read the privacy model ↗</a>
+      </section>
+
+      <section class="autopsy-install" id="install">
+        <h2 class="reveal">Stop one command earlier.</h2>
+        <button class="autopsy-command reveal" type="button" data-copy="brew install --cask Kevin-Umali/tap/repyy"><code>brew install --cask Kevin-Umali/tap/repyy</code><span>Copy</span></button>
+      </section>
+    </main>
+    <footer class="autopsy-footer"><a class="autopsy-brand" href="#top">REPYY<span>/</span></a><div><a href="./index.html">Forensic Calm</a><a href="./variant-b.html">Threat Cutaway</a><a href="./docs.html">Documentation</a></div><p>MIT licensed</p></footer>
+  </body>
+</html>
