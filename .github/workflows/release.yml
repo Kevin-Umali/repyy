@@ -61,8 +61,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Fine-grained PAT limited to contents:write on the tap and bucket.
           REPYY_RELEASE_TOKEN: ${{ secrets.REPYY_RELEASE_TOKEN }}
-      - name: Prepare Homebrew cask
-        run: scripts/prepare-homebrew-cask.sh
       - name: Smoke-test released binary
         run: |
           set -euo pipefail
@@ -76,19 +74,6 @@ jobs:
           test -n "$binary"
           "$binary" version
           REPYY_CACHE_DIR="$RUNNER_TEMP/repyy-cache" "$binary" intel status --format json
-      - name: Publish Homebrew cask
-        env:
-          GH_TOKEN: ${{ secrets.REPYY_RELEASE_TOKEN }}
-        run: |
-          set -euo pipefail
-          cask=dist/homebrew/Casks/repyy.rb
-          endpoint=repos/Kevin-Umali/homebrew-tap/contents/Casks/repyy.rb
-          sha="$(gh api "$endpoint" --jq .sha)"
-          content="$(base64 -w 0 "$cask")"
-          gh api --method PUT "$endpoint" \
-            --raw-field message="Brew cask update for repyy version $GITHUB_REF_NAME" \
-            --raw-field content="$content" \
-            --raw-field sha="$sha"
       - name: Attach signed intelligence snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
