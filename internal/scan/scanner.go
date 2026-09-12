@@ -47,6 +47,7 @@ type Options struct {
 	Intelligence        *intel.Database
 	IncludeDependencies bool
 	Limits              Limits
+	Progress            func(files int, bytes int64)
 }
 
 // Scanner performs deterministic, read-only static inspection.
@@ -71,7 +72,8 @@ func New(opts Options) *Scanner {
 var dependencyDirs = map[string]bool{
 	"node_modules": true, ".venv": true, "venv": true, ".tox": true,
 	"vendor": true, "target": true, ".gradle": true, ".m2": true,
-	"__pycache__": true, ".bundle": true,
+	"__pycache__": true, ".bundle": true, ".convex": true, ".expo": true,
+	".next": true, ".turbo": true, "Pods": true, "DerivedData": true,
 }
 
 // Scan inspects one local repository root without executing its contents.
@@ -110,6 +112,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		if d.IsDir() {
 			if d.Name() == ".git" {
 				s.scanGitMetadata(root, add, &coverage)
+				s.reportProgress(coverage)
 				return filepath.SkipDir
 			}
 			if !s.opts.IncludeDependencies && dependencyDirs[d.Name()] {
@@ -141,6 +144,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		if info.Size() > s.opts.Limits.MaxFileBytes {
 			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, rel+" (file-size limit)")
+			s.reportProgress(coverage)
 			return nil
 		}
 		data, err := os.ReadFile(path)
@@ -154,6 +158,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		if isArchive(rel, data) {
 			s.scanArchive(ctx, rel, data, 1, add, &coverage)
 		}
+		s.reportProgress(coverage)
 		return nil
 	})
 	if err != nil {
@@ -180,6 +185,12 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		return findings[i].RuleID < findings[j].RuleID
 	})
 	return coverage, findings
+}
+
+func (s *Scanner) reportProgress(coverage model.Coverage) {
+	if s.opts.Progress != nil {
+		s.opts.Progress(coverage.FilesScanned, coverage.BytesScanned)
+	}
 }
 
 func correlate(findings []model.Finding, add func(model.Finding)) {
@@ -310,6 +321,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 	}
 
+	dangerousChecked, dangerous := false, false
 	for i, line := range lines {
 		if skipGeneratedLineHeuristics(path) {
 			break
@@ -319,13 +331,24 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			finding.Context = classifyContext(path, line)
 			add(finding)
 		}
-		if len(line) >= 80 && entropy(line) >= 4.8 && dangerousContext(data) {
+		lineEntropy := 0.0
+		if len(line) >= 80 {
+			lineEntropy = entropy(line)
+		}
+		if lineEntropy >= 4.8 {
+			if !dangerousChecked {
+				dangerous = dangerousContext(data)
+				dangerousChecked = true
+			}
+			if !dangerous {
+				continue
+			}
 			severity, confidence := model.SeverityMedium, model.ConfidenceMedium
 			findingContext := classifyContext(path, line)
 			if findingContext != "executable" {
 				confidence = model.ConfidenceLow
 			}
-			finding := s.finding("OBFS-005", "high-entropy-code", severity, confidence, path, i+1, "High-entropy content beside an execution primitive", fmt.Sprintf("entropy: %.2f; length: %d", entropy(line), len(line)), "Decode and inspect the content in an isolated analysis environment.")
+			finding := s.finding("OBFS-005", "high-entropy-code", severity, confidence, path, i+1, "High-entropy content beside an execution primitive", fmt.Sprintf("entropy: %.2f; length: %d", lineEntropy, len(line)), "Decode and inspect the content in an isolated analysis environment.")
 			finding.Context = findingContext
 			add(finding)
 		}

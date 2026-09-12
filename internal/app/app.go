@@ -232,6 +232,131 @@ type scanArgs struct {
 	intelligence                                  *intel.Database
 }
 
+type scanProgressState struct {
+	target  string
+	started time.Time
+	files   int
+	bytes   int64
+}
+
+type scanProgress struct {
+	mu      sync.Mutex
+	w       io.Writer
+	enabled bool
+	active  map[int]*scanProgressState
+	stop    chan struct{}
+	stopped chan struct{}
+}
+
+func newScanProgress(w io.Writer, enabled bool) *scanProgress {
+	p := &scanProgress{w: w, enabled: enabled, active: map[int]*scanProgressState{}}
+	if enabled {
+		p.stop = make(chan struct{})
+		p.stopped = make(chan struct{})
+		go p.loop()
+	}
+	return p
+}
+
+func (p *scanProgress) loop() {
+	defer close(p.stopped)
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			p.printUpdates()
+		case <-p.stop:
+			return
+		}
+	}
+}
+
+func (p *scanProgress) start(index int, target string) {
+	if !p.enabled {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.active[index] = &scanProgressState{target: target, started: time.Now()}
+	fmt.Fprintf(p.w, "repyy: scanning %s...\n", target)
+}
+
+func (p *scanProgress) update(index, files int, bytes int64) {
+	if !p.enabled {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if state := p.active[index]; state != nil {
+		state.files = files
+		state.bytes = bytes
+	}
+}
+
+func (p *scanProgress) finish(index int, result model.RepoResult) {
+	if !p.enabled {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	state := p.active[index]
+	delete(p.active, index)
+	if state == nil {
+		return
+	}
+	if result.Error != "" {
+		fmt.Fprintf(p.w, "repyy: scan failed for %s after %s\n", state.target, formatDuration(result.Duration))
+		return
+	}
+	fmt.Fprintf(p.w, "repyy: scanned %s (%d files, %s) in %s\n", state.target, result.Coverage.FilesScanned, formatBytes(result.Coverage.BytesScanned), formatDuration(result.Duration))
+}
+
+func (p *scanProgress) printUpdates() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	indexes := make([]int, 0, len(p.active))
+	for index := range p.active {
+		indexes = append(indexes, index)
+	}
+	sort.Ints(indexes)
+	for _, index := range indexes {
+		state := p.active[index]
+		fmt.Fprintf(p.w, "repyy: scanning %s (%d files, %s, %s elapsed)\n", state.target, state.files, formatBytes(state.bytes), formatDuration(time.Since(state.started)))
+	}
+}
+
+func (p *scanProgress) close() {
+	if !p.enabled {
+		return
+	}
+	close(p.stop)
+	<-p.stopped
+}
+
+func formatBytes(bytes int64) string {
+	const unit = int64(1024)
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	value := float64(bytes)
+	units := []string{"KiB", "MiB", "GiB", "TiB"}
+	for _, name := range units {
+		value /= float64(unit)
+		if value < float64(unit) || name == units[len(units)-1] {
+			return fmt.Sprintf("%.1f %s", value, name)
+		}
+	}
+	return fmt.Sprintf("%d B", bytes)
+}
+
+func formatDuration(duration time.Duration) string {
+	if duration < time.Second {
+		return duration.Round(time.Millisecond).String()
+	}
+	return duration.Round(time.Second).String()
+}
+
 func parseScanArgs(args []string) (scanArgs, error) {
 	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
@@ -336,6 +461,7 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 		GeneratedAt: time.Now().UTC(),
 		Results:     make([]model.RepoResult, len(opts.targets)),
 	}
+	progress := newScanProgress(stderr, opts.format == "terminal")
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for range opts.jobs {
@@ -343,7 +469,12 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				report.Results[i] = scanOne(opts.targets[i], opts, rules, suppressions)
+				target := displayTarget(opts.targets[i])
+				progress.start(i, target)
+				report.Results[i] = scanOne(opts.targets[i], opts, rules, suppressions, func(files int, bytes int64) {
+					progress.update(i, files, bytes)
+				})
+				progress.finish(i, report.Results[i])
 			}
 		}()
 	}
@@ -352,6 +483,7 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	}
 	close(jobs)
 	wg.Wait()
+	progress.close()
 
 	w := stdout
 	var file *os.File
@@ -387,7 +519,7 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	return 0, nil
 }
 
-func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool) model.RepoResult {
+func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) model.RepoResult {
 	started := time.Now()
 	result := model.RepoResult{Target: displayTarget(target), Findings: []model.Finding{}}
 	ctx, cancel := context.WithTimeout(context.Background(), opts.timeout)
@@ -404,7 +536,7 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 	if opts.keep && prepared.Remote {
 		result.Resolved = prepared.Path
 	}
-	scanner := scan.New(scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits})
+	scanner := scan.New(scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress})
 	result.Coverage, result.Findings = scanner.Scan(ctx, prepared.Path)
 	filtered := result.Findings[:0]
 	for _, finding := range result.Findings {
