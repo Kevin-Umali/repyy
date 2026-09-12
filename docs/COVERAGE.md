@@ -29,9 +29,23 @@ heuristics can produce both false positives and false negatives.
 
 ## Precision controls
 
+- Every finding retains its matched locations, while bounded report-detail
+  limits prevent hostile input from exhausting memory.
+- Rules declare whether they inspect raw content, executable code, or a
+  structured format. Code-scoped matching distinguishes definite comments and
+  literals from executable tokens across common language families.
+- File roles distinguish executable code, CI and install hooks, manifests,
+  documentation, examples, tests, evidence, generated output, dependencies,
+  detection definitions, metadata, and archive entries. Confirmed IOCs are
+  never silenced by contextual downgrades.
+- Correlated findings require distinct actionable signals from executable code;
+  imports, generated examples, and low-confidence matches cannot form a
+  high-confidence behavior chain.
 - Documentation, tests, fixtures, and signature corpora are contextualized and
   downgraded instead of treated as executable malware.
-- Long-line and entropy checks skip lockfiles and source maps.
+- Long-line and entropy checks skip lockfiles, source maps, and known generated
+  output. Entropy must occur near an execution primitive rather than merely in
+  the same file.
 - Raw-IP checks exclude loopback, private, unspecified, link-local, and
   multicast addresses.
 - GitHub Actions pinned to a full 40-character commit SHA are not reported as
@@ -40,6 +54,10 @@ heuristics can produce both false positives and false negatives.
   version can become a confirmed IOC; an uncertain name/range remains a review
   signal.
 - `NO FINDINGS` never means safe, and incomplete coverage is reported.
+
+Run `repyy rules explain RULE-ID` for offline rationale, legitimate-use context,
+matching scope, and review guidance. Finding dispositions organize reports but
+do not change verdict or exit-code policy.
 
 ## Deliberate exclusions
 

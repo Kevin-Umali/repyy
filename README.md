@@ -66,6 +66,12 @@ repyy scan --file repositories.txt --jobs 4
 # Save machine-readable reports
 repyy scan ./assignment --format json --output report.scan.json
 repyy scan ./assignment --format sarif --output report.sarif
+
+# Create a private, self-contained review report
+repyy scan ./assignment --format html --output report.html
+
+# Render an existing JSON scan without rescanning the repository
+repyy report report.scan.json --format html --output report.html
 ```
 
 Private HTTPS clones can use `GITHUB_TOKEN`, `GITLAB_TOKEN`, or
@@ -105,8 +111,22 @@ Exit code `0` means no finding reached `--fail-on` (default: `high`), `1` means
 the threshold was reached, `2` means a target could not be fully scanned, and
 `3` means the command or configuration was invalid.
 
-Terminal, JSON, and SARIF reports identify the scanner, ruleset, and verified
+Terminal, HTML, JSON, and SARIF reports identify the scanner, ruleset, and verified
 intelligence snapshot used, so a result can be reproduced and audited later.
+
+Terminal output prioritizes blocking, review, and hardening findings. Use
+`--detail all` to include informational findings, or `--detail summary` for a
+compact verdict. Display filters such as `--min-severity`, `--min-confidence`,
+and `--group-by` never change the verdict or exit code. Progress and color can
+be controlled with `--progress` and `--color`; `NO_COLOR` is respected.
+
+HTML reports are single offline files with a semantic, accessible light review
+layout and embedded filtering. They open on the actionable review queue; use
+the disposition control to reveal informational context. Reports escape and
+redact matched source lines, make no network requests, and link supported Git
+remotes to the exact scanned commit. Local absolute file links are deliberately
+omitted. Treat reports as sensitive because even redacted evidence can reveal
+repository structure and behavior.
 
 Documentation, tests, fixtures, and security-rule files are identified as
 context and downgraded where appropriate. Private IPs, generated lockfiles,
@@ -135,6 +155,7 @@ repyy intel status --format json
 repyy rules check
 repyy rules list
 repyy rules list --format json
+repyy rules explain CICD-003
 ```
 
 Updating is an explicit action. It downloads only the public snapshot and its

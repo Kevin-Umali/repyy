@@ -3,6 +3,36 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
+## [0.4.0] - 2026-09-12
+
+### Added
+
+- Added self-contained offline HTML scan reports with a semantic, accessible
+  light review layout, focused review queue, filtering, file views, coverage
+  details, redacted matched lines, exact remote source links, and print styling.
+- Added `repyy report` for rendering existing JSON scans and `repyy rules
+  explain` for offline rule guidance.
+- Added complete, bounded occurrence locations and review dispositions while
+  retaining the version 1 report schema and legacy finding fields.
+- Added terminal detail, grouping, display-filter, progress, and color controls.
+
+### Changed
+
+- Prioritize actionable terminal findings, print remediation, summarize hidden
+  contextual results, and update interactive progress in place.
+- Apply centralized file-role and rule-scope policy across executable,
+  manifest, CI, generated, dependency, test, documentation, evidence, and
+  archive content.
+- Distinguish process API imports from actual invocation, use structured GitHub
+  Actions inspection, and require nearby execution for entropy findings.
+- Preserve verdict, `--fail-on`, exit-code, offline, and privacy behavior.
+
+### Fixed
+
+- Avoid identifier-substring matches such as `runConvexFunction`, quoted-token
+  matches such as `"process.env"`, and weak generated-file noise while retaining
+  strong indicators.
+
 ## [0.3.2] - 2026-09-12
 
 ### Added
@@ -67,6 +97,7 @@ Versioning after the first published release.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.4.0]: https://github.com/Kevin-Umali/repyy/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Kevin-Umali/repyy/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Kevin-Umali/repyy/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Kevin-Umali/repyy/compare/v0.2.2...v0.3.0

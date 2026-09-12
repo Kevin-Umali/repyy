@@ -10,6 +10,10 @@ rules:
     globs:
       - '*.sh'
       - '*.ps1'
+    match_scope: raw
+    disposition: review
+    rationale: Organization policy requires bootstrap hosts to be independently approved.
+    legitimate_use: A reviewed internal bootstrap host may be expected for this repository.
     remediation: Verify the host with the assignment owner before running it.
 
 suppressions:

