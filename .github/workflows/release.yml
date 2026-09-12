@@ -37,18 +37,19 @@ jobs:
           set -euo pipefail
           test -n "$REPYY_INTEL_SIGNING_KEY"
           key="$RUNNER_TEMP/repyy-intelligence.pem"
+          snapshot="$RUNNER_TEMP/repyy-intelligence.json"
           trap 'rm -f "$key"' EXIT
           printf '%s' "$REPYY_INTEL_SIGNING_KEY" > "$key"
           chmod 600 "$key"
-          go run ./cmd/repyy intel export > repyy-intelligence.json
+          go run ./cmd/repyy intel export > "$snapshot"
           openssl pkeyutl -sign -rawin \
             -inkey "$key" \
-            -in repyy-intelligence.json \
-            -out repyy-intelligence.json.sig
+            -in "$snapshot" \
+            -out "$snapshot.sig"
           openssl pkeyutl -verify -rawin -pubin \
             -inkey keys/intelligence-ed25519.pem \
-            -in repyy-intelligence.json \
-            -sigfile repyy-intelligence.json.sig
+            -in "$snapshot" \
+            -sigfile "$snapshot.sig"
           rm -f "$key"
           trap - EXIT
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
@@ -76,4 +77,4 @@ jobs:
       - name: Attach signed intelligence snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" repyy-intelligence.json repyy-intelligence.json.sig --clobber
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json" "$RUNNER_TEMP/repyy-intelligence.json.sig" --clobber
