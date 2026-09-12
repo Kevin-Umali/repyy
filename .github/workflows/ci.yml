@@ -9,6 +9,29 @@ permissions:
   contents: read
 
 jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Smoke test static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for site_path in index.html docs.html landing.css docs.css site.js landing.js; do
+            curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
+          done
+          curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
+          curl --fail --silent --show-error http://127.0.0.1:4173/index.html --output /tmp/repyy-index.html
+          curl --fail --silent --show-error http://127.0.0.1:4173/docs.html --output /tmp/repyy-docs.html
+          grep --quiet '<title>repyy |' /tmp/repyy-root.html
+          grep --quiet '<title>repyy |' /tmp/repyy-index.html
+          grep --quiet '<title>repyy documentation</title>' /tmp/repyy-docs.html
+
   test:
     runs-on: ubuntu-latest
     steps:

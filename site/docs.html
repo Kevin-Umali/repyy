@@ -1,0 +1,167 @@
+<!doctype html>
+<html class="docs-root" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Install, configure, and understand repyy repository scans." />
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>repyy documentation</title>
+    <link rel="stylesheet" href="./docs.css" />
+    <script src="./site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#docs-main">Skip to documentation</a>
+    <header class="docs-header">
+      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <label class="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search commands, flags, formats" autocomplete="off" /></label>
+      <div class="docs-header-links"><a href="./index.html">Website</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+    </header>
+
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <nav aria-label="Documentation navigation" tabindex="0">
+          <strong>Start</strong>
+          <a href="#overview">Overview</a><a href="#getting-started">Install and scan</a><a href="#take-home">Take-home workflow</a><a href="#verdicts-docs">Read a verdict</a>
+          <strong>Use repyy</strong>
+          <a href="#targets">Targets and history</a><a href="#reports-docs">Reports</a><a href="#configuration">Configuration</a><a href="#automation">Automation</a><a href="#agent-skill-docs">Agent skill</a>
+          <strong>Trust model</strong>
+          <a href="#privacy">Privacy</a><a href="#intelligence">Intelligence</a><a href="#coverage-docs">Detection coverage</a><a href="#limits-docs">Limits</a>
+          <strong>Reference</strong>
+          <a href="#scan-flags">Scan flags</a><a href="#exit-codes">Exit codes</a>
+        </nav>
+      </aside>
+
+      <main class="docs-main" id="docs-main">
+        <section class="docs-hero docs-searchable" id="overview" data-search="overview local read-only malware supply-chain scanner">
+          <p class="docs-kicker">Documentation</p>
+          <h1>A closer look.<span>A clearer next step.</span></h1>
+          <p>Install the scanner, inspect an unfamiliar repository, and understand the result. This reference covers commands, configuration, and the boundaries of a read-only scan.</p>
+          <div class="docs-summary" aria-label="Product summary"><span><b>Read only</b> Target code stays unexecuted</span><span><b>Local</b> Source and reports stay with you</span><span><b>MIT licensed</b> Free and open source</span></div>
+          <div class="docs-callout"><strong>What repyy does not do</strong><p>It does not install packages, build the target, run tests, execute source, or upload your code.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="getting-started" data-search="getting started install homebrew scoop go github releases first scan command">
+          <h2>Install and run a first scan</h2>
+          <p>Install only the scanner. The target repository remains data throughout the scan.</p>
+          <div class="docs-command"><div><span>Homebrew</span><button type="button" data-copy="brew install --cask Kevin-Umali/tap/repyy">Copy</button></div><code>brew install --cask Kevin-Umali/tap/repyy</code></div>
+          <div class="docs-command"><div><span>Go</span><button type="button" data-copy="go install github.com/Kevin-Umali/repyy/cmd/repyy@latest">Copy</button></div><code>go install github.com/Kevin-Umali/repyy/cmd/repyy@latest</code></div>
+          <h3>Scan a local folder</h3>
+          <div class="docs-command"><div><span>Terminal</span><button type="button" data-copy="repyy scan ./assignment">Copy</button></div><code>repyy scan ./assignment</code></div>
+          <h3>Scan a remote repository</h3>
+          <div class="docs-command"><div><span>Terminal</span><button type="button" data-copy="repyy scan https://github.com/org/assignment">Copy</button></div><code>repyy scan https://github.com/org/assignment</code></div>
+          <div class="docs-note"><strong>Private remotes</strong><p>HTTPS clones can use GITHUB_TOKEN, GITLAB_TOKEN, or BITBUCKET_TOKEN. SSH remotes use your existing SSH agent.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="take-home" data-search="take home interview assignment coding challenge clone install build test workflow remote scan">
+          <h2>Use repyy for a take-home assignment</h2>
+          <p>Keep the target unexecuted until you have reviewed the scan. A remote scan lets you inspect an assignment before creating a working checkout.</p>
+          <div class="workflow-list">
+            <article><b>1</b><div><strong>Scan the Git URL</strong><p>Start with <code>repyy scan URL</code>. Remote targets use a temporary shallow clone by default.</p></div></article>
+            <article><b>2</b><div><strong>Review the evidence</strong><p>Read blocking and review findings first. Check every location, confidence level, and reported coverage limit.</p></div></article>
+            <article><b>3</b><div><strong>Choose the next action</strong><p>Continue in an isolated environment, ask the interviewer for context, or stop. A scan does not prove that code is safe.</p></div></article>
+          </div>
+          <div class="docs-callout"><strong>Keep the boundary clear</strong><p>Do not install dependencies, open the repository with workspace trust enabled, build it, or run its tests before review.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="verdicts-docs" data-search="verdict no findings review required do not run scan incomplete meaning">
+          <h2>Read a verdict</h2>
+          <p>The verdict describes the strongest outcome and whether coverage completed.</p>
+          <div class="docs-verdict-grid">
+            <article><b>No findings</b><p>The completed scan matched no enabled rule. This does not prove the repository is safe.</p></article>
+            <article><b>Review required</b><p>One or more findings need a person to inspect their context.</p></article>
+            <article><b>Do not run</b><p>High-confidence critical behavior appeared in executable, install-time, or CI code.</p></article>
+            <article><b>Scan incomplete</b><p>A timeout, limit, permission, clone, archive, or read error reduced coverage.</p></article>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="targets" data-search="targets multiple repositories file jobs remote history clone keep workdir dependencies">
+          <h2>Targets and history</h2>
+          <p>Pass one or many local paths and Git URLs. For large review queues, put one target per line in a file.</p>
+          <div class="docs-command"><div><span>Multiple targets</span><button type="button" data-copy="repyy scan ./repo-a ./repo-b">Copy</button></div><code>repyy scan ./repo-a ./repo-b</code></div>
+          <div class="docs-command"><div><span>Target file</span><button type="button" data-copy="repyy scan --file repositories.txt --jobs 4">Copy</button></div><code>repyy scan --file repositories.txt --jobs 4</code></div>
+          <p>Remote scans use temporary shallow clones by default. Increase history depth only when you need it.</p>
+          <div class="docs-command"><div><span>Full history</span><button type="button" data-copy="repyy scan URL --history all --keep-workdir">Copy</button></div><code>repyy scan URL --history all --keep-workdir</code></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="reports-docs" data-search="terminal json sarif html reports output render existing scan">
+          <h2>Choose a report format</h2>
+          <div class="docs-table" role="table" aria-label="Report formats">
+            <div role="row"><b role="cell">Terminal</b><span role="cell">Interactive review with prioritized findings</span><code role="cell">--format terminal</code></div>
+            <div role="row"><b role="cell">JSON</b><span role="cell">Structured automation and archival input</span><code role="cell">--format json</code></div>
+            <div role="row"><b role="cell">SARIF</b><span role="cell">Code-scanning integrations</span><code role="cell">--format sarif</code></div>
+            <div role="row"><b role="cell">HTML</b><span role="cell">Private, self-contained offline review</span><code role="cell">--format html</code></div>
+          </div>
+          <div class="docs-command"><div><span>Save JSON</span><button type="button" data-copy="repyy scan ./repo --format json --output report.scan.json">Copy</button></div><code>repyy scan ./repo --format json --output report.scan.json</code></div>
+          <div class="docs-command"><div><span>Render later</span><button type="button" data-copy="repyy report report.scan.json --format html --output report.html">Copy</button></div><code>repyy report report.scan.json --format html --output report.html</code></div>
+          <div class="docs-note"><strong>Evidence handling</strong><p>Reports escape and redact matched source lines. Treat every report as sensitive because paths and behavior can still reveal repository structure.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="configuration" data-search="configuration yaml custom rules suppressions fingerprint expiry validate trusted config">
+          <h2>Use trusted configuration</h2>
+          <p>Repository-owned .repyy.yaml files are ignored so the target cannot weaken its own scan. Pass configuration you control.</p>
+          <div class="docs-command"><div><span>Validate</span><button type="button" data-copy="repyy rules validate examples/repyy.example.yaml">Copy</button></div><code>repyy rules validate examples/repyy.example.yaml</code></div>
+          <div class="docs-command"><div><span>Use config</span><button type="button" data-copy="repyy scan ./repo --config trusted-rules.yaml">Copy</button></div><code>repyy scan ./repo --config trusted-rules.yaml</code></div>
+          <p>Custom rules use declarative regex and path matches. They cannot run commands. Suppressions use stable fingerprints, require a reason, and can expire.</p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="automation" data-search="automation ci fail threshold jobs json sarif group filter severity confidence">
+          <h2>Set policy for automation</h2>
+          <p>The default failure threshold is high. Display filters change what you see, not the verdict or exit code.</p>
+          <div class="docs-command"><div><span>Critical only</span><button type="button" data-copy="repyy scan ./repo --fail-on critical">Copy</button></div><code>repyy scan ./repo --fail-on critical</code></div>
+          <div class="docs-command"><div><span>Focused review</span><button type="button" data-copy="repyy scan ./repo --min-severity high --min-confidence high">Copy</button></div><code>repyy scan ./repo --min-severity high --min-confidence high</code></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="agent-skill-docs" data-search="agent skill codex instructions npx skills add install global">
+          <h2>Install the optional agent skill</h2>
+          <p>The skill tells a coding agent to scan unfamiliar repositories before execution, keep source local, and report incomplete coverage. It installs instructions only. Install the repyy executable separately.</p>
+          <div class="docs-command"><div><span>Interactive</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy</code></div>
+          <div class="docs-command"><div><span>Codex, global</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y</code></div>
+          <div class="docs-note"><strong>Separate installs</strong><p>These commands do not install repyy and do not install dependencies from the repository being scanned.</p></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="privacy" data-search="privacy offline no telemetry upload network local remote tokens credentials clone">
+          <h2>Privacy and network behavior</h2>
+          <ul class="docs-list"><li>No telemetry, analytics, accounts, or source upload.</li><li>Local targets need no network access.</li><li>Remote targets use the network only to clone the repository you requested.</li><li>Scans never update intelligence automatically.</li><li>Provider tokens stay out of clone URLs and use process-local Git configuration.</li></ul>
+        </section>
+
+        <section class="docs-section docs-searchable" id="intelligence" data-search="intelligence snapshot status update rollback ed25519 signature verify rules explain list check">
+          <h2>Inspect signed offline intelligence</h2>
+          <p>repyy ships with a dated offline intelligence snapshot. Updates are explicit and activate only after signature, schema, date, and record validation.</p>
+          <div class="docs-command"><div><span>Status</span><button type="button" data-copy="repyy intel status">Copy</button></div><code>repyy intel status</code></div>
+          <div class="docs-command"><div><span>Update</span><button type="button" data-copy="repyy intel update">Copy</button></div><code>repyy intel update</code></div>
+          <div class="docs-command"><div><span>Rollback</span><button type="button" data-copy="repyy intel rollback">Copy</button></div><code>repyy intel rollback</code></div>
+          <p>Inspect the built-in rule set without contacting an external service.</p>
+          <div class="docs-command"><div><span>Explain a rule</span><button type="button" data-copy="repyy rules explain CICD-003">Copy</button></div><code>repyy rules explain CICD-003</code></div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="coverage-docs" data-search="coverage dynamic execution obfuscation lifecycle dependencies backdoors credentials secrets network reverse shell mining ci containers git hooks social engineering">
+          <h2>Detection coverage</h2>
+          <p>The built-in map covers behavioral combinations and individual indicators across source, manifests, automation, metadata, and archives.</p>
+          <div class="coverage-columns"><ul><li>Dynamic execution</li><li>Obfuscation</li><li>Package lifecycle</li><li>Malicious dependencies</li><li>Download and execution</li><li>Backdoors</li></ul><ul><li>Credentials and secrets</li><li>Network and exfiltration</li><li>Reverse shells</li><li>Cryptomining</li><li>CI and editor execution</li><li>Containers and Git metadata</li></ul></div>
+          <a class="docs-inline-link" href="https://github.com/Kevin-Umali/repyy/blob/main/docs/COVERAGE.md">Read the complete coverage map ↗</a>
+        </section>
+
+        <section class="docs-section docs-searchable" id="limits-docs" data-search="limits timeout max files file size incomplete archive dependency cache">
+          <h2>Review the default limits</h2>
+          <div class="docs-table compact" role="table" aria-label="Default scan limits"><div role="row"><b role="cell">Timeout</b><span role="cell">10 minutes per repository</span></div><div role="row"><b role="cell">Files</b><span role="cell">100,000 per repository</span></div><div role="row"><b role="cell">File size</b><span role="cell">50 MiB per file</span></div><div role="row"><b role="cell">Archive depth</b><span role="cell">3 nested levels</span></div></div>
+          <p>Dependency and cache directories are excluded by default. Add <code>--include-dependencies</code> when those files belong in your review.</p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="scan-flags" data-search="scan flags options file format output jobs config dependencies history workdir fail timeout files size detail progress color">
+          <h2>Scan flag reference</h2>
+          <div class="flag-grid">
+            <code>--file PATH</code><span>Read more targets, one per line.</span><code>--format FORMAT</code><span>terminal, json, sarif, or html.</span><code>--output PATH</code><span>Write the report to a file.</span><code>--jobs N</code><span>Scan 1 to 128 repositories concurrently. Default 4.</span><code>--config PATH</code><span>Load trusted rules and suppressions.</span><code>--include-dependencies</code><span>Include dependency and cache directories.</span><code>--history N|all</code><span>Set remote history depth. Default 1.</span><code>--keep-workdir</code><span>Retain remote checkouts after scanning.</span><code>--fail-on LEVEL</code><span>Set low, medium, high, or critical. Default high.</span><code>--timeout DURATION</code><span>Set a per-repository timeout. Default 10m.</span><code>--max-files N</code><span>Set the file limit.</span><code>--max-file-size BYTES</code><span>Set the per-file byte limit.</span><code>--detail MODE</code><span>summary, review, or all.</span><code>--progress MODE</code><span>auto, plain, or quiet.</span><code>--color MODE</code><span>auto, always, or never.</span><code>--min-severity LEVEL</code><span>Filter displayed findings.</span><code>--min-confidence LEVEL</code><span>Filter by low, medium, or high confidence.</span><code>--group-by FIELD</code><span>Group by severity, file, or rule.</span>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="exit-codes" data-search="exit codes status zero one two three fail threshold invalid incomplete">
+          <h2>Exit codes</h2>
+          <div class="exit-grid"><div><strong>0</strong><span>No finding reached your failure threshold.</span></div><div><strong>1</strong><span>The configured threshold was reached.</span></div><div><strong>2</strong><span>A target could not be scanned completely.</span></div><div><strong>3</strong><span>The command or configuration was invalid.</span></div></div>
+        </section>
+
+        <div class="docs-empty" id="docs-empty" hidden><strong>No matching documentation</strong><p>Try a command, output format, or concept such as privacy.</p></div>
+        <footer class="docs-footer"><p>repyy documentation</p><a href="https://github.com/Kevin-Umali/repyy/issues">Report a docs issue ↗</a></footer>
+      </main>
+    </div>
+  </body>
+</html>
