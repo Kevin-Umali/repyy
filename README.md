@@ -150,7 +150,9 @@ repyy intel rollback  # restore the previous verified cached snapshot
 Updates are stored atomically in the user cache. If the cache is missing,
 damaged, or fails verification, repyy warns and safely uses the snapshot
 embedded in the executable. The public verification key is published at
-[`keys/intelligence-ed25519.pem`](keys/intelligence-ed25519.pem).
+[`keys/intelligence-ed25519.pem`](keys/intelligence-ed25519.pem). It can only
+verify snapshots; it cannot create valid signatures. The private signing key is
+never stored in this repository.
 
 Package-name-only or uncertain-version matches require review. A sourced
 affected version or exact published file hash provides stronger evidence, but

@@ -11,3 +11,9 @@ coverage.html
 .idea/
 .vscode/
 .DS_Store
+
+# Private keys. Public verification keys under keys/ are intentionally tracked.
+*.key
+*-private.pem
+*private-key*.pem
+*signing-key*.pem
