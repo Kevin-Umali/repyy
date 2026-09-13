@@ -3,6 +3,46 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
+## Unreleased
+
+### Added
+
+- Added opt-in Docker isolation with separate networked HTTPS fetch and
+  network-disabled scan stages, digest-pinned release images, and host-rendered
+  reports. VM workflows remain documented manual options.
+- Added detailed web and Markdown guides for installation, CLI usage,
+  configuration, detection coverage, intelligence, Docker, Windows Sandbox,
+  macOS/Linux VM workflows, and the optional AI agent skill.
+
+### Changed
+
+- Aligned generated offline HTML reports with the site design, keyboard view
+  controls, per-repository counts, source links, and a readable no-JavaScript
+  fallback.
+- Write report files through a private temporary file and atomic rename with
+  restrictive permissions.
+- Made Docker isolation fail closed when Docker or the matching signed image is
+  unavailable. Docker accepts local paths and HTTPS remotes, and rejects SSH
+  remotes and `--keep-workdir`.
+- Reorganized the documentation site around a concise hub, focused guides,
+  visible back navigation, and bundled cross-guide search that works offline.
+
+### Fixed
+
+- Preserve successful targets when another target is incomplete, return exit
+  code `2` for incomplete coverage, and keep each target's original name,
+  order, remote URL, and revision.
+- Preserve partial Docker findings when coverage is incomplete and reject saved
+  reports whose verdict conflicts with their findings or coverage.
+- Filter findings across all recorded file locations and show a redacted
+  backend failure reason in incomplete reports.
+- Ignore inherited Git environment overrides and restrict clone transports to
+  the requested HTTPS or SSH protocol; document Git's untrusted `.git`
+  boundary.
+- Resolve symlinked repository roots; bound and confine Git metadata reads;
+  reject spoofed trusted-registry hosts and archive-link traversal; report
+  undecodable source as incomplete; and redact source-derived report fields.
+
 ## [0.4.0] - 2026-09-12
 
 ### Added

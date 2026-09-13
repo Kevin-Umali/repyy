@@ -7,7 +7,7 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/app"
 )
 
-var version = "0.4.0"
+var version = "0.5.0-dev"
 
 func main() {
 	code, err := app.Run(os.Args[1:], os.Stdout, os.Stderr, version)

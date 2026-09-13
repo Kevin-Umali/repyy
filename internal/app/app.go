@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/model"
 	"github.com/Kevin-Umali/repyy/internal/output"
+	"github.com/Kevin-Umali/repyy/internal/sandbox"
 	"github.com/Kevin-Umali/repyy/internal/scan"
 	"github.com/Kevin-Umali/repyy/internal/source"
 )
@@ -58,6 +60,7 @@ Scan options:
   --min-severity LEVEL     display filter only
   --min-confidence LEVEL   low|medium|high display filter only
   --group-by severity|file|rule
+  --sandbox host|docker       run scans in Docker (default host)
 
 Report options:
   --format terminal|html|sarif (default html)
@@ -370,25 +373,14 @@ func runReport(args []string, stdout io.Writer) (int, error) {
 		return 3, err
 	}
 
-	writer := stdout
-	var outputFile *os.File
-	if opts.output != "" {
-		file, err := openPrivateOutput(opts.output)
-		if err != nil {
-			return 3, err
-		}
-		outputFile = file
-		defer outputFile.Close()
-		writer = outputFile
-	}
-	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, writer)
+	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, stdout)
 	if err != nil {
 		return 3, err
 	}
-	if err := output.WriteWithOptions(writer, opts.format, report, presentation); err != nil {
+	if err := writeReportOutput(stdout, opts.output, opts.format, report, presentation); err != nil {
 		return 3, err
 	}
-	return 0, nil
+	return exitCodeForResults(report.Results, model.SeverityHigh), nil
 }
 
 func normalizeAndValidateReport(report *model.Report) error {
@@ -448,6 +440,16 @@ func normalizeAndValidateReport(report *model.Report) error {
 		if locationsTruncated {
 			result.Coverage.Warnings = append(result.Coverage.Warnings, "finding location detail was truncated by report limits; occurrence totals remain complete")
 		}
+		if result.Error != "" && result.Coverage.Complete {
+			return fmt.Errorf("result %d claims complete coverage despite a scan error", resultIndex)
+		}
+		expectedVerdict := verdict(result.Coverage, result.Findings)
+		if result.Error != "" {
+			expectedVerdict = model.VerdictIncomplete
+		}
+		if result.Verdict != expectedVerdict {
+			return fmt.Errorf("result %d verdict %q does not match its findings and coverage", resultIndex, result.Verdict)
+		}
 	}
 	return nil
 }
@@ -457,6 +459,8 @@ type scanArgs struct {
 	detail, progress, color, minSeverity, minConfidence, groupBy string
 	jobs                                                         int
 	includeDeps, keep                                            bool
+	sandbox                                                      string
+	version                                                      string
 	timeout                                                      time.Duration
 	limits                                                       scan.Limits
 	targets                                                      []string
@@ -643,6 +647,7 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	fs.BoolVar(&o.includeDeps, "include-dependencies", false, "")
 	fs.StringVar(&o.history, "history", o.history, "")
 	fs.BoolVar(&o.keep, "keep-workdir", false, "")
+	fs.StringVar(&o.sandbox, "sandbox", "host", "")
 	fs.StringVar(&o.failOn, "fail-on", o.failOn, "")
 	fs.DurationVar(&o.timeout, "timeout", o.timeout, "")
 	fs.IntVar(&o.limits.MaxFiles, "max-files", o.limits.MaxFiles, "")
@@ -676,6 +681,19 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	}
 	if o.jobs < 1 || o.jobs > 128 {
 		return o, errors.New("--jobs must be between 1 and 128")
+	}
+	if o.sandbox != "host" && o.sandbox != "docker" {
+		return o, errors.New("--sandbox must be host or docker; vm and auto are reserved for a later release")
+	}
+	if o.sandbox == "docker" {
+		if o.keep {
+			return o, errors.New("--keep-workdir is not supported with --sandbox=docker")
+		}
+		for _, target := range o.targets {
+			if strings.HasPrefix(target, "git@") || strings.HasPrefix(target, "ssh://") {
+				return o, errors.New("SSH URLs are not supported with --sandbox=docker; use an HTTPS Git URL")
+			}
+		}
 	}
 	if o.timeout <= 0 || o.limits.MaxFiles <= 0 || o.limits.MaxFileBytes <= 0 {
 		return o, errors.New("resource limits must be positive")
@@ -727,6 +745,25 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	if len(opts.targets) == 0 {
 		return 3, errors.New("provide at least one target or --file")
 	}
+	if opts.sandbox == "docker" {
+		for _, target := range opts.targets {
+			if strings.HasPrefix(target, "git@") || strings.HasPrefix(target, "ssh://") {
+				return 3, errors.New("SSH URLs are not supported with --sandbox=docker; use an HTTPS Git URL")
+			}
+		}
+	}
+	if opts.sandbox == "docker" {
+		preflightCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		err := sandbox.Preflight(preflightCtx, sandbox.Options{Version: version})
+		cancel()
+		if err != nil {
+			return 3, err
+		}
+		opts.version = version
+		if opts.jobs > 4 {
+			opts.jobs = 4
+		}
+	}
 
 	rules := scan.BuiltinRules()
 	suppressions := map[string]bool{}
@@ -737,6 +774,12 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 		}
 		rules = append(rules, cfg.Rules...)
 		suppressions = config.ActiveSuppressions(cfg, time.Now())
+		if opts.sandbox == "docker" {
+			opts.config, err = filepath.Abs(opts.config)
+			if err != nil {
+				return 3, err
+			}
+		}
 	}
 	store, err := intel.NewDefaultStore()
 	if err != nil {
@@ -744,6 +787,14 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	}
 	intelligence, intelStatus := store.LoadActive(time.Now().UTC())
 	opts.intelligence = intelligence
+	if opts.sandbox == "docker" {
+		// The release image has no host cache mount and scans with its embedded
+		// verified snapshot. Keep the host-rendered report metadata in sync.
+		builtin := intel.BuiltinSnapshot()
+		intelStatus.SnapshotVersion = builtin.SnapshotVersion
+		intelStatus.SnapshotDate = builtin.SnapshotDate
+		intelStatus.Source = "embedded"
+	}
 	if intelStatus.Warning != "" {
 		fmt.Fprintln(stderr, "repyy:", intelStatus.Warning)
 	}
@@ -783,28 +834,22 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	wg.Wait()
 	progress.close()
 
-	w := stdout
-	var file *os.File
-	if opts.output != "" {
-		file, err = openPrivateOutput(opts.output)
-		if err != nil {
-			return 3, err
-		}
-		defer file.Close()
-		w = file
-	}
-	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, w)
+	presentation, err := presentationOptions(opts.detail, opts.minSeverity, opts.minConfidence, opts.groupBy, opts.color, stdout)
 	if err != nil {
 		return 3, err
 	}
-	if err := output.WriteWithOptions(w, opts.format, report, presentation); err != nil {
+	if err := writeReportOutput(stdout, opts.output, opts.format, report, presentation); err != nil {
 		return 3, err
 	}
 	threshold, _ := parseSeverity(opts.failOn)
-	hasFinding, hasError := false, false
-	for _, result := range report.Results {
-		if result.Error != "" {
-			hasError = true
+	return exitCodeForResults(report.Results, threshold), nil
+}
+
+func exitCodeForResults(results []model.RepoResult, threshold model.Severity) int {
+	hasFinding, hasIncomplete := false, false
+	for _, result := range results {
+		if result.Error != "" || result.Verdict == model.VerdictIncomplete || !result.Coverage.Complete {
+			hasIncomplete = true
 		}
 		for _, finding := range result.Findings {
 			if finding.Severity.Rank() >= threshold.Rank() {
@@ -812,13 +857,13 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 			}
 		}
 	}
-	if hasError {
-		return 2, nil
+	if hasIncomplete {
+		return 2
 	}
 	if hasFinding {
-		return 1, nil
+		return 1
 	}
-	return 0, nil
+	return 0
 }
 
 func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) model.RepoResult {
@@ -826,6 +871,27 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 	result := model.RepoResult{Target: displayTarget(target), Findings: []model.Finding{}}
 	ctx, cancel := context.WithTimeout(context.Background(), opts.timeout)
 	defer cancel()
+	if opts.sandbox == "docker" {
+		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
+		if err != nil {
+			result.Error = err.Error()
+			result.Verdict = model.VerdictIncomplete
+			result.Coverage.Complete = false
+			result.Duration = time.Since(started)
+			return result
+		}
+		sandboxResult.Target = displayTarget(target)
+		sandboxResult.Duration = time.Since(started)
+		validation := model.Report{SchemaVersion: "1", Results: []model.RepoResult{sandboxResult}}
+		if err := normalizeAndValidateReport(&validation); err != nil {
+			result.Error = "sandbox returned invalid report: " + err.Error()
+			result.Verdict = model.VerdictIncomplete
+			result.Duration = time.Since(started)
+			return result
+		}
+		sandboxResult = validation.Results[0]
+		return sandboxResult
+	}
 	prepared, err := source.Prepare(ctx, target, source.Options{History: opts.history, Keep: opts.keep})
 	if err != nil {
 		result.Error = err.Error()
@@ -945,16 +1011,35 @@ func resolveColorMode(mode string, terminal, noColor bool) bool {
 	return mode == "always" || mode == "auto" && terminal && !noColor
 }
 
-func openPrivateOutput(path string) (*os.File, error) {
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
-	if err != nil {
-		return nil, err
+func writeReportOutput(stdout io.Writer, path, format string, report model.Report, presentation output.Options) error {
+	if path == "" {
+		return output.WriteWithOptions(stdout, format, report, presentation)
 	}
+	file, err := os.CreateTemp(filepath.Dir(path), ".repyy-report-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
 	if err := file.Chmod(0o600); err != nil {
 		file.Close()
-		return nil, err
+		return err
 	}
-	return file, nil
+	if err := restrictOutputPermissions(file.Name()); err != nil {
+		file.Close()
+		return err
+	}
+	if err := output.WriteWithOptions(file, format, report, presentation); err != nil {
+		file.Close()
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		file.Close()
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return os.Rename(file.Name(), path)
 }
 
 func resolveProgressMode(opts scanArgs, writer io.Writer) string {

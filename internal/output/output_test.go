@@ -111,7 +111,7 @@ func TestHTMLIsSelfContainedAndEscapesFindings(t *testing.T) {
 	if !strings.Contains(html, "color-scheme: light;") || strings.Contains(html, "prefers-color-scheme: dark") {
 		t.Fatal("HTML report is not consistently light themed")
 	}
-	for _, semantic := range []string{`<main id="report-content">`, `<header class="masthead"`, `<time datetime=`, `<output data-visible-count`, `<footer class="muted"`, `aria-live="polite"`, `aria-label="Scan coverage"`} {
+	for _, semantic := range []string{`<main id="report-content">`, `<header class="masthead"`, `<time datetime=`, `<output data-visible-count`, `<footer class="muted report-footer"`, `aria-live="polite"`, `aria-label="Scan coverage"`} {
 		if !strings.Contains(html, semantic) {
 			t.Errorf("HTML report is missing semantic marker %q", semantic)
 		}
@@ -160,6 +160,33 @@ func TestEvidenceSanitizationIsSharedByEveryFormat(t *testing.T) {
 		}
 		if strings.Contains(out.String(), "correct horse") || !strings.Contains(out.String(), "REDACTED") || !utf8.Valid(out.Bytes()) {
 			t.Errorf("%s leaked or corrupted evidence: %s", format, out.String())
+		}
+	}
+}
+
+func TestSourceDerivedSecretsAreRedactedAcrossFormats(t *testing.T) {
+	report := sampleReport()
+	token := "ghp_" + strings.Repeat("A", 36)
+	report.Results[0].Target = "package-" + token
+	report.Results[0].Resolved = "/tmp/" + token
+	report.Results[0].Error = "backend reported " + token
+	report.Results[0].Coverage.Warnings = []string{"warning: " + token}
+	report.Results[0].Coverage.Skipped = []string{"path/" + token}
+	report.Results[0].Source = &model.SourceInfo{RepositoryURL: "https://user:" + token + "@github.com/example/repo", Revision: strings.Repeat("a", 40)}
+	report.Results[0].Findings[0].Message = "Non-lifecycle package script downloads content: " + token
+	report.Results[0].Findings[0].Path = "scripts/" + token + ".js"
+	report.Results[0].Findings[0].Remediation = "Rotate " + token
+	report.Results[0].Findings[0].Locations[0].Path = "scripts/" + token + ".js"
+	for _, format := range []string{"terminal", "json", "sarif", "html"} {
+		var out bytes.Buffer
+		if err := Write(&out, format, report); err != nil {
+			t.Fatalf("%s: %v", format, err)
+		}
+		if strings.Contains(out.String(), token) || !strings.Contains(out.String(), "REDACTED") {
+			t.Errorf("%s leaked source-derived secret: %s", format, out.String())
+		}
+		if format != "terminal" && format != "html" && !json.Valid(out.Bytes()) {
+			t.Errorf("%s output is not valid JSON", format)
 		}
 	}
 }
@@ -229,6 +256,42 @@ func TestRemoteSourceLinksArePinnedAndLocalLinksAreAbsent(t *testing.T) {
 	}
 	if strings.Contains(local.String(), "file://") {
 		t.Fatal("local report contains a file URL")
+	}
+}
+
+func TestHTMLShowsSanitizedBackendErrorAndAllFindingFiles(t *testing.T) {
+	report := sampleReport()
+	report.Results[0].Verdict = model.VerdictIncomplete
+	report.Results[0].Error = `docker failed <script>alert("secret")</script>`
+	report.Results[0].Findings[0].Locations = []model.Location{
+		{Path: "first.txt", StartLine: 2, Evidence: "one"},
+		{Path: "second.txt", StartLine: 8, Evidence: "two"},
+	}
+	var out bytes.Buffer
+	if err := Write(&out, "html", report); err != nil {
+		t.Fatal(err)
+	}
+	html := out.String()
+	if !strings.Contains(html, "The scan backend failed before completion") ||
+		!strings.Contains(html, "&lt;script&gt;alert(&#34;secret&#34;)&lt;/script&gt;") {
+		t.Fatalf("missing safely rendered backend error: %s", html)
+	}
+	if strings.Contains(html, "<script>alert") || !strings.Contains(html, `data-file="first.txt`) || !strings.Contains(html, "second.txt\">") {
+		t.Fatalf("error or location escaped unsafely: %s", html)
+	}
+}
+
+func TestHTMLKeepsFileListReadableWithoutJavaScript(t *testing.T) {
+	var out bytes.Buffer
+	if err := Write(&out, "html", sampleReport()); err != nil {
+		t.Fatal(err)
+	}
+	html := out.String()
+	if !strings.Contains(html, `<section data-view-panel="files"`) ||
+		strings.Contains(html, `data-view-panel="files" aria-label="Files with findings for fixture" hidden`) ||
+		!strings.Contains(html, `.review-controls { display: none;`) ||
+		!strings.Contains(html, `.js .review-controls { display: block }`) {
+		t.Fatal("report fallback does not expose the file list without JavaScript")
 	}
 }
 

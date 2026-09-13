@@ -47,12 +47,14 @@ type htmlRepoView struct {
 	Findings                              []htmlFindingView
 	Files                                 []htmlFileView
 	RepositoryURL, Revision               string
+	Isolation                             *model.IsolationInfo
 }
 
 type htmlFindingView struct {
 	model.Finding
 	Rule       scan.RuleInfo
 	Locations  []htmlLocationView
+	FilePaths  []string
 	SearchText string
 }
 
@@ -93,6 +95,14 @@ func htmlOut(w io.Writer, report model.Report) error {
 			Reason: htmlVerdictReason(repo), FilesScanned: repo.Coverage.FilesScanned,
 			BytesScanned: formatHTMLBytes(repo.Coverage.BytesScanned), Duration: formatHTMLDuration(repo.Duration),
 			Coverage: repo.Coverage, Counts: map[string]int{}, ActionableCounts: map[string]int{}, DispositionCounts: map[string]int{}, FindingCount: len(repo.Findings),
+		}
+		if repo.Isolation != nil {
+			repoView.Isolation = &model.IsolationInfo{
+				Backend:      displayText(repo.Isolation.Backend),
+				ImageDigest:  displayText(repo.Isolation.ImageDigest),
+				FetchNetwork: displayText(repo.Isolation.FetchNetwork),
+				ScanNetwork:  displayText(repo.Isolation.ScanNetwork),
+			}
 		}
 		repoView.Coverage.Warnings = append([]string(nil), repo.Coverage.Warnings...)
 		repoView.Coverage.Skipped = append([]string(nil), repo.Coverage.Skipped...)
@@ -137,22 +147,27 @@ func htmlOut(w io.Writer, report model.Report) error {
 				locations = []model.Location{{Path: finding.Path, StartLine: finding.Line, Evidence: finding.Evidence}}
 			}
 			for _, location := range locations {
-				findingView.Locations = append(findingView.Locations, htmlLocationView{Label: formatLocation(location), Evidence: location.Evidence, Link: remoteSourceLink(repo.Source, location)})
-				searchParts = append(searchParts, displayText(location.Path), location.Evidence)
-				files[displayText(location.Path)] = true
+				path := displayText(location.Path)
+				findingView.Locations = append(findingView.Locations, htmlLocationView{Label: formatLocation(location), Evidence: displayText(location.Evidence), Link: remoteSourceLink(repo.Source, location)})
+				findingView.FilePaths = appendUnique(findingView.FilePaths, path)
+				searchParts = append(searchParts, path, displayText(location.Evidence))
+				files[path] = true
 			}
+			findingView.Path = strings.Join(findingView.FilePaths, "\n")
 			findingView.SearchText = strings.ToLower(strings.Join(searchParts, " "))
 			repoView.Findings = append(repoView.Findings, findingView)
 			categories[displayText(finding.Category)] = true
 			rules[displayText(finding.RuleID)] = true
-			entry := fileCounts[finding.Path]
-			if entry == nil {
-				entry = &htmlFileView{Path: displayText(finding.Path), Severity: string(finding.Severity)}
-				fileCounts[finding.Path] = entry
-			}
-			entry.Count++
-			if model.Severity(entry.Severity).Rank() < finding.Severity.Rank() {
-				entry.Severity = string(finding.Severity)
+			for _, path := range findingView.FilePaths {
+				entry := fileCounts[path]
+				if entry == nil {
+					entry = &htmlFileView{Path: path, Severity: string(finding.Severity)}
+					fileCounts[path] = entry
+				}
+				entry.Count++
+				if model.Severity(entry.Severity).Rank() < finding.Severity.Rank() {
+					entry.Severity = string(finding.Severity)
+				}
 			}
 		}
 		for _, entry := range fileCounts {
@@ -189,7 +204,27 @@ func sortedKeys(values map[string]bool) []string {
 	return keys
 }
 
+func appendUnique(values []string, value string) []string {
+	for _, existing := range values {
+		if existing == value {
+			return values
+		}
+	}
+	return append(values, value)
+}
+
+func truncateHTMLText(value string, limit int) string {
+	runes := []rune(value)
+	if len(runes) <= limit {
+		return value
+	}
+	return string(runes[:limit]) + "…"
+}
+
 func htmlVerdictReason(repo model.RepoResult) string {
+	if repo.Error != "" {
+		return "The scan backend failed before completion: " + truncateHTMLText(displayText(repo.Error), 1024) + ". Rerun after correcting the backend or target."
+	}
 	if repo.Verdict == model.VerdictIncomplete {
 		return "Scan coverage was incomplete. Review warnings and skipped areas before relying on this result."
 	}
@@ -291,6 +326,7 @@ func remoteSourceBase(source *model.SourceInfo) (string, string, bool) {
 }
 
 const htmlScript = `(() => {
+  document.documentElement.classList.add('js');
   const cards = [...document.querySelectorAll('[data-finding]')];
   const controls = [...document.querySelectorAll('[data-filter]')];
 	const empty = document.querySelector('[data-empty]');
@@ -304,12 +340,17 @@ const htmlScript = `(() => {
 		(!values.disposition || (values.disposition === 'actionable' ? card.dataset.disposition !== 'informational' : card.dataset.disposition === values.disposition)) &&
 		(!values.category || card.dataset.category === values.category) &&
 		(!values.rule || card.dataset.rule === values.rule) &&
-        (!values.file || card.dataset.file === values.file);
+        (!values.file || card.dataset.file.split('\n').includes(values.file));
       card.hidden = !matches;
       if (matches) visible++;
     }
-	const visibleFiles = new Set(cards.filter((card) => !card.hidden).map((card) => card.dataset.file));
-	for (const row of document.querySelectorAll('[data-file-row]')) row.hidden = !visibleFiles.has(row.dataset.file);
+    for (const repo of document.querySelectorAll('.repo')) {
+      const repoCards = [...repo.querySelectorAll('[data-finding]:not([hidden])')];
+      const repoFiles = new Set(repoCards.flatMap((card) => card.dataset.file.split('\n').filter(Boolean)));
+      for (const row of repo.querySelectorAll('[data-file-row]')) row.hidden = !repoFiles.has(row.dataset.file);
+      const count = repo.querySelector('[data-repo-visible-count]');
+      if (count) count.textContent = String(repoCards.length);
+    }
     document.querySelector('[data-visible-count]').textContent = String(visible);
 	empty.hidden = visible !== 0;
   };
@@ -318,11 +359,25 @@ const htmlScript = `(() => {
 		for (const control of controls) control.value = control.dataset.filter === 'disposition' ? 'actionable' : '';
 		apply();
 	});
-  for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => {
-    const selected = button.dataset.view;
+  const setView = (selected) => {
     for (const section of document.querySelectorAll('[data-view-panel]')) section.hidden = section.dataset.viewPanel !== selected;
-    for (const candidate of document.querySelectorAll('[data-view]')) candidate.setAttribute('aria-pressed', String(candidate === button));
-  });
+    for (const candidate of document.querySelectorAll('[data-view]')) {
+      const active = candidate.dataset.view === selected;
+      candidate.setAttribute('aria-pressed', String(active));
+    }
+  };
+  const viewButtons = [...document.querySelectorAll('[data-view]')];
+  for (const button of viewButtons) {
+    button.addEventListener('click', () => setView(button.dataset.view));
+    button.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const next = viewButtons[(viewButtons.indexOf(button) + (event.key === 'ArrowRight' ? 1 : -1) + viewButtons.length) % viewButtons.length];
+      next.focus();
+      setView(next.dataset.view);
+    });
+  }
+  setView('findings');
   apply();
 })();`
 
@@ -330,18 +385,18 @@ const htmlStyle = `:root {
   color-scheme: light;
   font: 100%/1.5 system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   font-optical-sizing: auto;
-  --bg: #fbfbfd;
-  --surface: rgba(255, 255, 255, .82);
+  --bg: #f5f5f7;
+  --surface: rgba(245, 245, 247, .88);
   --field: #fff;
   --text: #1d1d1f;
-  --secondary: #6e6e73;
-  --tertiary: #86868b;
-  --line: rgba(60, 60, 67, .18);
+  --secondary: #68686d;
+  --tertiary: #78787e;
+  --line: #dedee2;
   --soft: rgba(120, 120, 128, .08);
   --code: #f2f2f7;
-  --accent: #06c;
+  --accent: #b8401f;
   --critical: #d70015;
-  --high: #c93400;
+  --high: #b8401f;
   --medium: #9a6700;
   --low: #0071a4;
 }
@@ -358,12 +413,16 @@ h3 { font-size: 1.0625rem; line-height: 1.35; letter-spacing: -.012em }
 a { color: var(--accent); text-underline-offset: .15em }
 .eyebrow { margin-bottom: .7rem; color: var(--secondary); font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase }
 .masthead { padding-bottom: 2rem; border-bottom: 1px solid var(--line) }
+.report-brand { display: inline-flex; align-items: baseline; margin-bottom: 3rem; font-size: 1.7rem; font-weight: 750; letter-spacing: -.06em }
+.report-brand span { color: var(--accent) }
+.report-brand small { margin-left: 1rem; color: var(--secondary); font-size: .8rem; font-weight: 450; letter-spacing: 0 }
 .meta { display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; color: var(--secondary); font-size: .875rem }
 .meta .pill { padding: 0; border: 0; border-radius: 0 }
 .muted { color: var(--secondary) }
 .spaced { margin-top: 1rem }
 .masthead .spaced { overflow-wrap: anywhere; font: .75rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace }
-.review-controls { position: sticky; top: 0; z-index: 10; margin: 0 -1rem; padding: .8rem 1rem 1rem; background: var(--surface); border-bottom: 1px solid var(--line); backdrop-filter: blur(20px) saturate(180%) }
+.review-controls { display: none; position: sticky; top: 0; z-index: 10; margin: 0 -1rem; padding: .8rem 1rem 1rem; background: var(--surface); border-bottom: 1px solid var(--line); backdrop-filter: blur(20px) saturate(180%) }
+.js .review-controls { display: block }
 .filters { display: grid; grid-template-columns: minmax(14rem, 1fr) auto auto; gap: .5rem }
 .filters input, .filters select, button { min-height: 2.5rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--field); color: var(--text); padding: .45rem .7rem; font: inherit }
 .filters input { min-width: 0 }
@@ -420,6 +479,7 @@ pre { margin: .4rem 0 0; padding: .7rem .8rem; overflow-wrap: anywhere; border-r
 .file-list { margin: 0; padding: 0; list-style: none }
 .file-row span:first-child { overflow-wrap: anywhere }
 .file-row span:last-child { flex: none; color: var(--secondary) }
+.report-footer { margin-top: 1.5rem }
 [hidden] { display: none !important }
 @media (max-width: 720px) {
   main { width: min(100% - 1.5rem, 980px); padding-top: 2.5rem }
@@ -458,7 +518,7 @@ const htmlTemplate = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-{{.StyleHash}}'; script-src 'sha256-{{.ScriptHash}}'; img-src data:; base-uri 'none'; form-action 'none'; connect-src 'none'; object-src 'none'">
 <title>repyy security review</title><style>` + htmlStyle + `</style></head><body><a class="skip-link" href="#report-content">Skip to report</a><main id="report-content">
-<header class="masthead" aria-labelledby="report-title"><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy {{.ToolVersion}}</span><span class="pill">rules {{.RulesVersion}}</span><span class="pill">intelligence {{.Intelligence.Version}}</span><span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time></span></div><p class="muted spaced">Report <code>{{.ReportID}}</code></p></header>
+<header class="masthead" aria-labelledby="report-title"><div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span><small>Report</small></div><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy {{.ToolVersion}}</span><span class="pill">rules {{.RulesVersion}}</span><span class="pill">intelligence {{.Intelligence.Version}}</span><span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time></span></div><p class="muted spaced">Report <code>{{.ReportID}}</code></p></header>
 <section class="review-controls" aria-label="Review controls">
 <div class="view-switch" role="group" aria-label="Report view"><button data-view="findings" aria-pressed="true" type="button">Findings</button><button data-view="files" aria-pressed="false" type="button">Files</button><span class="pill"><output data-visible-count aria-live="polite">0</output> results</span></div>
 <section class="filters" aria-label="Finding filters">
@@ -472,8 +532,8 @@ const htmlTemplate = `<!doctype html>
 <select data-filter="file" aria-label="File"><option value="">All files</option>{{range .Files}}<option>{{.}}</option>{{end}}</select>
 </div><button class="reset" data-reset type="button">Reset filters</button></details></section></section>
 <p class="empty-state" data-empty role="status" aria-live="polite" hidden>No findings match the current filters.</p>
-{{range .Repositories}}<article class="repo" aria-label="Repository review for {{.Target}}"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>{{.Target}}</h2>{{if .RepositoryURL}}<p class="muted">Source <a href="{{.RepositoryURL}}" rel="noreferrer">{{.RepositoryURL}}</a> at <code>{{.Revision}}</code></p>{{end}}</div><strong class="verdict {{.VerdictClass}}" role="status">{{.Verdict}}</strong></header><p class="reason">{{.Reason}}</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>{{.ActionableCount}}</dd></div><div><dt>Critical priority</dt><dd>{{index .ActionableCounts "critical"}}</dd></div><div><dt>High priority</dt><dd>{{index .ActionableCounts "high"}}</dd></div><div><dt>Files scanned</dt><dd>{{.FilesScanned}}</dd></div></dl><p class="scan-meta"><span>{{.FindingCount}} total findings</span><span>{{index .Counts "high"}} high total</span><span>{{index .Counts "medium"}} medium</span><span>{{index .Counts "low"}} low</span><span>{{index .DispositionCounts "block"}} block</span><span>{{index .DispositionCounts "review"}} review</span><span>{{index .DispositionCounts "harden"}} harden</span><span>{{index .DispositionCounts "informational"}} informational</span><span>{{.BytesScanned}}</span><span>{{.Duration}}</span></p>
+{{range .Repositories}}<article class="repo" aria-label="Repository review for {{.Target}}"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>{{.Target}}</h2><p class="muted"><output data-repo-visible-count aria-live="polite">{{.FindingCount}}</output> visible findings</p>{{if .RepositoryURL}}<p class="muted">Source <a href="{{.RepositoryURL}}" rel="noreferrer">{{.RepositoryURL}}</a> at <code>{{.Revision}}</code></p>{{end}}</div><strong class="verdict {{.VerdictClass}}" role="status">{{.Verdict}}</strong></header><p class="reason">{{.Reason}}</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>{{.ActionableCount}}</dd></div><div><dt>Critical priority</dt><dd>{{index .ActionableCounts "critical"}}</dd></div><div><dt>High priority</dt><dd>{{index .ActionableCounts "high"}}</dd></div><div><dt>Files scanned</dt><dd>{{.FilesScanned}}</dd></div></dl><p class="scan-meta"><span>{{.FindingCount}} total findings</span><span>{{index .Counts "high"}} high total</span><span>{{index .Counts "medium"}} medium</span><span>{{index .Counts "low"}} low</span><span>{{index .DispositionCounts "block"}} block</span><span>{{index .DispositionCounts "review"}} review</span><span>{{index .DispositionCounts "harden"}} harden</span><span>{{index .DispositionCounts "informational"}} informational</span><span>{{.BytesScanned}}</span><span>{{.Duration}}</span></p>
 <section data-view-panel="findings" aria-label="Findings for {{.Target}}"><h2 class="section-heading">Findings</h2>{{if not .Findings}}<p>No enabled rule matched. This is not a guarantee that the repository is safe.</p>{{end}}{{range .Findings}}<article class="finding" data-finding data-search="{{.SearchText}}" data-severity="{{.Severity}}" data-confidence="{{.Confidence}}" data-disposition="{{.Disposition}}" data-category="{{.Category}}" data-rule="{{.RuleID}}" data-file="{{.Path}}"><header class="finding-head"><div><h3>{{.RuleID}} · {{.Message}}</h3><p class="tags"><span>{{.Severity}}</span><span>{{.Confidence}} confidence</span><span>{{.Disposition}}</span><span>{{.Context}}</span><span>{{.Category}}</span></p></div><span aria-label="{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}">{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}</span></header>{{range .Locations}}<div class="location">{{if .Link}}<a href="{{.Link}}" rel="noreferrer">{{.Label}}</a>{{else}}<strong>{{.Label}}</strong>{{end}}{{if .Evidence}}<pre aria-label="Redacted evidence"><code>{{.Evidence}}</code></pre>{{end}}</div>{{end}}{{if .LocationsOmitted}}<p class="muted">{{.LocationsOmitted}} additional locations omitted by report limits.</p>{{end}}{{if .ContributingRuleIDs}}<p><strong>Contributing rules:</strong> {{join .ContributingRuleIDs ", "}}</p>{{end}}<details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>{{.Rule.Rationale}}</p>{{if .Rule.ApplicablePaths}}<p><strong>Applies to:</strong> {{join .Rule.ApplicablePaths ", "}}</p>{{end}}</div><div><strong>Common legitimate use</strong><p>{{.Rule.LegitimateUse}}</p></div><div><strong>Recommended action</strong><p>{{.Remediation}}</p></div></div></details></article>{{end}}</section>
-<section data-view-panel="files" aria-label="Files with findings for {{.Target}}" hidden><h2 class="section-heading">Files</h2><ul class="file-list">{{range .Files}}<li class="file-row" data-file-row data-file="{{.Path}}"><span>{{.Path}}</span><span>{{.Count}} findings · highest {{.Severity}}</span></li>{{end}}</ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>{{if .Coverage.Complete}}Complete{{else}}Incomplete{{end}} · {{.Coverage.FilesScanned}} files · {{.BytesScanned}}</p>{{if .Coverage.Warnings}}<h4>Warnings</h4><ul>{{range .Coverage.Warnings}}<li>{{.}}</li>{{end}}</ul>{{end}}{{if .Coverage.Skipped}}<h4>Skipped areas</h4><ul>{{range .Coverage.Skipped}}<li>{{.}}</li>{{end}}</ul>{{end}}</section></article>{{end}}
-<footer class="muted" style="margin-top:24px">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. NO FINDINGS does not guarantee that a repository is safe.</footer></main><script>` + htmlScript + `</script></body></html>`
+<section data-view-panel="files" aria-label="Files with findings for {{.Target}}"><h2 class="section-heading">Files</h2><ul class="file-list">{{range .Files}}<li class="file-row" data-file-row data-file="{{.Path}}"><span>{{.Path}}</span><span>{{.Count}} findings · highest {{.Severity}}</span></li>{{end}}</ul></section>
+{{if .Isolation}}<p class="isolation muted">Isolation: {{.Isolation.Backend}} · scan network {{.Isolation.ScanNetwork}}{{if .Isolation.ImageDigest}} · image {{.Isolation.ImageDigest}}{{end}}</p>{{end}}<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>{{if .Coverage.Complete}}Complete{{else}}Incomplete{{end}} · {{.Coverage.FilesScanned}} files · {{.BytesScanned}}</p>{{if .Coverage.Warnings}}<h4>Warnings</h4><ul>{{range .Coverage.Warnings}}<li>{{.}}</li>{{end}}</ul>{{end}}{{if .Coverage.Skipped}}<h4>Skipped areas</h4><ul>{{range .Coverage.Skipped}}<li>{{.}}</li>{{end}}</ul>{{end}}</section></article>{{end}}
+<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. NO FINDINGS does not guarantee that a repository is safe.</footer></main><script>` + htmlScript + `</script></body></html>`

@@ -9,7 +9,7 @@ builds:
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
     ldflags:
-      - -s -w -X main.version={{.Version}}
+      - -s -w -X main.version={{.Version}} -X github.com/Kevin-Umali/repyy/internal/sandbox.ImageDigest={{.Env.REPYY_SANDBOX_IMAGE_DIGEST}}
 
 archives:
   - formats: [tar.gz]

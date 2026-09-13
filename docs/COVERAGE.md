@@ -55,6 +55,21 @@ heuristics can produce both false positives and false negatives.
   signal.
 - `NO FINDINGS` never means safe, and incomplete coverage is reported.
 
+## What this is not
+
+repyy is a source and repository review tool, not a replacement for
+`npm audit`, `pip-audit`, `cargo audit`, or another lockfile vulnerability
+database. It does not resolve packages, contact registries during a scan, or
+install dependencies. It can inspect supported manifests for declared package
+indicators and lockfiles for suspicious sources and integrity clues; confirm a
+dependency finding against the ecosystem's current advisory and the exact
+resolved version.
+
+Unreadable or non-regular files, undecodable source and configuration, linked
+Git metadata, resource limits, unsafe archive entries, and timeouts reduce
+coverage. Intentionally excluded dependency/cache trees are listed as skipped
+but do not make the default scan incomplete.
+
 Run `repyy rules explain RULE-ID` for offline rationale, legitimate-use context,
 matching scope, and review guidance. Finding dispositions organize reports but
 do not change verdict or exit-code policy.

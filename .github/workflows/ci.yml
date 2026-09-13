@@ -22,7 +22,7 @@ jobs:
           python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for site_path in index.html docs.html landing.css docs.css site.js landing.js; do
+          for site_path in index.html docs.html installation.html cli.html configuration.html isolation.html coverage.html intelligence.html agent-skill.html landing.css docs.css site.js landing.js; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
           done
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
@@ -31,6 +31,7 @@ jobs:
           grep --quiet '<title>repyy |' /tmp/repyy-root.html
           grep --quiet '<title>repyy |' /tmp/repyy-index.html
           grep --quiet '<title>repyy documentation</title>' /tmp/repyy-docs.html
+          python3 site/check_docs.py
 
   test:
     runs-on: ubuntu-latest
@@ -74,6 +75,18 @@ jobs:
           cache: true
       - run: go build ./cmd/repyy
 
+  sandbox-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build and smoke-test sandbox image
+        run: |
+          set -euo pipefail
+          docker build --file Dockerfile.sandbox --build-arg VERSION=ci --tag repyy-sandbox:ci .
+          docker run --rm --network none repyy-sandbox:ci version
+
   release-config:
     runs-on: ubuntu-latest
     steps:
@@ -95,6 +108,8 @@ jobs:
             go.mod \
             go.sum \
             .goreleaser.yaml \
+            Dockerfile.sandbox \
+            .dockerignore \
             .github/workflows/ci.yml \
             .github/workflows/release.yml; then
             echo "release=false" >> "$GITHUB_OUTPUT"
@@ -112,3 +127,5 @@ jobs:
           distribution: goreleaser
           version: 'v2.18.0'
           args: release --snapshot --clean --skip=sign,sbom,publish
+        env:
+          REPYY_SANDBOX_IMAGE_DIGEST: ''

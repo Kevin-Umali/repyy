@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  packages: write
 
 jobs:
   release:
@@ -30,6 +31,36 @@ jobs:
           go test -race ./...
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
       - uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and sign sandbox image
+        env:
+          IMAGE: ghcr.io/kevin-umali/repyy-sandbox
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg "VERSION=$version" \
+            --tag "$IMAGE:$GITHUB_REF_NAME" \
+            --metadata-file "$RUNNER_TEMP/repyy-sandbox-image.json" \
+            --file Dockerfile.sandbox \
+            --push .
+          digest="$(jq -r '."containerimage.digest"' "$RUNNER_TEMP/repyy-sandbox-image.json")"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          cosign sign --yes "$IMAGE@$digest"
+          cosign verify "$IMAGE@$digest" \
+            --certificate-identity "https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/$GITHUB_REF_NAME" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          printf '%s\n' "$IMAGE@$digest" > "$RUNNER_TEMP/repyy-sandbox-image.txt"
+          echo "REPYY_SANDBOX_IMAGE_DIGEST=$digest" >> "$GITHUB_ENV"
+          docker pull "$IMAGE@$digest"
+          docker run --rm --network none "$IMAGE@$digest" version
       - name: Create and verify signed intelligence snapshot
         env:
           REPYY_INTEL_SIGNING_KEY: ${{ secrets.REPYY_INTEL_SIGNING_KEY }}
@@ -77,4 +108,4 @@ jobs:
       - name: Attach signed intelligence snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json" "$RUNNER_TEMP/repyy-intelligence.json.sig" --clobber
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json" "$RUNNER_TEMP/repyy-intelligence.json.sig" "$RUNNER_TEMP/repyy-sandbox-image.txt" --clobber

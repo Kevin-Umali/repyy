@@ -1,0 +1,76 @@
+<!doctype html>
+<html class="docs-root" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Understand repyy intelligence snapshots, verification, updates, rollback, and rule commands." />
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>repyy intelligence guide</title>
+    <link rel="stylesheet" href="./docs.css" />
+    <script src="./site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#docs-main">Skip to intelligence guide</a>
+    <header class="docs-header">
+      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <div class="docs-search"><label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label></div>
+      <div class="docs-header-links"><a href="./index.html">Website</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+    </header>
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <a class="docs-back" href="./docs.html">← All docs</a>
+        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="./docs.html">All docs</a><a href="./installation.html">Installation</a><a href="./cli.html">CLI reference</a><a href="./configuration.html">Configuration</a><a href="./isolation.html">Isolation</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a><a href="./agent-skill.html">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#difference">Rules and intel</a><a href="#status">Check status</a><a href="#update">Update</a><a href="#rollback">Rollback</a><a href="#investigate">Investigate</a></div></details>
+        <nav aria-label="Intelligence navigation" tabindex="0">
+          <strong>Intelligence</strong>
+          <a href="#overview">Overview</a><a href="#difference">Rules and intel</a><a href="#status">Check status</a><a href="#update">Update</a><a href="#rollback">Rollback</a><a href="#investigate">Investigate</a>
+          <strong>More guides</strong>
+          <a href="./cli.html">CLI reference</a><a href="./coverage.html">Detection coverage</a><a href="./configuration.html">Configuration</a><a href="./agent-skill.html">Agent skill</a>
+        </nav>
+      </aside>
+      <main class="docs-main" id="docs-main">
+        <p class="docs-breadcrumb"><a href="./index.html">repyy</a><span aria-hidden="true">/</span><a href="./docs.html">Documentation</a><span aria-hidden="true">/</span><span>Intelligence</span></p>
+        <section class="docs-hero docs-searchable" id="overview" data-search="intel intelligence threat intelligence offline snapshot packages hashes advisories">
+          <p class="docs-kicker">Intelligence guide</p>
+          <h1>Fresh signals.<span>Private by default.</span></h1>
+          <p>“Intel” is repyy’s name for a dated, signed offline snapshot of sourced package and version advisories plus exact published file hashes. It supplements the built-in behavioral rules; it is not AI analysis.</p>
+          <div class="docs-summary" aria-label="Intelligence summary"><span><b>Offline</b>Every scan uses local data</span><span><b>Signed</b>Updates are verified before activation</span><span><b>Auditable</b>Reports record the snapshot used</span></div>
+          <div class="docs-callout"><strong>A signal starts review</strong><p>A package name alone does not prove that the resolved artifact is malicious. Confirm the version, source, hash, and surrounding context.</p></div>
+        </section>
+        <section class="docs-section docs-searchable" id="difference" data-search="built in rules intelligence snapshot difference behavior indicators package version hash">
+          <h2>Rules and intelligence work together</h2>
+          <div class="docs-table compact" role="table" aria-label="Rules and intelligence difference"><div role="row"><b role="cell">Built-in rules</b><span role="cell">Find suspicious behavior and context in source, manifests, automation, and metadata. Use <code>repyy rules explain RULE-ID</code> for rationale.</span></div><div role="row"><b role="cell">Intel snapshot</b><span role="cell">Adds sourced package/version advisories and exact SHA-256 file indicators. Use <code>repyy intel status</code> to see its date and source.</span></div></div>
+          <p>Every release includes an embedded snapshot. A normal host scan uses a verified cached snapshot when available and falls back to the embedded copy if the cache is broken. Docker scans use the image’s embedded snapshot so they do not read the host cache.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="status" data-search="status snapshot date source embedded cache freshness verification count command">
+          <h2>Check before you scan</h2>
+          <p>Status is offline. It reports the snapshot version, date, source, freshness, verification state, and indicator counts. Scans record the selected snapshot in their reports.</p>
+          <div class="docs-command"><div><span>Show active snapshot</span><button type="button" data-copy="repyy intel status">Copy</button></div><code>repyy intel status</code></div>
+          <div class="docs-note"><strong>Use the result in context</strong><p>A stale snapshot does not make a clean scan meaningless, and a current snapshot does not make a match conclusive. Treat both as review inputs.</p></div>
+        </section>
+        <section class="docs-section docs-searchable" id="update" data-search="update download github releases ed25519 signature verify atomic cache network explicit">
+          <h2>Update only when you choose to</h2>
+          <p>Scans never contact the update service automatically. Run the explicit update command when you want to download a newer public snapshot from GitHub Releases.</p>
+          <div class="docs-command"><div><span>Download and activate</span><button type="button" data-copy="repyy intel update">Copy</button></div><code>repyy intel update</code></div>
+          <p>repyy verifies the Ed25519 signature and validates the snapshot before activating it atomically. An invalid or incomplete update leaves the existing verified snapshot in place. The update does not upload source, paths, findings, or file hashes.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="rollback" data-search="rollback previous cache restore no previous snapshot command">
+          <h2>Roll back a cached update</h2>
+          <p>Rollback restores the previous verified cached snapshot when one exists. It cannot roll back the embedded snapshot or a cache with no previous version.</p>
+          <div class="docs-command"><div><span>Restore previous cache</span><button type="button" data-copy="repyy intel rollback">Copy</button></div><code>repyy intel rollback</code></div>
+          <p>Run <code>repyy intel status</code> afterward to confirm the active source and date.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="investigate" data-search="rules explain list check package advisory hash indicator command json">
+          <h2>Investigate an indicator</h2>
+          <p>Use these commands to understand what is active and why a finding exists. Prefer JSON when preserving an audit record.</p>
+          <div class="docs-command"><div><span>Explain a rule</span><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button></div><code>repyy rules explain EXEC-001</code></div>
+          <div class="docs-command"><div><span>Check bundled rules and intel</span><button type="button" data-copy="repyy rules check">Copy</button></div><code>repyy rules check</code></div>
+          <div class="docs-command"><div><span>List active indicators</span><button type="button" data-copy="repyy rules list --format json">Copy</button></div><code>repyy rules list --format json</code></div>
+          <p>For package findings, compare the resolved version and advisory source. An exact published file hash is stronger evidence, but still inspect the file’s role and context.</p>
+          <div class="docs-callout"><strong>Need scan coverage details?</strong><p>Detection families, exclusions, resource limits, and incomplete-result behavior are documented in the <a href="./coverage.html">coverage guide</a>.</p></div>
+        </section>
+        <div class="docs-empty" id="docs-empty" hidden><strong>No matching intelligence documentation</strong><p>Try “status”, “update”, “rollback”, or “signature”.</p></div>
+        <footer class="docs-footer"><p>repyy intelligence</p><a href="./docs.html">All documentation →</a></footer>
+      </main>
+    </div>
+  </body>
+</html>

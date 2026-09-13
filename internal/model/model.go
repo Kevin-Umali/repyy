@@ -123,14 +123,24 @@ type Coverage struct {
 
 // RepoResult contains the verdict and evidence for one requested repository.
 type RepoResult struct {
-	Target   string        `json:"target"`
-	Resolved string        `json:"resolved,omitempty"`
-	Verdict  string        `json:"verdict"`
-	Findings []Finding     `json:"findings"`
-	Coverage Coverage      `json:"coverage"`
-	Error    string        `json:"error,omitempty"`
-	Duration time.Duration `json:"duration_ns"`
-	Source   *SourceInfo   `json:"source,omitempty"`
+	Target    string         `json:"target"`
+	Resolved  string         `json:"resolved,omitempty"`
+	Verdict   string         `json:"verdict"`
+	Findings  []Finding      `json:"findings"`
+	Coverage  Coverage       `json:"coverage"`
+	Error     string         `json:"error,omitempty"`
+	Duration  time.Duration  `json:"duration_ns"`
+	Source    *SourceInfo    `json:"source,omitempty"`
+	Isolation *IsolationInfo `json:"isolation,omitempty"`
+}
+
+// IsolationInfo records the execution boundary used for a repository scan.
+// Network values are deliberately descriptive and stable for report readers.
+type IsolationInfo struct {
+	Backend      string `json:"backend"`
+	ImageDigest  string `json:"image_digest,omitempty"`
+	FetchNetwork string `json:"fetch_network"`
+	ScanNetwork  string `json:"scan_network"`
 }
 
 // SourceInfo identifies a remote repository revision used for stable source
