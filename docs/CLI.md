@@ -119,6 +119,9 @@ The default format is HTML. The input must be a valid repyy JSON scan of at most
 For a valid saved report, rendering returns `2` for incomplete coverage, `1`
 when a high or critical finding exists, and `0` otherwise. Invalid input
 returns `3`. Display filters do not change these codes.
+Only render JSON produced by a scan you trust. Verdict validation catches
+contradictions within a report; JSON is not signed and cannot reveal findings
+that someone removed before sharing it.
 
 ## Rules and intelligence commands
 

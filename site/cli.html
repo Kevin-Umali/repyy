@@ -131,6 +131,7 @@ https://github.com/org/assignment-b</pre>
           <div class="docs-command"><div><span>Render HTML</span><button type="button" data-copy="repyy report scan.json --format html --output review.html">Copy</button></div><code>repyy report scan.json --format html --output review.html</code></div>
           <div class="docs-command"><div><span>Render from stdin</span><button type="button" data-copy="cat scan.json | repyy report - --format sarif --output results.sarif">Copy</button></div><code>cat scan.json | repyy report - --format sarif --output results.sarif</code></div>
           <p>Report options are <code>--format terminal|html|sarif</code>, <code>--output PATH</code>, <code>--detail summary|review|all</code>, <code>--color auto|always|never</code>, <code>--min-severity</code>, <code>--min-confidence</code>, and <code>--group-by severity|file|rule</code>. Filters affect presentation only. Input must be valid repyy JSON no larger than 64 MiB; repyy rejects a verdict that conflicts with findings or coverage. Rendering returns code <code>2</code> for incomplete coverage, <code>1</code> for a high or critical finding, and <code>0</code> otherwise. Invalid input returns <code>3</code>.</p>
+          <p>Only render JSON from a scan you trust. Verdict validation catches contradictions inside a report, but JSON is not signed and cannot reveal findings removed before someone shares it.</p>
         </section>
 
         <section class="docs-section docs-searchable" id="rules" data-search="rules validate check list explain format json rule id">
