@@ -5,11 +5,64 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: 1 · Identify changes
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.paths.outputs.go }}
+      site: ${{ steps.paths.outputs.site }}
+      sandbox: ${{ steps.paths.outputs.sandbox }}
+      release: ${{ steps.paths.outputs.release }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify changed files
+        id: paths
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            for area in go site sandbox release; do
+              echo "$area=true" >> "$GITHUB_OUTPUT"
+            done
+            exit 0
+          fi
+          changed() {
+            if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- "$@"; then echo false; else echo true; fi
+          }
+          go="$(changed ':(glob)**/*.go' go.mod go.sum Makefile .github/workflows/ci.yml)"
+          site="$(changed site docs README.md .github/workflows/ci.yml)"
+          sandbox="$(changed Dockerfile.sandbox .dockerignore ':(glob)**/*.go' go.mod go.sum .github/workflows/ci.yml)"
+          release="$(changed ':(glob)**/*.go' go.mod go.sum .goreleaser.yaml Dockerfile.sandbox .dockerignore .github/workflows/ci.yml .github/workflows/release.yml .github/workflows/prepare-release.yml)"
+          {
+            echo "go=$go"
+            echo "site=$site"
+            echo "sandbox=$sandbox"
+            echo "release=$release"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '### Changed areas'
+            echo '| Go | Site and docs | Sandbox | Release config |'
+            echo '|:--:|:--:|:--:|:--:|'
+            echo "| $go | $site | $sandbox | $release |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   site:
+    name: 2 · Check site and docs
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -22,18 +75,20 @@ jobs:
           python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for site_path in index.html docs.html installation.html cli.html configuration.html isolation.html coverage.html intelligence.html agent-skill.html landing.css docs.css site.js landing.js; do
+          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ landing.css docs.css site.js landing.js; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
           done
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
           curl --fail --silent --show-error http://127.0.0.1:4173/index.html --output /tmp/repyy-index.html
-          curl --fail --silent --show-error http://127.0.0.1:4173/docs.html --output /tmp/repyy-docs.html
+          curl --fail --silent --show-error http://127.0.0.1:4173/docs/ --output /tmp/repyy-docs.html
           grep --quiet '<title>repyy |' /tmp/repyy-root.html
           grep --quiet '<title>repyy |' /tmp/repyy-index.html
           grep --quiet '<title>repyy documentation</title>' /tmp/repyy-docs.html
           python3 site/check_docs.py
 
   test:
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -47,7 +102,8 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
-  vulnerability-scan:
+  workflow-lint:
+    name: 2 · Lint workflows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -57,11 +113,27 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
-      - run: govulncheck ./...
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+  vulnerability-scan:
+    needs: [changes, test, workflow-lint]
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
   build:
+    needs: [changes, test, workflow-lint]
+    if: needs.changes.outputs.go == 'true'
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -73,56 +145,62 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - run: go build ./cmd/repyy
+      - name: Build and run CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          suffix=''
+          if [[ "$RUNNER_OS" == Windows ]]; then suffix='.exe'; fi
+          go build -o "$RUNNER_TEMP/repyy$suffix" ./cmd/repyy
+          "$RUNNER_TEMP/repyy$suffix" version
 
   sandbox-image:
+    name: 3 · Build sandbox image
+    needs: [changes, test, workflow-lint]
+    if: >-
+      always() && needs.changes.outputs.sandbox == 'true' &&
+      needs.workflow-lint.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Build and smoke-test sandbox image
-        run: |
-          set -euo pipefail
-          docker build --file Dockerfile.sandbox --build-arg VERSION=ci --tag repyy-sandbox:ci .
-          docker run --rm --network none repyy-sandbox:ci version
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: Dockerfile.sandbox
+          build-args: VERSION=ci
+          tags: repyy-sandbox:ci
+          load: true
+          cache-from: type=gha,scope=sandbox
+          cache-to: type=gha,mode=max,scope=sandbox
+      - run: docker run --rm --network none repyy-sandbox:ci version
 
   release-config:
+    needs: [changes, test, workflow-lint]
+    if: >-
+      always() && needs.changes.outputs.release == 'true' &&
+      needs.workflow-lint.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check for release input changes
-        id: changes
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          set -euo pipefail
-          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
-            ':(glob)**/*.go' \
-            go.mod \
-            go.sum \
-            .goreleaser.yaml \
-            Dockerfile.sandbox \
-            .dockerignore \
-            .github/workflows/ci.yml \
-            .github/workflows/release.yml; then
-            echo "release=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "release=true" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        if: steps.changes.outputs.release == 'true'
         with:
           go-version-file: go.mod
           cache: true
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        if: steps.changes.outputs.release == 'true'
+        with:
+          distribution: goreleaser
+          version: 'v2.18.0'
+          args: check
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        if: github.event_name == 'push'
         with:
           distribution: goreleaser
           version: 'v2.18.0'

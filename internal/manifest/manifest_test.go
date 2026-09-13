@@ -12,6 +12,7 @@ func TestParseSupportedManifests(t *testing.T) {
 		{"Gemfile", "gem 'rack', '1.0.0'\n", "rubygems", "rack", "1.0.0"},
 		{"composer.json", `{"require":{"vendor/pkg":"1.0.0"}}`, "composer", "vendor/pkg", "1.0.0"},
 		{"packages.config", `<packages><package id="StripeApi.Net" version="1.0.0"/></packages>`, "nuget", "StripeApi.Net", "1.0.0"},
+		{"Directory.Packages.props", `<Project><ItemGroup><PackageVersion Include="StripeApi.Net" Version="1.0.0" /></ItemGroup></Project>`, "nuget", "StripeApi.Net", "1.0.0"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
@@ -37,4 +38,21 @@ func TestDeclarationLineUsesIdentifierBoundaries(t *testing.T) {
 	if got := DeclarationLine(data, "foobar"); got != 2 {
 		t.Fatalf("DeclarationLine(foobar) = %d, want 2", got)
 	}
+}
+
+func TestNPMAliasExposesResolvedPackageIdentity(t *testing.T) {
+	data := []byte(`{"dependencies":{"expected":"npm:@fixture/actual@1.2.3"}}`)
+	got, ok := Parse("package.json", data)
+	if !ok || len(got) != 2 {
+		t.Fatalf("npm alias target was not parsed: %+v", got)
+	}
+	for _, dependency := range got {
+		if dependency.Name == "@fixture/actual" {
+			if dependency.Version != "1.2.3" || dependency.Alias != "expected" || dependency.Line != 1 {
+				t.Fatalf("alias target lost provenance: %+v", dependency)
+			}
+			return
+		}
+	}
+	t.Fatalf("actual npm package identity missing: %+v", got)
 }

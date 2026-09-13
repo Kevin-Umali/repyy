@@ -1,26 +1,20 @@
 package scan
 
 import (
-	"archive/tar"
-	"archive/zip"
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"net"
 	"net/url"
 	"os"
-	pathpkg "path"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -28,6 +22,9 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/manifest"
 	"github.com/Kevin-Umali/repyy/internal/model"
+	"github.com/Kevin-Umali/repyy/internal/scan/media"
+	"github.com/Kevin-Umali/repyy/internal/scan/supplychain"
+	"github.com/Kevin-Umali/repyy/internal/scan/workflow"
 	"gopkg.in/yaml.v3"
 )
 
@@ -81,7 +78,7 @@ func New(opts Options) *Scanner {
 var dependencyDirs = map[string]bool{
 	"node_modules": true, ".venv": true, "venv": true, ".tox": true,
 	"vendor": true, "target": true, ".gradle": true, ".m2": true,
-	"__pycache__": true, ".bundle": true, ".convex": true, ".expo": true,
+	"__pycache__": true, ".convex": true, ".expo": true,
 	".next": true, ".turbo": true, "Pods": true, "DerivedData": true,
 }
 
@@ -112,6 +109,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 	seen := map[string]int{}
 	locationTotal := 0
 	locationDetailTruncated := false
+	cargoBuilds := supplychain.NewCargoBuildInventory()
 
 	add := func(f model.Finding) {
 		NormalizeFinding(&f)
@@ -234,6 +232,9 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 			return nil
 		}
 		coverage.BytesScanned += int64(len(data))
+		if looksText(data) {
+			cargoBuilds.Observe(rel, data)
+		}
 		s.scanContent(rel, data, info.Mode(), add, &coverage)
 		if isArchive(rel, data) {
 			s.scanArchive(ctx, rel, data, 1, add, &coverage)
@@ -249,6 +250,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		coverage.Complete = false
 		coverage.Warnings = append(coverage.Warnings, "scan timed out or was cancelled")
 	}
+	cargoBuilds.Report(s.supplyChainDetector(), add)
 	s.scanRepositoryHygiene(root, add)
 	correlate(findings, add)
 	if locationDetailTruncated {
@@ -420,6 +422,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 		return
 	}
+	media.ScanSVG(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
 	if dependencies, supported := manifest.Parse(path, data); supported {
 		for _, dependency := range dependencies {
 			confirmed := false
@@ -548,6 +551,15 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 	}
 	s.scanStructured(path, data, add)
+	s.scanSupplyChain(path, data, add)
+}
+
+func (s *Scanner) supplyChainDetector() supplychain.Detector {
+	return supplychain.New(s.finding, safeEvidence)
+}
+
+func (s *Scanner) scanSupplyChain(path string, data []byte, add func(model.Finding)) {
+	s.supplyChainDetector().ScanFile(path, data, add)
 }
 
 func qualifyingLineMatches(ruleID string, original []byte, matches [][]int) [][]int {
@@ -593,70 +605,6 @@ func (s *Scanner) scanStructured(path string, data []byte, add func(model.Findin
 	if isGitHubWorkflow(path) {
 		s.scanWorkflowActions(path, data, add)
 	}
-	if filepath.Base(innerPath(path)) != "package.json" {
-		return
-	}
-	var pkg struct {
-		Scripts      map[string]string `json:"scripts"`
-		Dependencies map[string]string `json:"dependencies"`
-		Dev          map[string]string `json:"devDependencies"`
-		Bin          any               `json:"bin"`
-	}
-	if json.Unmarshal(data, &pkg) != nil {
-		return
-	}
-	for _, name := range []string{"preinstall", "install", "postinstall", "prepare", "prepublish"} {
-		cmd, ok := pkg.Scripts[name]
-		if !ok {
-			continue
-		}
-		sev, conf := model.SeverityMedium, model.ConfidenceMedium
-		if suspiciousCommand(cmd) {
-			sev, conf = model.SeverityCritical, model.ConfidenceHigh
-		}
-		finding := s.finding("PKG-001", "package-lifecycle", sev, conf, path, lineForToken(data, name), "Package lifecycle script: "+name, safeEvidence([]byte(cmd)), "Review this script before installing dependencies.")
-		finding.Context = "manifest-hook"
-		add(finding)
-	}
-	for name, cmd := range pkg.Scripts {
-		if name == "preinstall" || name == "install" || name == "postinstall" || name == "prepare" || name == "prepublish" || !suspiciousCommand(cmd) {
-			continue
-		}
-		f := s.finding("PKG-007", "package-script", model.SeverityHigh, model.ConfidenceMedium, path, lineForToken(data, name), "Non-lifecycle package script downloads and executes content: "+name, safeEvidence([]byte(cmd)), "Review the script before running package-manager commands such as test, dev, or start.")
-		f.Context = "manifest-hook"
-		add(f)
-	}
-	all := make(map[string]string, len(pkg.Dependencies)+len(pkg.Dev))
-	for k, v := range pkg.Dependencies {
-		all[k] = v
-	}
-	for k, v := range pkg.Dev {
-		all[k] = v
-	}
-	for name, version := range all {
-		lower := strings.ToLower(version)
-		if strings.HasPrefix(lower, "http:") || strings.HasPrefix(lower, "https:") || strings.HasPrefix(lower, "git+") || strings.HasPrefix(lower, "file:") {
-			add(s.finding("PKG-002", "suspicious-dependency-source", model.SeverityHigh, model.ConfidenceMedium, path, lineForToken(data, name), "Dependency uses a non-registry source: "+name, "source type: "+strings.SplitN(lower, ":", 2)[0], "Verify the dependency source and pin it to an immutable trusted revision."))
-		}
-		if version == "0.0.0" || version == "0.0.1" {
-			add(s.finding("PKG-003", "suspicious-dependency-version", model.SeverityMedium, model.ConfidenceMedium, path, lineForToken(data, name), "Dependency uses a placeholder-like version: "+name, "version: "+version, "Verify the package name and version."))
-		}
-		if inflatedMajorVersion(version) {
-			finding := s.finding("PKG-005", "dependency-confusion", model.SeverityMedium, model.ConfidenceMedium, path, lineForToken(data, name), "Dependency uses an unusually high major version: "+name, "version: "+safeEvidence([]byte(version)), "Verify whether a public package is shadowing an internal dependency and inspect the resolved registry and integrity hash.")
-			finding.Context = "manifest"
-			add(finding)
-		}
-	}
-	if pkg.Bin != nil {
-		add(s.finding("PKG-004", "package-binary", model.SeverityLow, model.ConfidenceMedium, path, lineForToken(data, "bin"), "Package exposes an executable command", "package.json contains a bin field", "Inspect the referenced executable before installing globally."))
-		for _, target := range binTargets(pkg.Bin) {
-			if escapingManifestPath(target) || suspiciousBinTarget(target) {
-				f := s.finding("PKG-006", "package-binary", model.SeverityHigh, model.ConfidenceHigh, path, lineForToken(data, target), "Package bin target escapes the package or embeds execution behavior", safeEvidence([]byte(target)), "Do not install the package until the bin target is constrained to a reviewed local file.")
-				f.Context = "manifest-hook"
-				add(f)
-			}
-		}
-	}
 }
 
 func (s *Scanner) scanWorkflowActions(path string, data []byte, add func(model.Finding)) {
@@ -687,172 +635,9 @@ func (s *Scanner) scanWorkflowActions(path string, data []byte, add func(model.F
 		}
 	}
 	visit(&document)
-}
-
-func lineForToken(data []byte, token string) int {
-	return manifest.DeclarationLine(data, token)
-}
-
-func inflatedMajorVersion(version string) bool {
-	v := strings.TrimLeft(strings.TrimSpace(version), "~^<>=v ")
-	majorText, _, ok := strings.Cut(v, ".")
-	if !ok {
-		return false
+	if len(document.Content) > 0 {
+		workflow.ScanRisks(path, document.Content[0], s.finding, add)
 	}
-	major, err := strconv.Atoi(majorText)
-	return err == nil && major >= 90
-}
-
-func (s *Scanner) scanRepositoryHygiene(root string, add func(model.Finding)) {
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return
-	}
-	hasREADME, hasLicense := false, false
-	for _, entry := range entries {
-		name := strings.ToLower(entry.Name())
-		hasREADME = hasREADME || name == "readme" || strings.HasPrefix(name, "readme.")
-		hasLicense = hasLicense || name == "license" || strings.HasPrefix(name, "license.") || name == "copying"
-	}
-	if !hasREADME {
-		f := s.finding("REPO-001", "repository-hygiene", model.SeverityLow, model.ConfidenceHigh, ".", 0, "Repository has no top-level README", "README not found", "Ask the repository owner for setup, provenance, and execution instructions.")
-		f.Context = "metadata"
-		add(f)
-	}
-	if !hasLicense {
-		f := s.finding("REPO-002", "repository-hygiene", model.SeverityLow, model.ConfidenceHigh, ".", 0, "Repository has no top-level license", "license file not found", "Clarify the code's origin and permitted use before redistributing it.")
-		f.Context = "metadata"
-		add(f)
-	}
-}
-
-func (s *Scanner) scanSymlink(root, path, rel string, add func(model.Finding)) {
-	target, err := os.Readlink(path)
-	if err != nil {
-		return
-	}
-	resolved := target
-	if !filepath.IsAbs(target) {
-		resolved = filepath.Join(filepath.Dir(path), target)
-	}
-	resolved, err = filepath.Abs(resolved)
-	rootAbs, _ := filepath.Abs(root)
-	if err != nil || resolved != rootAbs && !strings.HasPrefix(resolved, rootAbs+string(os.PathSeparator)) {
-		add(s.finding("SYMLINK-001", "escaping-symlink", model.SeverityHigh, model.ConfidenceHigh, rel, 0, "Symbolic link escapes the repository", "target redacted", "Remove or replace the escaping symbolic link."))
-		return
-	}
-	if _, err := os.Stat(resolved); err != nil {
-		add(s.finding("SYMLINK-002", "broken-symlink", model.SeverityMedium, model.ConfidenceMedium, rel, 0, "Broken symbolic link", "target unavailable", "Review the link target and repository packaging."))
-	}
-}
-
-func (s *Scanner) scanGitMetadata(ctx context.Context, root, gitRel string, add func(model.Finding), coverage *model.Coverage) {
-	confined, err := os.OpenRoot(root)
-	if err != nil {
-		coverage.Complete = false
-		coverage.Warnings = append(coverage.Warnings, gitRel+": cannot confine Git metadata")
-		return
-	}
-	defer confined.Close()
-	read := func(rel string, hook bool) {
-		path := filepath.ToSlash(filepath.Join(gitRel, rel))
-		if ctx.Err() != nil {
-			coverage.Complete = false
-			return
-		}
-		info, err := confined.Lstat(path)
-		if os.IsNotExist(err) {
-			return
-		}
-		if err != nil || !info.Mode().IsRegular() {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (unreadable or non-regular Git metadata)")
-			return
-		}
-		if coverage.FilesScanned >= s.opts.Limits.MaxFiles {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (file-count limit)")
-			return
-		}
-		coverage.FilesScanned++
-		if info.Size() > s.opts.Limits.MaxFileBytes {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (file-size limit)")
-			return
-		}
-		file, err := openConfinedNonblocking(confined, path)
-		if err != nil {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (cannot open Git metadata)")
-			return
-		}
-		defer file.Close()
-		openedInfo, err := file.Stat()
-		if err != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (Git metadata changed while scanning)")
-			return
-		}
-		data, err := io.ReadAll(io.LimitReader(file, s.opts.Limits.MaxFileBytes+1))
-		if err != nil || int64(len(data)) > s.opts.Limits.MaxFileBytes || ctx.Err() != nil {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, path+" (Git metadata read or size limit)")
-			return
-		}
-		coverage.BytesScanned += int64(len(data))
-		mode := os.FileMode(0)
-		if hook {
-			mode = 0o700
-			if suspiciousHook(data) {
-				f := s.finding("GITHOOK-002", "git-hook", model.SeverityCritical, model.ConfidenceHigh, path, 0, "Active Git hook contains execution or remote-fetch behavior", "suspicious behavior in active hook", "Disable the hook and review its complete data flow before running Git commands.")
-				f.Context = "git-hook"
-				add(f)
-			}
-		}
-		s.scanContent(path, data, mode, add, coverage)
-	}
-	for _, rel := range []string{"config", "config.worktree", filepath.Join("info", "attributes")} {
-		read(rel, false)
-	}
-	hooksPath := filepath.ToSlash(filepath.Join(gitRel, "hooks"))
-	info, err := confined.Lstat(hooksPath)
-	if os.IsNotExist(err) {
-		return
-	}
-	if err != nil || !info.IsDir() {
-		coverage.Complete = false
-		coverage.Skipped = append(coverage.Skipped, hooksPath+" (unreadable or non-directory hooks)")
-		return
-	}
-	hooksDir, err := confined.Open(hooksPath)
-	if err != nil {
-		coverage.Complete = false
-		coverage.Skipped = append(coverage.Skipped, hooksPath+" (cannot open hooks)")
-		return
-	}
-	defer hooksDir.Close()
-	hooks, err := hooksDir.ReadDir(-1)
-	if err != nil {
-		coverage.Complete = false
-		coverage.Skipped = append(coverage.Skipped, hooksPath+" (cannot list hooks)")
-		return
-	}
-	for _, hook := range hooks {
-		if strings.HasSuffix(strings.ToLower(hook.Name()), ".sample") {
-			continue
-		}
-		read(filepath.Join("hooks", hook.Name()), true)
-	}
-}
-
-func suspiciousHook(data []byte) bool {
-	l := strings.ToLower(string(data))
-	for _, needle := range []string{"curl ", "wget ", "eval ", "node -e", "python -c", "bash -c", "powershell", "/dev/tcp/", "base64 -d"} {
-		if strings.Contains(l, needle) {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *Scanner) finding(id, category string, severity model.Severity, confidence model.Confidence, path string, line int, message, evidence, remediation string) model.Finding {
@@ -907,12 +692,18 @@ func scanRelevantText(path string, data []byte, mode os.FileMode) bool {
 	if _, supported := manifest.Parse(path, nil); supported {
 		return true
 	}
+	if supplychain.IsJVMWrapper(path) {
+		return true
+	}
+	if strings.HasSuffix("/"+strings.ToLower(filepath.ToSlash(path)), "/.bundle/config") {
+		return true
+	}
 	switch base {
-	case "dockerfile", "makefile", "gemfile", ".npmrc", ".yarnrc", ".yarnrc.yml", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "cargo.lock", "go.sum", "pipfile.lock", "poetry.lock", "requirements.txt":
+	case "dockerfile", "makefile", "gemfile", ".npmrc", ".yarnrc", ".yarnrc.yml", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "cargo.lock", "go.sum", "go.work", "pipfile.lock", "poetry.lock", "requirements.txt", "nuget.config":
 		return true
 	}
 	switch strings.ToLower(filepath.Ext(base)) {
-	case ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".php", ".c", ".h", ".cc", ".cpp", ".html", ".htm", ".css", ".sql", ".yml", ".yaml", ".toml", ".json", ".jsonc", ".ipynb", ".xml", ".ini", ".cfg", ".conf":
+	case ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".php", ".c", ".h", ".cc", ".cpp", ".html", ".htm", ".css", ".sql", ".yml", ".yaml", ".toml", ".json", ".jsonc", ".ipynb", ".xml", ".ini", ".cfg", ".conf", ".props", ".targets":
 		return true
 	}
 	return false
@@ -1103,13 +894,6 @@ func dangerousContext(data []byte) bool {
 	return false
 }
 
-func suspiciousCommand(v string) bool {
-	l := strings.ToLower(v)
-	hasFetch := strings.Contains(l, "curl ") || strings.Contains(l, "wget ") || strings.Contains(l, "http://") || strings.Contains(l, "https://")
-	hasExec := strings.Contains(l, "| sh") || strings.Contains(l, "| bash") || strings.Contains(l, "eval") || strings.Contains(l, "node -e") || strings.Contains(l, "python -c") || strings.Contains(l, "powershell")
-	return hasFetch && hasExec || strings.Contains(l, "base64") && hasExec
-}
-
 func looksLikeSignatureDefinition(line []byte) bool {
 	l := strings.TrimSpace(string(line))
 	if strings.HasPrefix(l, "#") || strings.Contains(l, `\s`) || strings.Contains(l, `\(`) || strings.Contains(l, `[^\n]`) || strings.Contains(l, "Pattern:") {
@@ -1147,6 +931,9 @@ func classifyContext(path string, line []byte) string {
 	if strings.Contains(slashed, "/node_modules/") || strings.Contains(slashed, "/vendor/") || strings.Contains(slashed, "/pods/") || strings.Contains(slashed, "/.venv/") {
 		return "dependency"
 	}
+	if isAgentInstructionPath(slashed, base) {
+		return "agent-instruction"
+	}
 	if strings.Contains(slashed, "/examples/") || strings.Contains(slashed, "/example/") || strings.Contains(slashed, "/samples/") {
 		return "example"
 	}
@@ -1156,7 +943,7 @@ func classifyContext(path string, line []byte) string {
 	if strings.Contains(slashed, "/.git/hooks/") {
 		return "git-hook"
 	}
-	if ext == ".md" || ext == ".rst" || ext == ".adoc" || ext == ".txt" {
+	if ext == ".md" || ext == ".markdown" || ext == ".rst" || ext == ".adoc" || ext == ".txt" {
 		return "documentation"
 	}
 	if base == "package.json" || base == "pyproject.toml" || base == "setup.py" || base == "composer.json" || base == "cargo.toml" || base == "pom.xml" || strings.HasPrefix(base, "build.gradle") {
@@ -1168,8 +955,35 @@ func classifyContext(path string, line []byte) string {
 	return "executable"
 }
 
+func isAgentInstructionPath(slashed, base string) bool {
+	if base == ".cursorrules" || base == ".clinerules" || base == ".windsurfrules" || base == "copilot-instructions.md" {
+		return true
+	}
+	if base == "skill.md" && strings.Contains(slashed, "/skills/") {
+		return true
+	}
+	if strings.Contains(slashed, "/.cursor/rules/") {
+		return true
+	}
+	if strings.Contains(slashed, "/.github/instructions/") && strings.HasSuffix(base, ".instructions.md") {
+		return true
+	}
+	extension := filepath.Ext(base)
+	stem := strings.TrimSuffix(base, extension)
+	if stem == "agents" || stem == "claude" || stem == "gemini" {
+		switch extension {
+		case ".md", ".mdc", ".markdown", ".mdx", ".txt", ".yaml", ".yml", ".json", ".toml":
+			return true
+		}
+	}
+	return false
+}
+
 func matchContext(rule Rule, path string, line []byte) string {
 	context := classifyContext(path, line)
+	if rule.Category == "prompt-injection" && context == "executable" && strings.EqualFold(filepath.Ext(innerPath(path)), ".mdx") {
+		context = "documentation"
+	}
 	if !definiteCommentLine(path, line) {
 		return context
 	}
@@ -1333,34 +1147,7 @@ func skipGeneratedLineHeuristics(path string) bool {
 	return strings.HasSuffix(base, ".map") || strings.HasSuffix(base, ".lock") || base == "package-lock.json" || base == "npm-shrinkwrap.json" || base == "pnpm-lock.yaml" || base == "yarn.lock"
 }
 
-func binTargets(value any) []string {
-	switch v := value.(type) {
-	case string:
-		return []string{v}
-	case map[string]any:
-		out := make([]string, 0, len(v))
-		for _, target := range v {
-			if s, ok := target.(string); ok {
-				out = append(out, s)
-			}
-		}
-		return out
-	default:
-		return nil
-	}
-}
-
-func escapingManifestPath(target string) bool {
-	target = filepath.ToSlash(strings.TrimSpace(target))
-	clean := filepath.ToSlash(filepath.Clean(target))
-	return filepath.IsAbs(target) || windowsAbsPath.MatchString(target) || clean == ".." || strings.HasPrefix(clean, "../")
-}
-
 var windowsAbsPath = regexp.MustCompile(`(?i)^[a-z]:[\\/]`)
-
-func suspiciousBinTarget(target string) bool {
-	return strings.ContainsAny(target, ";|`") || strings.Contains(target, "$(") || strings.Contains(target, "${")
-}
 
 func isGitHubWorkflow(path string) bool {
 	path = "/" + strings.ToLower(innerPath(path))
@@ -1401,200 +1188,4 @@ func disabledHooksPath(line []byte) bool {
 
 func executableMagic(data []byte) bool {
 	return len(data) >= 4 && (string(data[:4]) == "\x7fELF" || string(data[:2]) == "MZ" || string(data[:4]) == "\xcf\xfa\xed\xfe" || string(data[:4]) == "\xfe\xed\xfa\xcf" || string(data[:4]) == "\xca\xfe\xba\xbe")
-}
-
-func isArchive(path string, data []byte) bool {
-	l := strings.ToLower(path)
-	return len(data) >= 4 && (string(data[:4]) == "PK\x03\x04" || strings.HasSuffix(l, ".tar") || strings.HasSuffix(l, ".tar.gz") || strings.HasSuffix(l, ".tgz"))
-}
-
-func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, depth int, add func(model.Finding), coverage *model.Coverage) {
-	if depth > s.opts.Limits.MaxArchiveDepth {
-		coverage.Complete = false
-		coverage.Skipped = append(coverage.Skipped, parent+" (archive-depth limit)")
-		return
-	}
-	count, total := 0, int64(0)
-	links := map[string]string{}
-	flagUnsafe := func(name, reason string) {
-		coverage.Complete = false
-		coverage.Skipped = append(coverage.Skipped, parent+"!"+name+" (unsafe archive entry)")
-		add(s.finding("ARCHIVE-001", "archive-traversal", model.SeverityCritical, model.ConfidenceHigh, parent+"!"+name, 0, "Archive entry escapes its extraction root", reason, "Do not extract this archive."))
-	}
-	inspectNonFile := func(name string) bool {
-		count++
-		if count > s.opts.Limits.MaxArchiveFiles {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, parent+" (archive entry-count limit)")
-			return false
-		}
-		if unsafeArchivePath(name) {
-			flagUnsafe(name, "unsafe archive path")
-		}
-		return true
-	}
-	inspectLink := func(name, target string, hardlink bool) bool {
-		if !inspectNonFile(name) {
-			return false
-		}
-		name = strings.ReplaceAll(name, "\\", "/")
-		target = strings.ReplaceAll(target, "\\", "/")
-		if unsafeArchivePath(name) {
-			return true
-		}
-		if strings.HasPrefix(target, "/") || windowsAbsPath.MatchString(target) {
-			flagUnsafe(name, "unsafe archive link target")
-			return true
-		}
-		resolved := target
-		if !hardlink {
-			resolved = pathpkg.Join(pathpkg.Dir(name), target)
-		}
-		if unsafeArchivePath(resolved) {
-			flagUnsafe(name, "archive link escapes extraction root")
-			return true
-		}
-		links[pathpkg.Clean(name)] = pathpkg.Clean(resolved)
-		return true
-	}
-	consume := func(name string, size int64, r io.Reader) bool {
-		if ctx.Err() != nil {
-			return false
-		}
-		count++
-		total += size
-		if count > s.opts.Limits.MaxArchiveFiles || total > s.opts.Limits.MaxArchiveBytes || size > s.opts.Limits.MaxFileBytes {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, parent+" (archive resource limit)")
-			return false
-		}
-		if unsafeArchivePath(name) {
-			flagUnsafe(name, "unsafe archive path")
-			return true
-		}
-		portableName := pathpkg.Clean(strings.ReplaceAll(name, "\\", "/"))
-		for ancestor := pathpkg.Dir(portableName); ancestor != "." && ancestor != "/"; ancestor = pathpkg.Dir(ancestor) {
-			if _, linked := links[ancestor]; linked {
-				coverage.Complete = false
-				coverage.Skipped = append(coverage.Skipped, parent+"!"+name+" (entry traverses archive link)")
-				return true
-			}
-		}
-		entry, err := io.ReadAll(io.LimitReader(r, s.opts.Limits.MaxFileBytes+1))
-		if err != nil || int64(len(entry)) > s.opts.Limits.MaxFileBytes {
-			coverage.Complete = false
-			return true
-		}
-		virtual := parent + "!" + filepath.ToSlash(name)
-		s.scanContent(virtual, entry, 0, add, coverage)
-		if isArchive(name, entry) {
-			s.scanArchive(ctx, virtual, entry, depth+1, add, coverage)
-		}
-		return true
-	}
-
-	if len(data) >= 4 && string(data[:4]) == "PK\x03\x04" {
-		zr, err := zip.NewReader(strings.NewReader(string(data)), int64(len(data)))
-		if err != nil {
-			coverage.Complete = false
-			coverage.Warnings = append(coverage.Warnings, parent+": invalid or encrypted zip")
-			return
-		}
-		for _, f := range zr.File {
-			if f.FileInfo().IsDir() {
-				if !inspectNonFile(f.Name) {
-					return
-				}
-				continue
-			}
-			if f.Mode()&os.ModeSymlink != 0 {
-				r, err := f.Open()
-				if err != nil {
-					coverage.Complete = false
-					continue
-				}
-				target, err := io.ReadAll(io.LimitReader(r, 4097))
-				r.Close()
-				if err != nil || len(target) > 4096 {
-					coverage.Complete = false
-					coverage.Skipped = append(coverage.Skipped, parent+"!"+f.Name+" (unreadable archive link)")
-					continue
-				}
-				if !inspectLink(f.Name, string(target), false) {
-					return
-				}
-				continue
-			}
-			if !f.Mode().IsRegular() {
-				if !inspectNonFile(f.Name) {
-					return
-				}
-				coverage.Complete = false
-				coverage.Skipped = append(coverage.Skipped, parent+"!"+f.Name+" (unsupported archive entry type)")
-				continue
-			}
-			r, err := f.Open()
-			if err != nil {
-				coverage.Complete = false
-				continue
-			}
-			ok := consume(f.Name, int64(f.UncompressedSize64), r)
-			r.Close()
-			if !ok {
-				return
-			}
-		}
-		return
-	}
-	var tr *tar.Reader
-	if strings.HasSuffix(strings.ToLower(parent), ".gz") || strings.HasSuffix(strings.ToLower(parent), ".tgz") {
-		gz, err := gzip.NewReader(strings.NewReader(string(data)))
-		if err != nil {
-			coverage.Complete = false
-			return
-		}
-		defer gz.Close()
-		tr = tar.NewReader(gz)
-	} else {
-		tr = tar.NewReader(strings.NewReader(string(data)))
-	}
-	for {
-		h, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			coverage.Complete = false
-			break
-		}
-		if h.FileInfo().IsDir() {
-			if !inspectNonFile(h.Name) {
-				return
-			}
-			continue
-		}
-		if h.Typeflag == tar.TypeSymlink || h.Typeflag == tar.TypeLink {
-			if !inspectLink(h.Name, h.Linkname, h.Typeflag == tar.TypeLink) {
-				return
-			}
-			continue
-		}
-		if h.Typeflag != tar.TypeReg && h.Typeflag != tar.TypeRegA {
-			if !inspectNonFile(h.Name) {
-				return
-			}
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, parent+"!"+h.Name+" (unsupported archive entry type)")
-			continue
-		}
-		if !consume(h.Name, h.Size, tr) {
-			return
-		}
-	}
-}
-
-func unsafeArchivePath(name string) bool {
-	portable := strings.ReplaceAll(name, "\\", "/")
-	clean := pathpkg.Clean(portable)
-	return clean == ".." || strings.HasPrefix(clean, "../") || strings.HasPrefix(portable, "/") || windowsAbsPath.MatchString(name)
 }

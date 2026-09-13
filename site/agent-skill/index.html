@@ -6,29 +6,29 @@
     <meta name="description" content="Install and use the optional repyy agent skill before opening unfamiliar repositories." />
     <meta name="theme-color" content="#f5f5f7" />
     <title>repyy agent skill guide</title>
-    <link rel="stylesheet" href="./docs.css" />
-    <script src="./site.js" defer></script>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
   </head>
   <body class="docs-page">
     <a class="skip-link" href="#docs-main">Skip to agent skill guide</a>
     <header class="docs-header">
-      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
       <div class="docs-search"><label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label></div>
-      <div class="docs-header-links"><a href="./index.html">Website</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
     </header>
     <div class="docs-shell">
       <aside class="docs-sidebar">
-        <a class="docs-back" href="./docs.html">← All docs</a>
-        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="./docs.html">All docs</a><a href="./installation.html">Installation</a><a href="./cli.html">CLI reference</a><a href="./configuration.html">Configuration</a><a href="./isolation.html">Isolation</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a><a href="./agent-skill.html">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#install">Install the skill</a><a href="#workflow">Default workflow</a><a href="#docker">Docker option</a><a href="#limits">Limits and privacy</a></div></details>
+        <a class="docs-back" href="../docs/">← All docs</a>
+        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="../docs/">All docs</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a><a href="../configuration/">Configuration</a><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#install">Install the skill</a><a href="#workflow">Default workflow</a><a href="#docker">Docker option</a><a href="#limits">Limits and privacy</a></div></details>
         <nav aria-label="Agent skill navigation" tabindex="0">
           <strong>Agent skill</strong>
           <a href="#overview">Overview</a><a href="#install">Install the skill</a><a href="#workflow">Default workflow</a><a href="#docker">Docker option</a><a href="#limits">Limits and privacy</a>
           <strong>More guides</strong>
-          <a href="./cli.html">CLI reference</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a>
+          <a href="../cli/">CLI reference</a><a href="../coverage/">Detection coverage</a><a href="../intelligence/">Intelligence</a>
         </nav>
       </aside>
       <main class="docs-main" id="docs-main">
-        <p class="docs-breadcrumb"><a href="./index.html">repyy</a><span aria-hidden="true">/</span><a href="./docs.html">Documentation</a><span aria-hidden="true">/</span><span>Agent skill</span></p>
+        <p class="docs-breadcrumb"><a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span><span>Agent skill</span></p>
         <section class="docs-hero docs-searchable" id="overview" data-search="agent skill optional instructions codex unfamiliar repository scan read only">
           <p class="docs-kicker">Optional agent skill</p>
           <h1>Make the safe first move.<span>Before code runs.</span></h1>
@@ -42,7 +42,7 @@
           <div class="docs-command"><div><span>Interactive install</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy</code></div>
           <div class="docs-command"><div><span>Codex, global</span><button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y">Copy</button></div><code>npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y</code></div>
           <div class="docs-note"><strong>Before you run it</strong><p>Install Node.js and npm so <code>npx</code> is available, install Git and keep it on <code>PATH</code>, and allow network access to fetch the published skill. Git and network are needed for this skill installation, even though a local repyy scan needs neither.</p></div>
-          <p>Neither command installs dependencies from a repository you plan to scan. Install repyy separately using the <a href="./installation.html">installation guide</a>, then confirm it with <code>repyy version</code>.</p>
+          <p>Neither command installs dependencies from a repository you plan to scan. Install repyy separately using the <a href="../installation/">installation guide</a>, then confirm it with <code>repyy version</code>.</p>
         </section>
         <section class="docs-section docs-searchable" id="workflow" data-search="workflow scan json report html rules intel incomplete verdict no findings review required do not run">
           <h2>What the skill tells an agent to do</h2>
@@ -55,7 +55,7 @@
           <h2>Use Docker when you need a process boundary</h2>
           <p>The skill includes an opt-in Docker path for local folders and HTTPS remotes. Prepare Docker and the exact signed, digest-pinned image for the installed repyy release before asking the agent to scan.</p>
           <div class="docs-command"><div><span>Docker scan</span><button type="button" data-copy="repyy scan TARGET --sandbox=docker --format html --output repyy.report.html">Copy</button></div><code>repyy scan TARGET --sandbox=docker --format html --output repyy.report.html</code></div>
-          <p>Docker rejects SSH URLs and <code>--keep-workdir</code>. Missing Docker or a missing release-matched image is a preflight error; the skill must never accept a silent host fallback. Read the <a href="./isolation.html">isolation guide</a> for image verification and manual VM workflows.</p>
+          <p>Docker rejects SSH URLs and <code>--keep-workdir</code>. Missing Docker or a missing release-matched image is a preflight error; the skill must never accept a silent host fallback. Read the <a href="../isolation/">isolation guide</a> for image verification and manual VM workflows.</p>
         </section>
         <section class="docs-section docs-searchable" id="limits" data-search="safety privacy limitations target execute build test dependency upload telemetry intel update rollback remote shallow">
           <h2>Understand the limits</h2>
@@ -64,7 +64,7 @@
           <div class="docs-note"><strong>Read the source instructions</strong><p>The <a href="https://github.com/Kevin-Umali/repyy/blob/main/skills/repyy/SKILL.md">repository copy of the skill ↗</a> is the canonical reference for agent behavior. Keep it aligned with the installed CLI and review it when upgrading repyy.</p></div>
         </section>
         <div class="docs-empty" id="docs-empty" hidden><strong>No matching agent skill documentation</strong><p>Try “install”, “Docker”, “workflow”, or “privacy”.</p></div>
-        <footer class="docs-footer"><p>repyy agent skill</p><a href="./docs.html">All documentation →</a></footer>
+        <footer class="docs-footer"><p>repyy agent skill</p><a href="../docs/">All documentation →</a></footer>
       </main>
     </div>
   </body>

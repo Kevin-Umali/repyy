@@ -6,24 +6,24 @@
     <meta name="description" content="Install repyy, verify the binary, and run a first repository scan." />
     <meta name="theme-color" content="#f5f5f7" />
     <title>repyy installation</title>
-    <link rel="stylesheet" href="./docs.css" />
-    <script src="./site.js" defer></script>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
   </head>
   <body class="docs-page">
     <a class="skip-link" href="#docs-main">Skip to documentation</a>
     <header class="docs-header">
-      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
       <div class="docs-search"><label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label></div>
-      <div class="docs-header-links"><a href="./index.html">Website</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
     </header>
     <div class="docs-shell">
-      <aside class="docs-sidebar"><a class="docs-back" href="./docs.html">← All docs</a><details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="./docs.html">All docs</a><a href="./installation.html">Installation</a><a href="./cli.html">CLI reference</a><a href="./configuration.html">Configuration</a><a href="./isolation.html">Isolation</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a><a href="./agent-skill.html">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#prerequisites">Prerequisites</a><a href="#macos-linux">macOS and Linux</a><a href="#windows">Windows PowerShell</a><a href="#checksums">Checksums</a><a href="#first-scan">First scan</a><a href="#remote">Remote repositories</a><a href="#troubleshooting">Troubleshooting</a></div></details><nav aria-label="Installation navigation" tabindex="0">
+      <aside class="docs-sidebar"><a class="docs-back" href="../docs/">← All docs</a><details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="../docs/">All docs</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a><a href="../configuration/">Configuration</a><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#prerequisites">Prerequisites</a><a href="#macos-linux">macOS and Linux</a><a href="#windows">Windows PowerShell</a><a href="#checksums">Checksums</a><a href="#first-scan">First scan</a><a href="#remote">Remote repositories</a><a href="#troubleshooting">Troubleshooting</a></div></details><nav aria-label="Installation navigation" tabindex="0">
         <strong>Install</strong><a href="#overview">Overview</a><a href="#prerequisites">Prerequisites</a><a href="#macos-linux">macOS and Linux</a><a href="#windows">Windows PowerShell</a>
         <strong>Verify</strong><a href="#checksums">Checksums</a><a href="#first-scan">First scan</a><a href="#remote">Remote repositories</a><a href="#troubleshooting">Troubleshooting</a>
-        <strong>Next</strong><a href="./isolation.html">Isolation guide</a><a href="./intelligence.html">Intelligence guide</a><a href="./agent-skill.html">Agent skill</a><a href="./docs.html">All documentation</a>
+        <strong>Next</strong><a href="../isolation/">Isolation guide</a><a href="../intelligence/">Intelligence guide</a><a href="../agent-skill/">Agent skill</a><a href="../docs/">All documentation</a>
       </nav></aside>
       <main class="docs-main" id="docs-main">
-        <p class="docs-breadcrumb"><a href="./index.html">repyy</a><span aria-hidden="true">/</span><a href="./docs.html">Documentation</a><span aria-hidden="true">/</span><span>Installation</span></p>
+        <p class="docs-breadcrumb"><a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span><span>Installation</span></p>
         <section class="docs-hero docs-searchable" id="overview" data-search="installation first scan native command line binary read only untrusted repository">
           <p class="docs-kicker">Installation</p><h1>Start with a<br /><span>quiet first scan.</span></h1>
           <p>Install repyy on the computer where you will review code. The scanner reads target files as data; it does not install target packages, build the target, run tests, or execute source.</p>
@@ -34,7 +34,7 @@
         <section class="docs-section docs-searchable" id="prerequisites" data-search="prerequisites macos linux windows git docker browser">
           <h2>Prerequisites</h2><p>You need macOS, Linux, or Windows with a supported repyy release binary and a browser for HTML reports. Install Git on the host only when scanning a remote URL in the default host mode. Local folder scans do not invoke Git.</p>
           <div class="docs-table compact" role="table" aria-label="Installation prerequisites"><div role="row"><b role="cell">Local folder</b><span role="cell">repyy only</span></div><div role="row"><b role="cell">Host-mode remote</b><span role="cell">repyy plus Git on <code>PATH</code></span></div><div role="row"><b role="cell">Docker mode</b><span role="cell">Docker Desktop or Docker Engine, plus the release-matched image</span></div><div role="row"><b role="cell">HTML review</b><span role="cell">A current browser; the report opens as a local file</span></div></div>
-          <p>Docker is an optional analysis backend. See the <a href="./isolation.html#docker">isolation guide</a> for digest and signature verification.</p>
+          <p>Docker is an optional analysis backend. See the <a href="../isolation/#docker">isolation guide</a> for digest and signature verification.</p>
         </section>
 
         <section class="docs-section docs-searchable" id="macos-linux" data-search="macos linux homebrew archive deb rpm apk go install path command v repyy version">
@@ -86,15 +86,15 @@ repyy scan ./unfamiliar-repository --format html --output repyy-report.html</cod
           <h2>Scan a remote repository</h2><p>Host mode makes a temporary shallow clone and removes it afterward. Git must be installed and available on <code>PATH</code>. HTTPS and SSH are available in host mode.</p>
           <div class="docs-command"><div><span>HTTPS remote</span><button type="button" data-copy="repyy scan https://github.com/org/repository --format html --output report.html">Copy</button></div><code>repyy scan https://github.com/org/repository --format html --output report.html</code></div>
           <p>For private HTTPS access, set <code>GITHUB_TOKEN</code>, <code>GITLAB_TOKEN</code>, or <code>BITBUCKET_TOKEN</code> in the scanner environment. Do not put credentials in the URL. SSH uses the existing host SSH agent.</p>
-          <div class="docs-note"><strong>Want a stronger boundary?</strong><p>Docker accepts HTTPS remotes and separates fetching from network-disabled analysis. SSH remotes are rejected there. Continue with the <a href="./isolation.html#docker">Docker guide</a>.</p></div>
+          <div class="docs-note"><strong>Want a stronger boundary?</strong><p>Docker accepts HTTPS remotes and separates fetching from network-disabled analysis. SSH remotes are rejected there. Continue with the <a href="../isolation/#docker">Docker guide</a>.</p></div>
         </section>
 
         <section class="docs-section docs-searchable" id="troubleshooting" data-search="troubleshooting command not found scoop git remote html blank incomplete permission timeout archive">
           <h2>Troubleshoot the first run</h2><div class="docs-table compact" role="table" aria-label="Installation troubleshooting"><div role="row"><b role="cell">Command not found</b><span role="cell">Open a new terminal after changing <code>PATH</code>; use <code>command -v repyy</code> or <code>where.exe repyy</code>.</span></div><div role="row"><b role="cell">Scoop bucket fails</b><span role="cell">Install Git and retry; local-folder scans do not need Git.</span></div><div role="row"><b role="cell">Remote scan fails</b><span role="cell">Check Git, URL reachability, and the matching provider token or SSH agent. Docker accepts HTTPS only.</span></div><div role="row"><b role="cell">HTML looks blank</b><span role="cell">Confirm the file finished writing, then open it in a current browser. A readable summary remains when JavaScript is off.</span></div><div role="row"><b role="cell">Scan incomplete</b><span role="cell">Read the reported permission, timeout, file, archive, clone, or mount reason before relying on the result.</span></div></div>
-          <p>For all command flags and report formats, see <a href="./docs.html">the full documentation</a>. For manual isolation, see <a href="./isolation.html">the isolation guide</a>.</p>
+          <p>For all command flags and report formats, see <a href="../docs/">the full documentation</a>. For manual isolation, see <a href="../isolation/">the isolation guide</a>.</p>
         </section>
         <div class="docs-empty" id="docs-empty" hidden><strong>No matching documentation</strong><p>Try “checksum”, “PowerShell”, or “first scan”.</p></div>
-        <footer class="docs-footer"><p>repyy installation</p><a href="./isolation.html">Continue to isolation ↗</a></footer>
+        <footer class="docs-footer"><p>repyy installation</p><a href="../isolation/">Continue to isolation ↗</a></footer>
       </main>
     </div>
   </body>

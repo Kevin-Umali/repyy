@@ -6,21 +6,21 @@
     <meta name="description" content="Configure reviewed custom rules and narrow finding suppressions for repyy." />
     <meta name="theme-color" content="#f5f5f7" />
     <title>repyy trusted configuration</title>
-    <link rel="stylesheet" href="./docs.css" />
-    <script src="./site.js" defer></script>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
   </head>
   <body class="docs-page">
     <a class="skip-link" href="#docs-main">Skip to configuration guide</a>
     <header class="docs-header">
-      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
       <div class="docs-search"><label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label></div>
-      <div class="docs-header-links"><a href="./index.html">Website</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
     </header>
 
     <div class="docs-shell">
       <aside class="docs-sidebar">
-        <a class="docs-back" href="./docs.html">← All docs</a>
-        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="./docs.html">All docs</a><a href="./installation.html">Installation</a><a href="./cli.html">CLI reference</a><a href="./configuration.html">Configuration</a><a href="./isolation.html">Isolation</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a><a href="./agent-skill.html">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#boundary">Trust boundary</a><a href="#minimal">Minimal YAML</a><a href="#workflow">Validate and scan</a><a href="#rule-fields">Rule fields</a><a href="#rule-walkthrough">Custom rule walkthrough</a><a href="#scope">Match scope</a><a href="#suppressions">Suppressions</a><a href="#review-example">Review example</a><a href="#limits">Limits and errors</a></div></details>
+        <a class="docs-back" href="../docs/">← All docs</a>
+        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="../docs/">All docs</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a><a href="../configuration/">Configuration</a><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#boundary">Trust boundary</a><a href="#minimal">Minimal YAML</a><a href="#workflow">Validate and scan</a><a href="#rule-fields">Rule fields</a><a href="#rule-walkthrough">Custom rule walkthrough</a><a href="#scope">Match scope</a><a href="#suppressions">Suppressions</a><a href="#review-example">Review example</a><a href="#limits">Limits and errors</a></div></details>
         <nav aria-label="Configuration navigation" tabindex="0">
           <strong>Configuration</strong>
           <a href="#overview">Overview</a><a href="#boundary">Trust boundary</a><a href="#minimal">Minimal YAML</a><a href="#workflow">Validate and scan</a>
@@ -29,12 +29,12 @@
           <strong>Exceptions</strong>
           <a href="#suppressions">Suppressions</a><a href="#review-example">Review example</a><a href="#limits">Limits and errors</a>
           <strong>More guides</strong>
-          <a href="./intelligence.html">Intelligence guide</a><a href="./agent-skill.html">Agent skill</a><a href="./docs.html">All documentation</a>
+          <a href="../intelligence/">Intelligence guide</a><a href="../agent-skill/">Agent skill</a><a href="../docs/">All documentation</a>
         </nav>
       </aside>
 
       <main class="docs-main" id="docs-main">
-        <p class="docs-breadcrumb"><a href="./index.html">repyy</a><span aria-hidden="true">/</span><a href="./docs.html">Documentation</a><span aria-hidden="true">/</span><span>Configuration</span></p>
+        <p class="docs-breadcrumb"><a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span><span>Configuration</span></p>
         <section class="docs-hero docs-searchable" id="overview" data-search="configuration trusted yaml custom rules suppressions version one">
           <p class="docs-kicker">Trusted configuration</p>
           <h1>Make policy explicit.<span>Keep review narrow.</span></h1>
@@ -90,7 +90,7 @@ rules:
     rationale: Our policy requires approval for bootstrap hosts.
     legitimate_use: A reviewed internal host may be expected.
     remediation: Confirm the host with the repository owner.</pre>
-          <p><code>globs</code> applies to file names or paths. <code>raw</code> checks comments and strings as well as code; use <code>code</code> when only executable code should match. Custom rules cannot use <code>structured</code> scope, which is reserved for built-in structured detectors.</p>
+          <p><code>globs</code> applies to file names or paths using case-insensitive comparisons. <code>raw</code> checks comments and strings as well as code; use <code>code</code> when only executable code should match. Custom rules cannot use <code>structured</code> scope, which is reserved for built-in structured detectors.</p>
           <div class="docs-command"><div><span>Validate then use it</span><button type="button" data-copy="repyy rules validate policy.yaml; repyy scan ./repo --config policy.yaml">Copy</button></div><code>repyy rules validate policy.yaml
 repyy scan ./repo --config policy.yaml</code></div>
         </section>
@@ -125,11 +125,11 @@ suppressions:
           <p>Configuration errors return exit code <code>3</code>. Common causes are a version other than <code>1</code>, malformed YAML, an invalid regular expression, <code>structured</code> match scope on a custom rule, an unsupported enum value, or a suppression missing its fingerprint, reason, or valid date.</p>
           <p>Fix the YAML and rerun <code>repyy rules validate</code> before scanning. A valid configuration does not guarantee that a target scan will complete; timeouts, permissions, file limits, archive limits, or sandbox failures still produce incomplete coverage and exit code <code>2</code>.</p>
           <div class="docs-command"><div><span>Validate only</span><button type="button" data-copy="repyy rules validate policy.yaml">Copy</button></div><code>repyy rules validate policy.yaml</code></div>
-          <p>For the complete command list, see the <a href="./cli.html">CLI reference ↗</a>. For installation, reports, Docker, and the trust model, return to the <a href="./docs.html">documentation home ↗</a>.</p>
+          <p>For the complete command list, see the <a href="../cli/">CLI reference ↗</a>. For installation, reports, Docker, and the trust model, return to the <a href="../docs/">documentation home ↗</a>.</p>
         </section>
 
         <div class="docs-empty" id="docs-empty" hidden><strong>No matching configuration documentation</strong><p>Try YAML, rule fields, fingerprint, or validation.</p></div>
-        <footer class="docs-footer"><p>repyy trusted configuration</p><a href="./docs.html">Documentation home ↗</a></footer>
+        <footer class="docs-footer"><p>repyy trusted configuration</p><a href="../docs/">Documentation home ↗</a></footer>
       </main>
     </div>
   </body>

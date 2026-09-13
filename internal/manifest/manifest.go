@@ -16,6 +16,7 @@ type Dependency struct {
 	Name      string `json:"name"`
 	Version   string `json:"version,omitempty"`
 	Scope     string `json:"scope,omitempty"`
+	Alias     string `json:"alias,omitempty"`
 	Line      int    `json:"line,omitempty"`
 }
 
@@ -43,7 +44,7 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 		dependencies, supported = parseJSONMaps("composer", data, "require", "require-dev"), true
 	case base == "pom.xml":
 		dependencies, supported = parseMaven(data), true
-	case base == "packages.config" || strings.HasSuffix(base, ".csproj") || strings.HasSuffix(base, ".fsproj") || strings.HasSuffix(base, ".vbproj"):
+	case base == "packages.config" || base == "Directory.Packages.props" || strings.HasSuffix(base, ".csproj") || strings.HasSuffix(base, ".fsproj") || strings.HasSuffix(base, ".vbproj"):
 		dependencies, supported = parseXMLPackages(data), true
 	case base == "go.mod":
 		dependencies, supported = parseGoMod(data), true
@@ -65,6 +66,9 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 func attachLines(data []byte, dependencies []Dependency) {
 	for i := range dependencies {
 		needles := []string{dependencies[i].Name}
+		if dependencies[i].Alias != "" {
+			needles = append([]string{dependencies[i].Alias}, needles...)
+		}
 		if separator := strings.LastIndex(dependencies[i].Name, ":"); separator >= 0 {
 			needles = append(needles, dependencies[i].Name[separator+1:])
 		}
@@ -118,9 +122,35 @@ func parseJSONMaps(ecosystem string, data []byte, keys ...string) []Dependency {
 		}
 		for name, version := range deps {
 			out = append(out, Dependency{Ecosystem: ecosystem, Name: name, Version: version, Scope: key})
+			if ecosystem == "npm" {
+				if target, targetVersion, alias := NPMAlias(version); alias && target != name {
+					out = append(out, Dependency{Ecosystem: ecosystem, Name: target, Version: targetVersion, Scope: key + ":alias-target", Alias: name})
+				}
+			}
 		}
 	}
 	return sorted(out)
+}
+
+// NPMAlias extracts the actual registry package from an npm: alias specifier.
+func NPMAlias(spec string) (name, version string, ok bool) {
+	if !strings.HasPrefix(spec, "npm:") {
+		return "", "", false
+	}
+	value := strings.TrimPrefix(spec, "npm:")
+	if value == "" {
+		return "", "", false
+	}
+	lastAt := strings.LastIndex(value, "@")
+	if lastAt > 0 {
+		name, version = value[:lastAt], value[lastAt+1:]
+	} else {
+		name = value
+	}
+	if name == "" || strings.ContainsAny(name, " \t\r\n") {
+		return "", "", false
+	}
+	return name, version, true
 }
 
 func parseGoMod(data []byte) []Dependency {
@@ -216,21 +246,26 @@ func parseXMLPackages(data []byte) []Dependency {
 	type node struct {
 		ID       string `xml:"id,attr"`
 		Include  string `xml:"Include,attr"`
+		Update   string `xml:"Update,attr"`
 		Version  string `xml:"version,attr"`
 		Version2 string `xml:"Version,attr"`
 	}
 	var root struct {
 		Packages   []node `xml:"package"`
 		References []node `xml:"ItemGroup>PackageReference"`
+		Versions   []node `xml:"ItemGroup>PackageVersion"`
 	}
 	if xml.Unmarshal(data, &root) != nil {
 		return nil
 	}
 	var out []Dependency
-	for _, n := range append(root.Packages, root.References...) {
+	for _, n := range append(append(root.Packages, root.References...), root.Versions...) {
 		name := n.ID
 		if name == "" {
 			name = n.Include
+		}
+		if name == "" {
+			name = n.Update
 		}
 		version := n.Version
 		if version == "" {

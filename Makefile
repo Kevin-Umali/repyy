@@ -1,5 +1,5 @@
 BINARY := bin/repyy
-VERSION ?= 0.4.0
+VERSION ?= 0.5.0
 
 .PHONY: build test check security intel install clean
 

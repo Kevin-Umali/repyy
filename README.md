@@ -43,16 +43,16 @@ review its warnings before relying on the result.
 
 ## Documentation
 
-Open the checked-in [documentation site](site/docs.html) locally for the guided
+Open the checked-in [documentation site](site/docs/index.html) locally for the guided
 web experience ([preview instructions](site/README.md)):
 
-- [Install and run a first scan](site/installation.html)
-- [CLI commands and flags](site/cli.html)
-- [Trusted configuration](site/configuration.html)
-- [Docker and manual VM isolation](site/isolation.html)
-- [Detection coverage and limits](site/coverage.html)
-- [Offline intelligence and updates](site/intelligence.html)
-- [AI agent skill workflow](site/agent-skill.html)
+- [Install and run a first scan](site/installation/index.html)
+- [CLI commands and flags](site/cli/index.html)
+- [Trusted configuration](site/configuration/index.html)
+- [Docker and manual VM isolation](site/isolation/index.html)
+- [Detection coverage and limits](site/coverage/index.html)
+- [Offline intelligence and updates](site/intelligence/index.html)
+- [AI agent skill workflow](site/agent-skill/index.html)
 
 The same topics are available as detailed Markdown guides for repository
 readers: [installation](docs/INSTALLATION.md), [CLI](docs/CLI.md),
@@ -68,7 +68,7 @@ npx skills add Kevin-Umali/repyy --skill repyy
 
 This optional installer needs Node/npm, Git, and network access. The skill
 contains instructions; install the `repyy` CLI separately. See the
-[web skill guide](site/agent-skill.html) for the full workflow.
+[web skill guide](site/agent-skill/index.html) for the full workflow.
 
 ## Contributing
 

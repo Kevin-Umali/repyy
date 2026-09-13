@@ -55,7 +55,7 @@ func codeScopedRule(id string) bool {
 }
 
 func defaultRuleDisposition(id, category string, severity model.Severity, confidence model.Confidence) model.Disposition {
-	if id == "CICD-003" || strings.HasPrefix(id, "REPO-") || category == "repository-hygiene" {
+	if id == "CICD-003" || id == "JVMWRAP-002" || strings.HasPrefix(id, "REPO-") || category == "repository-hygiene" {
 		return model.DispositionHarden
 	}
 	if severity == model.SeverityLow || confidence == model.ConfidenceLow || category == "process-capability" {
@@ -85,6 +85,8 @@ func categoryLegitimateUse(category string) string {
 		return "Installers and update tools may retrieve content from reviewed, pinned sources."
 	case "dynamic-execution":
 		return "Frameworks and developer tools sometimes evaluate generated or sandboxed code."
+	case "image-active-content":
+		return "Interactive SVG assets may intentionally contain script or event handlers."
 	default:
 		return "The behavior may be legitimate when its inputs, destination, and execution context are understood."
 	}
@@ -138,12 +140,21 @@ func structuredRuleCatalog() []RuleInfo {
 		{"COMBO-001", "collection-and-exfiltration", "Collection appears alongside network transfer", "Verify the collected data and destination before running the repository.", model.SeverityHigh, model.ConfidenceHigh},
 		{"COMBO-002", "fetch-and-execute", "Network retrieval appears alongside execution", "Do not run until the fetched content and execution path are verified.", model.SeverityCritical, model.ConfidenceHigh},
 		{"COMBO-003", "evasion-and-execution", "Environment evasion appears alongside execution", "Verify the environment checks and execution path.", model.SeverityHigh, model.ConfidenceHigh},
+		{"CICD-006", "ci-artifact-trust", "Privileged workflow_run job executes after downloading an artifact", "Treat upstream artifacts as untrusted data; validate them and avoid executing downloaded content in this privileged job.", model.SeverityHigh, model.ConfidenceMedium},
+		{"CICD-007", "ci-cache-integrity", "Low-trust workflow explicitly allows cache writes", "Keep low-trust jobs read-only for cache access, or verify that they cannot process untrusted input before saving a cache.", model.SeverityHigh, model.ConfidenceMedium},
+		{"CICD-008", "ci-runner-trust", "Pull-request workflow runs on a self-hosted runner", "Verify repository visibility, fork approval, runner isolation, and what untrusted pull-request code can access.", model.SeverityHigh, model.ConfidenceMedium},
+		{"DOTNET-001", "dotnet-build-execution", "MSBuild project or imported file runs a command", "Inspect the Exec command and its conditions before building or restoring the project.", model.SeverityHigh, model.ConfidenceMedium},
 		{"EXECBIT-001", "executable-file", "File has executable permissions", "Review whether this file needs to be executable.", model.SeverityLow, model.ConfidenceMedium},
 		{"GITHOOK-002", "git-hook", "Active Git hook contains execution or remote-fetch behavior", "Disable the hook and review it before running Git commands.", model.SeverityCritical, model.ConfidenceHigh},
+		{"IMAGE-001", "image-active-content", "SVG contains active content", "Review the SVG source and remove unneeded scripts, event handlers, or JavaScript links.", model.SeverityMedium, model.ConfidenceMedium},
+		{"JVMWRAP-001", "jvm-wrapper-source", "JVM wrapper distribution URL is missing or redirects from the official source", "Verify the wrapper distribution before running it.", model.SeverityHigh, model.ConfidenceHigh},
+		{"JVMWRAP-002", "jvm-wrapper-integrity", "JVM wrapper distribution has no expected SHA-256", "Pin the reviewed distribution SHA-256 in the wrapper properties.", model.SeverityMedium, model.ConfidenceHigh},
+		{"JVMWRAP-003", "jvm-wrapper-integrity", "JVM wrapper distribution SHA-256 is malformed", "Replace the checksum with the reviewed 64-character SHA-256.", model.SeverityHigh, model.ConfidenceHigh},
 		{"IOC-HASH-SHA256", "known-malicious-file", "File hash matches confirmed intelligence", "Isolate the file and follow incident-response procedures.", model.SeverityCritical, model.ConfidenceHigh},
 		{"IOC-PKG-*", "known-malicious-package", "Package declaration matches confirmed intelligence", "Review the advisory and resolved package before installation.", model.SeverityCritical, model.ConfidenceHigh},
 		{"OBFS-004", "minified-or-obfuscated", "Very long single line", "Review generated or minified content and its provenance.", model.SeverityLow, model.ConfidenceLow},
 		{"OBFS-005", "high-entropy-code", "High-entropy content appears beside execution", "Decode and inspect the content in an isolated environment.", model.SeverityMedium, model.ConfidenceMedium},
+		{"NUGET-001", "nuget-package-source", "NuGet configuration uses an alternate package source", "Verify the feed and constrain package source mapping.", model.SeverityMedium, model.ConfidenceMedium},
 		{"PKG-001", "package-lifecycle", "Package lifecycle script is present", "Review the script before installing dependencies.", model.SeverityMedium, model.ConfidenceMedium},
 		{"PKG-002", "suspicious-dependency-source", "Dependency uses a non-registry source", "Verify and pin the dependency source.", model.SeverityHigh, model.ConfidenceMedium},
 		{"PKG-003", "suspicious-dependency-version", "Dependency uses a placeholder-like version", "Verify the package name and version.", model.SeverityMedium, model.ConfidenceMedium},
@@ -151,10 +162,22 @@ func structuredRuleCatalog() []RuleInfo {
 		{"PKG-005", "dependency-confusion", "Dependency uses an unusually high major version", "Verify registry ownership and the resolved artifact.", model.SeverityMedium, model.ConfidenceMedium},
 		{"PKG-006", "package-binary", "Package binary target escapes the package or embeds execution", "Constrain the target to a reviewed local file.", model.SeverityHigh, model.ConfidenceHigh},
 		{"PKG-007", "package-script", "Package script downloads and executes content", "Review the script before running package-manager commands.", model.SeverityHigh, model.ConfidenceMedium},
+		{"PKG-008", "dependency-override", "Dependency override changes package source or identity", "Review the override and pin it to a trusted immutable artifact.", model.SeverityHigh, model.ConfidenceMedium},
+		{"PKG-009", "package-alias", "Dependency name resolves to a different registry package", "Verify the alias target, publisher, and resolved artifact.", model.SeverityMedium, model.ConfidenceMedium},
+		{"PHP-002", "composer-package-source", "Composer defines alternate package repositories", "Review repository precedence and the resolved composer.lock.", model.SeverityMedium, model.ConfidenceMedium},
+		{"PHP-003", "composer-plugin-execution", "Composer permits every dependency plugin to execute", "Replace wildcard permission with explicit reviewed plugin names.", model.SeverityHigh, model.ConfidenceHigh},
+		{"PY-003", "python-package-source", "pip configuration changes package lookup sources", "Verify the source and avoid mixing public and private indexes for the same package names.", model.SeverityMedium, model.ConfidenceMedium},
+		{"RUBY-002", "ruby-package-source", "Bundler package source is redirected", "Verify the gem source or mirror and review Gemfile.lock.", model.SeverityMedium, model.ConfidenceMedium},
+		{"RUST-002", "rust-build-script", "Cargo automatically executes a package build.rs", "Inspect build.rs and its build dependencies before compiling.", model.SeverityMedium, model.ConfidenceHigh},
+		{"RUST-003", "rust-registry-redirection", "Cargo configuration redirects dependency resolution", "Verify the registry or source replacement before fetching dependencies.", model.SeverityHigh, model.ConfidenceHigh},
+		{"RUST-004", "rust-dependency-override", "Cargo dependency source override", "Verify and pin the replacement dependency source.", model.SeverityHigh, model.ConfidenceMedium},
+		{"RUST-005", "rust-dependency-source", "Cargo dependency uses a non-default source", "Verify the dependency source and pin remote revisions.", model.SeverityHigh, model.ConfidenceMedium},
 		{"REPO-001", "repository-hygiene", "Repository has no top-level README", "Ask the owner for setup and provenance documentation.", model.SeverityLow, model.ConfidenceHigh},
 		{"REPO-002", "repository-hygiene", "Repository has no top-level license", "Clarify the code origin and permitted use.", model.SeverityLow, model.ConfidenceHigh},
 		{"SYMLINK-001", "escaping-symlink", "Symbolic link escapes the repository", "Remove or replace the escaping link.", model.SeverityHigh, model.ConfidenceHigh},
 		{"SYMLINK-002", "broken-symlink", "Symbolic link target is unavailable", "Review the link target and packaging.", model.SeverityMedium, model.ConfidenceMedium},
+		{"YARN-001", "package-manager-execution", "Project selects a local Yarn executable", "Inspect the referenced Yarn executable before running yarn commands.", model.SeverityMedium, model.ConfidenceHigh},
+		{"YARN-002", "package-manager-plugin", "Project loads a Yarn plugin", "Inspect the plugin source before running yarn commands.", model.SeverityMedium, model.ConfidenceHigh},
 	}
 	items := make([]RuleInfo, 0, len(entries))
 	for _, value := range entries {
@@ -181,6 +204,10 @@ func structuredApplicablePaths(id string) []string {
 		return []string{"archive entries"}
 	case id == "GITHOOK-002":
 		return []string{".git/hooks/*"}
+	case id == "CICD-006" || id == "CICD-007" || id == "CICD-008":
+		return []string{".github/workflows/*.yml", ".github/workflows/*.yaml"}
+	case id == "IMAGE-001":
+		return []string{"*.svg"}
 	default:
 		return []string{"**"}
 	}

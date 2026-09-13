@@ -19,8 +19,8 @@ type ruleQualityGroup struct {
 // suite here fails TestRuleQualityManifestCoversCatalog.
 var ruleQualityManifest = []ruleQualityGroup{
 	{
-		Implementation: "BuiltinRules and scanContent generic matcher",
-		Tests:          "TestBuiltinRegexContract plus scanner context corpus",
+		Implementation: "BuiltinRules and scanContent generic matcher, plus workflow block inspection",
+		Tests:          "TestBuiltinRegexContract, scanner context corpus, and workflow block regressions",
 		RuleIDs: []string{
 			"EXEC-001", "EXEC-002", "EXEC-003", "EXEC-004",
 			"OBFS-001", "OBFS-002", "OBFS-003", "OBFS-006", "OBFS-007", "OBFS-008", "OBFS-009",
@@ -42,9 +42,9 @@ var ruleQualityManifest = []ruleQualityGroup{
 		Implementation: "archive, filesystem, repository, manifest, correlation, and intelligence inspectors",
 		Tests:          "TestStructuredRuleFamilyContract and targeted scanner regression tests",
 		RuleIDs: []string{
-			"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "EXECBIT-001", "GITHOOK-002",
-			"IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004",
-			"PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002",
+			"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "CICD-006", "CICD-007", "CICD-008", "EXECBIT-001", "GITHOOK-002", "IMAGE-001",
+			"DOTNET-001", "IOC-HASH-SHA256", "IOC-PKG-*", "JVMWRAP-001", "JVMWRAP-002", "JVMWRAP-003", "NUGET-001", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004",
+			"PKG-005", "PKG-006", "PKG-007", "PKG-008", "PKG-009", "PHP-002", "PHP-003", "PY-003", "RUBY-002", "RUST-002", "RUST-003", "RUST-004", "RUST-005", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002", "YARN-001", "YARN-002",
 		},
 	},
 }
