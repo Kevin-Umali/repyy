@@ -74,8 +74,31 @@ func activeElement(element xml.StartElement) string {
 		if len(name) > 2 && strings.HasPrefix(name, "on") && strings.TrimSpace(attr.Value) != "" {
 			return "SVG " + name + " event handler"
 		}
-		if name == "href" && strings.HasPrefix(strings.ToLower(strings.TrimSpace(attr.Value)), "javascript:") {
-			return "SVG JavaScript link"
+		if name == "href" {
+			if reason := activeLink(attr.Value); reason != "" {
+				return reason
+			}
+		}
+	}
+	return ""
+}
+
+func activeLink(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch {
+	case strings.HasPrefix(value, "javascript:"):
+		return "SVG JavaScript link"
+	case strings.HasPrefix(value, "vbscript:"):
+		return "SVG VBScript link"
+	case strings.HasPrefix(value, "data:"):
+		metadata, _, ok := strings.Cut(strings.TrimPrefix(value, "data:"), ",")
+		if !ok {
+			return ""
+		}
+		mediaType, _, _ := strings.Cut(metadata, ";")
+		switch strings.TrimSpace(mediaType) {
+		case "text/html", "application/xhtml+xml", "image/svg+xml", "text/javascript", "application/javascript":
+			return "SVG active data link"
 		}
 	}
 	return ""

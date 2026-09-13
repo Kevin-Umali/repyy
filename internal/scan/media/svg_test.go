@@ -74,3 +74,20 @@ func TestSVGCommentsAndDataScriptsAreNotActive(t *testing.T) {
 		t.Fatalf("passive SVG was flagged: %+v", findings)
 	}
 }
+
+func TestSVGActiveURLSchemes(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "assets/links.svg", `<svg xmlns="http://www.w3.org/2000/svg">
+  <a href="vbscript:MsgBox(1)"/>
+  <a href="data:text/html,&lt;script&gt;void 0&lt;/script&gt;"/>
+  <a href="data:image/svg+xml;base64,PHN2Zy8+"/>
+  <image href="data:image/png;base64,AAAA"/>
+</svg>`)
+	_, findings := scan.New(scan.Options{}).Scan(context.Background(), root)
+	finding, ok := ruleFinding(findings, "IMAGE-001")
+	if !ok || finding.Occurrences != 3 || len(finding.Locations) != 3 {
+		t.Fatalf("active SVG links were not distinguished from an embedded image: %+v", findings)
+	}
+}
