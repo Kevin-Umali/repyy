@@ -15,6 +15,8 @@ Codex without prompts with
 `npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y`.
 This installs agent instructions only. The `repyy` executable is installed
 separately, and neither command installs dependencies from a scanned target.
+The optional `npx` installer needs Node/npm, Git, and network access; local
+folder scans with an installed `repyy` binary do not.
 
 ## Run a scan
 
@@ -39,6 +41,24 @@ separately, and neither command installs dependencies from a scanned target.
    disposition filter to reveal informational context only when it is useful;
    do not upload the report to a hosted viewer.
 
+   For a stronger process boundary, Docker is opt-in and must be prepared
+   before the scan:
+
+   ```sh
+   repyy scan TARGET --sandbox=docker --format html --output repyy.report.html
+   ```
+
+   Docker mode requires Docker and the exact digest-pinned image published for
+   the installed repyy release. Get the image reference from
+   `repyy-sandbox-image.txt` in the matching GitHub release, verify the release
+   checksum and Cosign signature, and pull that digest first. Missing Docker or
+   a missing version-matched image is a preflight error; never fall back to a
+   host scan. Docker accepts local paths and HTTPS remotes, and rejects SSH
+   URLs and `--keep-workdir`. See the repository's
+   [Docker guide](https://github.com/Kevin-Umali/repyy/blob/main/docs/SANDBOX.md)
+   and [manual VM guide](https://github.com/Kevin-Umali/repyy/blob/main/docs/VM-GUIDES.md)
+   when a VM boundary is required.
+
 5. Treat `SCAN INCOMPLETE` as unresolved. Report skipped paths and warnings.
 6. Summarize blocking and review findings first, including every reported
    location, context, confidence, and remediation. Use `repyy rules explain
@@ -55,8 +75,6 @@ separately, and neither command installs dependencies from a scanned target.
   from GitHub Releases and uploads nothing.
 - If an update causes a regression, use `repyy intel rollback` to activate the
   previous verified cached snapshot.
-- Do not enable online reputation checks unless the user explicitly requests a
-  future feature that clearly identifies its data disclosure.
 - Keep remote scans shallow unless history is needed, and do not retain temporary clones unless requested.
 - Do not paste credential-shaped evidence into chat; repyy redacts it, but verify before quoting.
 - Treat generated HTML reports as sensitive local artifacts. They make no

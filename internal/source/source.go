@@ -36,7 +36,11 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 		if err != nil {
 			return Prepared{}, err
 		}
-		return Prepared{Target: target, Path: abs, Cleanup: func() error { return nil }}, nil
+		resolved, err := filepath.EvalSymlinks(abs)
+		if err != nil {
+			return Prepared{}, fmt.Errorf("resolve local target: %w", err)
+		}
+		return Prepared{Target: target, Path: resolved, Cleanup: func() error { return nil }}, nil
 	}
 	if !isRemote(target) {
 		return Prepared{}, fmt.Errorf("target is neither a local directory nor a supported Git URL")
@@ -58,7 +62,7 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 		return os.RemoveAll(tmp)
 	}
 	dest := filepath.Join(tmp, "repo")
-	args := []string{"-c", "core.hooksPath=" + nullDevice(), "-c", "protocol.file.allow=never", "clone", "--no-recurse-submodules", "--template=", "--config", "core.hooksPath=" + nullDevice()}
+	args := []string{"-c", "core.hooksPath=" + nullDevice(), "-c", "protocol.file.allow=never", "-c", "http.followRedirects=false", "clone", "--no-recurse-submodules", "--template=", "--config", "core.hooksPath=" + nullDevice()}
 	switch opts.History {
 	case "", "1":
 		args = append(args, "--depth", "1")
@@ -122,10 +126,16 @@ func isRemote(v string) bool {
 
 func secureGitEnv(target string) []string {
 	env := filteredGitEnv(os.Environ())
+	protocol := "https"
+	if strings.HasPrefix(target, "git@") || strings.HasPrefix(target, "ssh://") {
+		protocol = "ssh"
+	}
 	env = append(env,
 		"GIT_CONFIG_NOSYSTEM=1",
 		"GIT_CONFIG_GLOBAL="+nullDevice(),
 		"GIT_TERMINAL_PROMPT=0",
+		"GIT_ALLOW_PROTOCOL="+protocol,
+		"GIT_PROTOCOL_FROM_USER=0",
 		"GCM_INTERACTIVE=Never",
 		"SSH_ASKPASS_REQUIRE=never",
 	)
@@ -142,24 +152,14 @@ func secureGitEnv(target string) []string {
 }
 
 func filteredGitEnv(input []string) []string {
-	blocked := []string{
-		"GIT_CONFIG_", "GIT_DIR=", "GIT_WORK_TREE=", "GIT_INDEX_FILE=",
-		"GIT_OBJECT_DIRECTORY=", "GIT_ALTERNATE_OBJECT_DIRECTORIES=",
-		"GIT_TEMPLATE_DIR=", "GIT_SSH=", "GIT_SSH_COMMAND=", "GIT_ASKPASS=",
-		"SSH_ASKPASS=", "SSH_ASKPASS_REQUIRE=",
-	}
 	out := make([]string, 0, len(input))
 	for _, item := range input {
-		skip := false
-		for _, prefix := range blocked {
-			if strings.HasPrefix(item, prefix) {
-				skip = true
-				break
-			}
+		name, _, _ := strings.Cut(item, "=")
+		upper := strings.ToUpper(name)
+		if strings.HasPrefix(upper, "GIT_") || upper == "SSH_ASKPASS" || upper == "SSH_ASKPASS_REQUIRE" {
+			continue
 		}
-		if !skip {
-			out = append(out, item)
-		}
+		out = append(out, item)
 	}
 	return out
 }

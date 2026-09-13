@@ -7,6 +7,9 @@ Contributions that reduce false positives are as valuable as new detections.
 
 - Use a supported Go version from `go.mod`.
 - Read the README and `docs/COVERAGE.md`.
+- Keep the detailed Markdown guide for a topic aligned with its matching web
+  guide when user-visible behavior changes. `README.md` is the entry point;
+  put command and configuration detail in `docs/`.
 - Search existing issues before proposing a large change.
 - Open an issue before changing output compatibility, verdict behavior, remote
   access, or ruleset distribution.
@@ -64,8 +67,9 @@ nationality as a malicious signal.
 Every package or file-hash indicator needs a stable advisory identifier,
 affected versions when published, a description, dates, and an HTTPS primary
 source. Run `make intel` only when intentionally refreshing the curated GitHub
-advisory metadata; it performs network requests through your authenticated
-`gh` CLI. Review the generated diff and run the full checks afterward.
+advisory metadata; it performs network requests through the authenticated `gh`
+CLI. The command rewrites generated metadata, so review the diff and run the
+full checks afterward.
 
 Never add an intelligence signing private key to a commit, fixture, issue, or
 pull request. Releases sign the exported snapshot in GitHub Actions; the public

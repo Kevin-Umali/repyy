@@ -14,6 +14,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"net/url"
 	"os"
 	pathpkg "path"
 	"path/filepath"
@@ -87,6 +88,26 @@ var dependencyDirs = map[string]bool{
 // Scan inspects one local repository root without executing its contents.
 func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []model.Finding) {
 	coverage := model.Coverage{Complete: true}
+	resolved, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		coverage.Complete = false
+		coverage.Warnings = append(coverage.Warnings, "cannot resolve repository root: "+err.Error())
+		return coverage, nil
+	}
+	info, err := os.Stat(resolved)
+	if err != nil || !info.IsDir() {
+		coverage.Complete = false
+		coverage.Warnings = append(coverage.Warnings, "repository root is not a readable directory")
+		return coverage, nil
+	}
+	root = resolved
+	confined, err := os.OpenRoot(root)
+	if err != nil {
+		coverage.Complete = false
+		coverage.Warnings = append(coverage.Warnings, "cannot confine repository root")
+		return coverage, nil
+	}
+	defer confined.Close()
 	findings := make([]model.Finding, 0)
 	seen := map[string]int{}
 	locationTotal := 0
@@ -135,7 +156,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		findings = append(findings, f)
 	}
 
-	err := filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
+	err = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
@@ -151,7 +172,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		}
 		if d.IsDir() {
 			if d.Name() == ".git" {
-				s.scanGitMetadata(root, add, &coverage)
+				s.scanGitMetadata(ctx, root, rel, add, &coverage)
 				s.reportProgress(coverage)
 				return filepath.SkipDir
 			}
@@ -170,9 +191,14 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
 			s.scanSymlink(root, path, rel, add)
+			if d.Name() == ".git" {
+				coverage.Complete = false
+				coverage.Skipped = append(coverage.Skipped, rel+" (linked Git metadata directory)")
+			}
 			return nil
 		}
 		if !info.Mode().IsRegular() {
+			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, rel+" (non-regular file)")
 			return nil
 		}
@@ -187,14 +213,28 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 			s.reportProgress(coverage)
 			return nil
 		}
-		data, err := os.ReadFile(path)
+		file, err := openConfinedNonblocking(confined, rel)
 		if err != nil {
 			coverage.Complete = false
-			coverage.Warnings = append(coverage.Warnings, rel+": "+err.Error())
+			coverage.Warnings = append(coverage.Warnings, rel+": cannot open confined file")
+			return nil
+		}
+		openedInfo, err := file.Stat()
+		if err != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
+			file.Close()
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, rel+" (file changed while scanning)")
+			return nil
+		}
+		data, err := io.ReadAll(io.LimitReader(file, s.opts.Limits.MaxFileBytes+1))
+		file.Close()
+		if err != nil || int64(len(data)) > s.opts.Limits.MaxFileBytes || ctx.Err() != nil {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, rel+" (file read or size limit)")
 			return nil
 		}
 		coverage.BytesScanned += int64(len(data))
-		s.scanContent(rel, data, info.Mode(), add)
+		s.scanContent(rel, data, info.Mode(), add, &coverage)
 		if isArchive(rel, data) {
 			s.scanArchive(ctx, rel, data, 1, add, &coverage)
 		}
@@ -362,7 +402,7 @@ func correlatedFinding(id, category, path, message, remediation string, hash [32
 	}
 }
 
-func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add func(model.Finding)) {
+func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add func(model.Finding), coverage *model.Coverage) {
 	if executableMagic(data) {
 		add(s.finding("BINARY-001", "compiled-binary", model.SeverityHigh, model.ConfidenceHigh, path, 0, "Compiled executable content is present", "executable file signature", "Verify the binary's provenance and hash before use."))
 	} else if mode&0o111 != 0 {
@@ -374,6 +414,10 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		add(finding)
 	}
 	if !looksText(data) {
+		if scanRelevantText(path, data, mode) {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (undecodable source or configuration)")
+		}
 		return
 	}
 	if dependencies, supported := manifest.Parse(path, data); supported {
@@ -702,41 +746,102 @@ func (s *Scanner) scanSymlink(root, path, rel string, add func(model.Finding)) {
 	}
 }
 
-func (s *Scanner) scanGitMetadata(root string, add func(model.Finding), coverage *model.Coverage) {
-	paths := []string{"config", "config.worktree", filepath.Join("info", "attributes")}
-	for _, rel := range paths {
-		path := filepath.Join(root, ".git", rel)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			continue
+func (s *Scanner) scanGitMetadata(ctx context.Context, root, gitRel string, add func(model.Finding), coverage *model.Coverage) {
+	confined, err := os.OpenRoot(root)
+	if err != nil {
+		coverage.Complete = false
+		coverage.Warnings = append(coverage.Warnings, gitRel+": cannot confine Git metadata")
+		return
+	}
+	defer confined.Close()
+	read := func(rel string, hook bool) {
+		path := filepath.ToSlash(filepath.Join(gitRel, rel))
+		if ctx.Err() != nil {
+			coverage.Complete = false
+			return
+		}
+		info, err := confined.Lstat(path)
+		if os.IsNotExist(err) {
+			return
+		}
+		if err != nil || !info.Mode().IsRegular() {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (unreadable or non-regular Git metadata)")
+			return
+		}
+		if coverage.FilesScanned >= s.opts.Limits.MaxFiles {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (file-count limit)")
+			return
 		}
 		coverage.FilesScanned++
+		if info.Size() > s.opts.Limits.MaxFileBytes {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (file-size limit)")
+			return
+		}
+		file, err := openConfinedNonblocking(confined, path)
+		if err != nil {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (cannot open Git metadata)")
+			return
+		}
+		defer file.Close()
+		openedInfo, err := file.Stat()
+		if err != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (Git metadata changed while scanning)")
+			return
+		}
+		data, err := io.ReadAll(io.LimitReader(file, s.opts.Limits.MaxFileBytes+1))
+		if err != nil || int64(len(data)) > s.opts.Limits.MaxFileBytes || ctx.Err() != nil {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, path+" (Git metadata read or size limit)")
+			return
+		}
 		coverage.BytesScanned += int64(len(data))
-		s.scanContent(filepath.ToSlash(filepath.Join(".git", rel)), data, 0, add)
+		mode := os.FileMode(0)
+		if hook {
+			mode = 0o700
+			if suspiciousHook(data) {
+				f := s.finding("GITHOOK-002", "git-hook", model.SeverityCritical, model.ConfidenceHigh, path, 0, "Active Git hook contains execution or remote-fetch behavior", "suspicious behavior in active hook", "Disable the hook and review its complete data flow before running Git commands.")
+				f.Context = "git-hook"
+				add(f)
+			}
+		}
+		s.scanContent(path, data, mode, add, coverage)
 	}
-	hooksDir := filepath.Join(root, ".git", "hooks")
-	hooks, err := os.ReadDir(hooksDir)
+	for _, rel := range []string{"config", "config.worktree", filepath.Join("info", "attributes")} {
+		read(rel, false)
+	}
+	hooksPath := filepath.ToSlash(filepath.Join(gitRel, "hooks"))
+	info, err := confined.Lstat(hooksPath)
+	if os.IsNotExist(err) {
+		return
+	}
+	if err != nil || !info.IsDir() {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, hooksPath+" (unreadable or non-directory hooks)")
+		return
+	}
+	hooksDir, err := confined.Open(hooksPath)
 	if err != nil {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, hooksPath+" (cannot open hooks)")
+		return
+	}
+	defer hooksDir.Close()
+	hooks, err := hooksDir.ReadDir(-1)
+	if err != nil {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, hooksPath+" (cannot list hooks)")
 		return
 	}
 	for _, hook := range hooks {
-		if hook.IsDir() || strings.HasSuffix(strings.ToLower(hook.Name()), ".sample") {
+		if strings.HasSuffix(strings.ToLower(hook.Name()), ".sample") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(hooksDir, hook.Name()))
-		if err != nil {
-			coverage.Complete = false
-			continue
-		}
-		coverage.FilesScanned++
-		coverage.BytesScanned += int64(len(data))
-		hookPath := filepath.ToSlash(filepath.Join(".git", "hooks", hook.Name()))
-		if suspiciousHook(data) {
-			f := s.finding("GITHOOK-002", "git-hook", model.SeverityCritical, model.ConfidenceHigh, hookPath, 0, "Active Git hook contains execution or remote-fetch behavior", "suspicious behavior in active hook", "Disable the hook and review its complete data flow before running Git commands.")
-			f.Context = "git-hook"
-			add(f)
-		}
-		s.scanContent(hookPath, data, 0o700, add)
+		read(filepath.Join("hooks", hook.Name()), true)
 	}
 }
 
@@ -784,6 +889,33 @@ func looksText(data []byte) bool {
 		}
 	}
 	return true
+}
+
+// Undecodable source and configuration cannot be silently treated as clean.
+// Ordinary binary assets remain outside the text-rule coverage claim.
+func scanRelevantText(path string, data []byte, mode os.FileMode) bool {
+	if mode&0o111 != 0 || bytes.HasPrefix(data, []byte("#!")) {
+		return true
+	}
+	if i := strings.LastIndex(path, "!"); i >= 0 {
+		path = path[i+1:]
+	}
+	base := strings.ToLower(filepath.Base(path))
+	if strings.Contains(filepath.ToSlash(path), "/.git/") || strings.HasPrefix(filepath.ToSlash(path), ".git/") {
+		return true
+	}
+	if _, supported := manifest.Parse(path, nil); supported {
+		return true
+	}
+	switch base {
+	case "dockerfile", "makefile", "gemfile", ".npmrc", ".yarnrc", ".yarnrc.yml", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "cargo.lock", "go.sum", "pipfile.lock", "poetry.lock", "requirements.txt":
+		return true
+	}
+	switch strings.ToLower(filepath.Ext(base)) {
+	case ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".php", ".c", ".h", ".cc", ".cpp", ".html", ".htm", ".css", ".sql", ".yml", ".yaml", ".toml", ".json", ".jsonc", ".ipynb", ".xml", ".ini", ".cfg", ".conf":
+		return true
+	}
+	return false
 }
 
 func splitLines(data []byte) [][]byte {
@@ -1151,12 +1283,20 @@ var evidenceRedactors = []*regexp.Regexp{
 }
 
 func onlyTrustedRegistry(line []byte) bool {
-	l := strings.ToLower(string(line))
-	trusted := []string{"registry.npmjs.org", "registry.yarnpkg.com", "files.pythonhosted.org", "repo1.maven.org", "repo.maven.apache.org"}
-	for _, host := range trusted {
-		if strings.Contains(l, host) {
-			return true
-		}
+	value := string(line)
+	start := strings.Index(strings.ToLower(value), "http://")
+	secureStart := strings.Index(strings.ToLower(value), "https://")
+	if secureStart < 0 || start >= 0 && start < secureStart {
+		return false
+	}
+	value = strings.TrimRight(value[secureStart:], ",;)")
+	u, err := url.Parse(value)
+	if err != nil || u.Scheme != "https" || u.User != nil || u.Hostname() == "" || u.Port() != "" && u.Port() != "443" {
+		return false
+	}
+	switch strings.ToLower(u.Hostname()) {
+	case "registry.npmjs.org", "registry.yarnpkg.com", "files.pythonhosted.org", "repo1.maven.org", "repo.maven.apache.org":
+		return true
 	}
 	return false
 }
@@ -1275,6 +1415,48 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 		return
 	}
 	count, total := 0, int64(0)
+	links := map[string]string{}
+	flagUnsafe := func(name, reason string) {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, parent+"!"+name+" (unsafe archive entry)")
+		add(s.finding("ARCHIVE-001", "archive-traversal", model.SeverityCritical, model.ConfidenceHigh, parent+"!"+name, 0, "Archive entry escapes its extraction root", reason, "Do not extract this archive."))
+	}
+	inspectNonFile := func(name string) bool {
+		count++
+		if count > s.opts.Limits.MaxArchiveFiles {
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, parent+" (archive entry-count limit)")
+			return false
+		}
+		if unsafeArchivePath(name) {
+			flagUnsafe(name, "unsafe archive path")
+		}
+		return true
+	}
+	inspectLink := func(name, target string, hardlink bool) bool {
+		if !inspectNonFile(name) {
+			return false
+		}
+		name = strings.ReplaceAll(name, "\\", "/")
+		target = strings.ReplaceAll(target, "\\", "/")
+		if unsafeArchivePath(name) {
+			return true
+		}
+		if strings.HasPrefix(target, "/") || windowsAbsPath.MatchString(target) {
+			flagUnsafe(name, "unsafe archive link target")
+			return true
+		}
+		resolved := target
+		if !hardlink {
+			resolved = pathpkg.Join(pathpkg.Dir(name), target)
+		}
+		if unsafeArchivePath(resolved) {
+			flagUnsafe(name, "archive link escapes extraction root")
+			return true
+		}
+		links[pathpkg.Clean(name)] = pathpkg.Clean(resolved)
+		return true
+	}
 	consume := func(name string, size int64, r io.Reader) bool {
 		if ctx.Err() != nil {
 			return false
@@ -1287,8 +1469,16 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			return false
 		}
 		if unsafeArchivePath(name) {
-			add(s.finding("ARCHIVE-001", "archive-traversal", model.SeverityCritical, model.ConfidenceHigh, parent+"!"+name, 0, "Archive entry escapes its extraction root", "unsafe archive path", "Do not extract this archive."))
+			flagUnsafe(name, "unsafe archive path")
 			return true
+		}
+		portableName := pathpkg.Clean(strings.ReplaceAll(name, "\\", "/"))
+		for ancestor := pathpkg.Dir(portableName); ancestor != "." && ancestor != "/"; ancestor = pathpkg.Dir(ancestor) {
+			if _, linked := links[ancestor]; linked {
+				coverage.Complete = false
+				coverage.Skipped = append(coverage.Skipped, parent+"!"+name+" (entry traverses archive link)")
+				return true
+			}
 		}
 		entry, err := io.ReadAll(io.LimitReader(r, s.opts.Limits.MaxFileBytes+1))
 		if err != nil || int64(len(entry)) > s.opts.Limits.MaxFileBytes {
@@ -1296,7 +1486,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			return true
 		}
 		virtual := parent + "!" + filepath.ToSlash(name)
-		s.scanContent(virtual, entry, 0, add)
+		s.scanContent(virtual, entry, 0, add, coverage)
 		if isArchive(name, entry) {
 			s.scanArchive(ctx, virtual, entry, depth+1, add, coverage)
 		}
@@ -1312,6 +1502,35 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 		}
 		for _, f := range zr.File {
 			if f.FileInfo().IsDir() {
+				if !inspectNonFile(f.Name) {
+					return
+				}
+				continue
+			}
+			if f.Mode()&os.ModeSymlink != 0 {
+				r, err := f.Open()
+				if err != nil {
+					coverage.Complete = false
+					continue
+				}
+				target, err := io.ReadAll(io.LimitReader(r, 4097))
+				r.Close()
+				if err != nil || len(target) > 4096 {
+					coverage.Complete = false
+					coverage.Skipped = append(coverage.Skipped, parent+"!"+f.Name+" (unreadable archive link)")
+					continue
+				}
+				if !inspectLink(f.Name, string(target), false) {
+					return
+				}
+				continue
+			}
+			if !f.Mode().IsRegular() {
+				if !inspectNonFile(f.Name) {
+					return
+				}
+				coverage.Complete = false
+				coverage.Skipped = append(coverage.Skipped, parent+"!"+f.Name+" (unsupported archive entry type)")
 				continue
 			}
 			r, err := f.Open()
@@ -1349,6 +1568,23 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			break
 		}
 		if h.FileInfo().IsDir() {
+			if !inspectNonFile(h.Name) {
+				return
+			}
+			continue
+		}
+		if h.Typeflag == tar.TypeSymlink || h.Typeflag == tar.TypeLink {
+			if !inspectLink(h.Name, h.Linkname, h.Typeflag == tar.TypeLink) {
+				return
+			}
+			continue
+		}
+		if h.Typeflag != tar.TypeReg && h.Typeflag != tar.TypeRegA {
+			if !inspectNonFile(h.Name) {
+				return
+			}
+			coverage.Complete = false
+			coverage.Skipped = append(coverage.Skipped, parent+"!"+h.Name+" (unsupported archive entry type)")
 			continue
 		}
 		if !consume(h.Name, h.Size, tr) {

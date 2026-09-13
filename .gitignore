@@ -6,6 +6,7 @@
 *.scan.json
 coverage.out
 coverage.html
+!site/coverage.html
 *.prof
 *.test
 .idea/

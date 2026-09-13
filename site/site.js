@@ -1,4 +1,5 @@
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.documentElement.classList.add('has-js');
 
 document.querySelectorAll('button, .button, .nav-docs').forEach((pressable) => {
   pressable.addEventListener('pointerdown', (event) => {
@@ -36,7 +37,16 @@ const copyText = async (button, value) => {
     await navigator.clipboard.writeText(value);
     showCopyResult(button, 'Copied');
   } catch {
-    showCopyResult(button, 'Select and copy');
+    const fallback = document.createElement('textarea');
+    fallback.value = value;
+    fallback.setAttribute('readonly', '');
+    fallback.style.position = 'fixed';
+    fallback.style.opacity = '0';
+    document.body.appendChild(fallback);
+    fallback.select();
+    const copied = document.execCommand('copy');
+    fallback.remove();
+    showCopyResult(button, copied ? 'Copied' : 'Select and copy');
   }
 };
 
@@ -154,18 +164,6 @@ document.querySelectorAll('[data-report-lab]').forEach((lab) => {
 const docsSearch = document.querySelector('#docs-search');
 if (docsSearch) {
   const sections = [...document.querySelectorAll('.docs-searchable')];
-  const empty = document.querySelector('#docs-empty');
-  docsSearch.addEventListener('input', () => {
-    const query = docsSearch.value.trim().toLowerCase();
-    let visibleCount = 0;
-    sections.forEach((section) => {
-      const text = `${section.dataset.search} ${section.textContent}`.toLowerCase();
-      const matches = !query || text.includes(query);
-      section.hidden = !matches;
-      if (matches) visibleCount += 1;
-    });
-    empty.hidden = visibleCount !== 0;
-  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === '/' && document.activeElement !== docsSearch) {
@@ -201,14 +199,7 @@ if (docsSearch) {
     });
   };
   links.forEach((link) => {
-    link.addEventListener('click', () => {
-      // Restore hidden sections before the browser follows the anchor.
-      if (docsSearch.value) {
-        docsSearch.value = '';
-        docsSearch.dispatchEvent(new Event('input'));
-      }
-      markCurrent(link);
-    });
+    link.addEventListener('click', () => markCurrent(link));
   });
   const sectionObserver = new IntersectionObserver((entries) => {
     const visible = entries
@@ -218,6 +209,106 @@ if (docsSearch) {
     markCurrent(linkById.get(visible.target.id));
   }, { rootMargin: '-18% 0px -68%', threshold: [0, .2, .5] });
   sections.forEach((section) => sectionObserver.observe(section));
+}
+
+const docsGlobalIndex = [
+  ['docs.html','Documentation','overview','Overview','overview scanner read only guides'],
+  ['docs.html','Documentation','getting-started','Run your first scan','getting started install first scan local folder html git'],
+  ['docs.html','Documentation','recipes','Copyable starting points','examples local remote powershell docker json sarif targets'],
+  ['docs.html','Documentation','verdicts-docs','Read the result','verdict findings no findings review required do not run incomplete exit code'],
+  ['docs.html','Documentation','reports-docs','Choose a report','terminal json sarif html report output offline file'],
+  ['docs.html','Documentation','privacy','Know the boundary','privacy network credentials telemetry upload'],
+  ['docs.html','Documentation','intelligence','What “intel” means','intel intelligence indicators packages hashes snapshot status update rollback'],
+  ['docs.html','Documentation','agent-skill-docs','Give your coding agent a safe first step','agent skill codex instructions workflow'],
+  ['docs.html','Documentation','limits-docs','When coverage is incomplete','limits timeout files archive incomplete coverage'],
+  ['installation.html','Installation','overview','Installation','install first scan binary'],
+  ['installation.html','Installation','prerequisites','Prerequisites','git docker browser macos linux windows'],
+  ['installation.html','Installation','macos-linux','Install on macOS and Linux','homebrew archive deb rpm apk go path'],
+  ['installation.html','Installation','windows','Install on Windows PowerShell','windows powershell scoop zip path'],
+  ['installation.html','Installation','checksums','Verify the release','checksum sha256 signed binary'],
+  ['installation.html','Installation','first-scan','Run a first local scan','local html report intel status'],
+  ['installation.html','Installation','remote','Scan a remote repository','remote github gitlab bitbucket https ssh token'],
+  ['installation.html','Installation','troubleshooting','Troubleshoot the first run','command not found permission timeout html'],
+  ['cli.html','CLI reference','overview','CLI reference','commands flags scan report rules intelligence'],
+  ['cli.html','CLI reference','shape','Command shape','syntax subcommands targets path url'],
+  ['cli.html','CLI reference','first-scan','Run a first scan','local remote folder git'],
+  ['cli.html','CLI reference','targets','Targets and target files','multiple file jobs history clone'],
+  ['cli.html','CLI reference','scan-flags','All scan flags','format output config dependencies sandbox fail timeout detail progress severity confidence'],
+  ['cli.html','CLI reference','recipes','Copyable scan recipes','html json sarif ci docker'],
+  ['cli.html','CLI reference','reports','Choose a report format','terminal json sarif html'],
+  ['cli.html','CLI reference','report-command','Render a saved JSON report','report stdin filters'],
+  ['cli.html','CLI reference','rules','Rules commands','validate check list explain'],
+  ['cli.html','CLI reference','intel','Intelligence commands','intel status update rollback snapshot'],
+  ['cli.html','CLI reference','exit-codes','Exit codes and verdicts','zero one two three incomplete threshold'],
+  ['cli.html','CLI reference','troubleshooting','Troubleshooting','git docker incomplete'],
+  ['configuration.html','Configuration','overview','Configuration','trusted yaml custom rules suppressions'],
+  ['configuration.html','Configuration','boundary','Understand the trust boundary','repository config trust'],
+  ['configuration.html','Configuration','minimal','Start with valid YAML','version rules yaml'],
+  ['configuration.html','Configuration','workflow','Use the safe workflow','validate scan config'],
+  ['configuration.html','Configuration','rule-fields','Custom rule fields','severity confidence pattern globs rationale'],
+  ['configuration.html','Configuration','rule-walkthrough','Walk through a custom rule','regex example'],
+  ['configuration.html','Configuration','scope','Choose the matching scope','raw code structured'],
+  ['configuration.html','Configuration','suppressions','Suppress one reviewed finding','fingerprint reason expires'],
+  ['configuration.html','Configuration','review-example','Review example','finding exception'],
+  ['configuration.html','Configuration','limits','Limits and validation errors','invalid regex exit code 3'],
+  ['coverage.html','Detection coverage','overview','Detection coverage','rules detection limits'],
+  ['coverage.html','Detection coverage','map','Coverage map','execution obfuscation dependencies secrets network shells mining ci containers git'],
+  ['coverage.html','Detection coverage','precision','How repyy improves precision','context scope correlation confidence'],
+  ['coverage.html','Detection coverage','limits','Coverage has a boundary','timeout max files archive incomplete'],
+  ['coverage.html','Detection coverage','exclusions','Deliberate exclusions','generated lockfiles offline privacy'],
+  ['coverage.html','Detection coverage','explain','Explain a rule before acting','rules explain rationale'],
+  ['coverage.html','Detection coverage','list','Inspect the active intelligence','rules list snapshot packages hashes'],
+  ['coverage.html','Detection coverage','workflow','A practical review workflow','evidence verdict report'],
+  ['isolation.html','Isolation','overview','Isolation','docker vm sandbox network read only'],
+  ['isolation.html','Isolation','docker','Docker release image','sandbox digest signed image'],
+  ['isolation.html','Isolation','docker-image','Verify the image signature','cosign sigstore checksum'],
+  ['isolation.html','Isolation','local','Docker with a local folder','mount networking disabled json'],
+  ['isolation.html','Isolation','https','Docker with an HTTPS remote','fetch credentials git'],
+  ['isolation.html','Isolation','edge-cases','Know the edge cases','incomplete timeout ssh keep workdir'],
+  ['isolation.html','Isolation','vm','Manual VM workflows','windows macos linux guest'],
+  ['isolation.html','Isolation','windows-sandbox','Windows Sandbox','wsb powershell mapped folders'],
+  ['isolation.html','Isolation','utm','macOS with UTM','macos vm read only'],
+  ['isolation.html','Isolation','qemu','Linux with QEMU/KVM','linux qemu kvm'],
+  ['intelligence.html','Intelligence','overview','Intelligence','intel threat offline snapshot packages hashes'],
+  ['intelligence.html','Intelligence','difference','Rules and intelligence work together','built in rules indicators versions'],
+  ['intelligence.html','Intelligence','status','Check before you scan','status freshness verification cache'],
+  ['intelligence.html','Intelligence','update','Update only when you choose to','update download ed25519 signature'],
+  ['intelligence.html','Intelligence','rollback','Roll back a cached update','rollback previous cache'],
+  ['intelligence.html','Intelligence','investigate','Investigate an indicator','rules explain list check advisory hash'],
+  ['agent-skill.html','Agent skill','overview','Optional agent skill','instructions codex scan read only'],
+  ['agent-skill.html','Agent skill','install','Install the skill','npx skills add global interactive'],
+  ['agent-skill.html','Agent skill','workflow','What the skill tells an agent to do','workflow json html verdict incomplete'],
+  ['agent-skill.html','Agent skill','docker','Use Docker when you need a process boundary','docker sandbox digest ssh'],
+  ['agent-skill.html','Agent skill','limits','Understand the limits','privacy target execute build test upload intel'],
+];
+const docsSearchInput = document.querySelector('#docs-search');
+if (docsSearchInput) {
+  const box = docsSearchInput.closest('.docs-search');
+  const results = document.createElement('div');
+  results.className = 'docs-search-results';
+  results.id = 'docs-search-results';
+  results.setAttribute('role', 'region');
+  results.setAttribute('aria-label', 'Documentation search results');
+  results.hidden = true;
+  box?.appendChild(results);
+  docsSearchInput.setAttribute('aria-controls', results.id);
+  docsSearchInput.setAttribute('aria-expanded', 'false');
+  const render = () => {
+    const query = docsSearchInput.value.trim().toLowerCase();
+    results.replaceChildren();
+    if (!query) { results.hidden = true; docsSearchInput.setAttribute('aria-expanded', 'false'); return; }
+    const matches = docsGlobalIndex.filter((item) => query.split(/\s+/).every((word) => item.slice(1).join(' ').toLowerCase().includes(word)));
+    if (!matches.length) { const message = document.createElement('p'); message.className = 'docs-search-empty'; message.textContent = 'No documentation matches that search.'; results.appendChild(message); }
+    matches.slice(0, 30).forEach(([page, pageTitle, id, title]) => { const link = document.createElement('a'); link.href = page + '#' + id; const heading = document.createElement('strong'); heading.textContent = title; const location = document.createElement('small'); location.textContent = pageTitle; link.append(heading, location); results.appendChild(link); });
+    if (matches.length) { const count = document.createElement('p'); count.className = 'docs-search-count'; count.textContent = matches.length > 30 ? 'Showing 30 of ' + matches.length + ' matches' : matches.length + (matches.length === 1 ? ' match' : ' matches'); results.appendChild(count); }
+    results.hidden = false; docsSearchInput.setAttribute('aria-expanded', 'true');
+    const localEmpty = document.querySelector('#docs-empty'); if (localEmpty) localEmpty.hidden = true;
+  };
+  docsSearchInput.addEventListener('input', render);
+  docsSearchInput.addEventListener('focus', () => { if (docsSearchInput.value.trim()) render(); });
+  docsSearchInput.addEventListener('keydown', (event) => { if (event.key === 'ArrowDown' && !results.hidden) { event.preventDefault(); results.querySelector('a')?.focus(); } });
+  results.addEventListener('keydown', (event) => { const links = [...results.querySelectorAll('a')]; const index = links.indexOf(document.activeElement); if (event.key === 'ArrowDown' && index >= 0) { event.preventDefault(); links[Math.min(index + 1, links.length - 1)]?.focus(); } if (event.key === 'ArrowUp') { event.preventDefault(); index <= 0 ? docsSearchInput.focus() : links[index - 1]?.focus(); } if (event.key === 'Escape') { event.preventDefault(); docsSearchInput.value = ''; docsSearchInput.dispatchEvent(new Event('input')); docsSearchInput.focus(); } });
+  document.addEventListener('pointerdown', (event) => { if (!box?.contains(event.target)) { results.hidden = true; docsSearchInput.setAttribute('aria-expanded', 'false'); } });
 }
 
 document.querySelectorAll('[data-drag-rail]').forEach((viewport) => {
