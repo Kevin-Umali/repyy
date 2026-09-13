@@ -6,21 +6,21 @@
     <meta name="description" content="Practical repyy command-line reference: scans, reports, rules, intelligence, flags, and exit codes." />
     <meta name="theme-color" content="#f5f5f7" />
     <title>repyy CLI reference</title>
-    <link rel="stylesheet" href="./docs.css" />
-    <script src="./site.js" defer></script>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
   </head>
   <body class="docs-page">
     <a class="skip-link" href="#docs-main">Skip to CLI reference</a>
     <header class="docs-header">
-      <a class="brand" href="./index.html" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
       <div class="docs-search"><label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label></div>
-      <div class="docs-header-links"><a href="./index.html">Website</a><a href="./docs.html">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
     </header>
 
     <div class="docs-shell">
       <aside class="docs-sidebar">
-        <a class="docs-back" href="./docs.html">← All docs</a>
-        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="./docs.html">All docs</a><a href="./installation.html">Installation</a><a href="./cli.html">CLI reference</a><a href="./configuration.html">Configuration</a><a href="./isolation.html">Isolation</a><a href="./coverage.html">Detection coverage</a><a href="./intelligence.html">Intelligence</a><a href="./agent-skill.html">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#shape">Command shape</a><a href="#first-scan">First scan</a><a href="#targets">Targets and target files</a><a href="#scan-flags">All scan flags</a><a href="#recipes">Scan recipes</a><a href="#reports">Reports</a><a href="#exit-codes">Exit codes</a><a href="#report-command">Render a saved report</a><a href="#rules">Rules commands</a><a href="#intel">Intelligence commands</a><a href="#troubleshooting">Troubleshooting</a></div></details>
+        <a class="docs-back" href="../docs/">← All docs</a>
+        <details class="docs-mobile-menu"><summary>Browse documentation</summary><div class="docs-mobile-menu-links"><a href="../docs/">All docs</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a><a href="../configuration/">Configuration</a><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a><span>On this page</span><a href="#overview">Overview</a><a href="#shape">Command shape</a><a href="#first-scan">First scan</a><a href="#targets">Targets and target files</a><a href="#scan-flags">All scan flags</a><a href="#recipes">Scan recipes</a><a href="#reports">Reports</a><a href="#exit-codes">Exit codes</a><a href="#report-command">Render a saved report</a><a href="#rules">Rules commands</a><a href="#intel">Intelligence commands</a><a href="#troubleshooting">Troubleshooting</a></div></details>
         <nav aria-label="CLI navigation" tabindex="0">
           <strong>CLI guide</strong>
           <a href="#overview">Overview</a><a href="#shape">Command shape</a><a href="#first-scan">First scan</a><a href="#targets">Targets and target files</a>
@@ -29,12 +29,12 @@
           <strong>Inspect</strong>
           <a href="#report-command">Render a saved report</a><a href="#rules">Rules commands</a><a href="#intel">Intelligence commands</a><a href="#troubleshooting">Troubleshooting</a>
           <strong>More guides</strong>
-          <a href="./intelligence.html">Intelligence guide</a><a href="./agent-skill.html">Agent skill</a><a href="./docs.html">All documentation</a>
+          <a href="../intelligence/">Intelligence guide</a><a href="../agent-skill/">Agent skill</a><a href="../docs/">All documentation</a>
         </nav>
       </aside>
 
       <main class="docs-main" id="docs-main">
-        <p class="docs-breadcrumb"><a href="./index.html">repyy</a><span aria-hidden="true">/</span><a href="./docs.html">Documentation</a><span aria-hidden="true">/</span><span>CLI reference</span></p>
+        <p class="docs-breadcrumb"><a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span><span>CLI reference</span></p>
         <section class="docs-hero docs-searchable" id="overview" data-search="cli command line reference scan report rules intelligence flags">
           <p class="docs-kicker">CLI reference</p>
           <h1>Every command.<span>A clear next move.</span></h1>
@@ -88,7 +88,7 @@ https://github.com/org/assignment-b</pre>
             <code>--format FORMAT</code><span><code>terminal</code> (default), <code>json</code>, <code>sarif</code>, or <code>html</code>.</span>
             <code>--output PATH</code><span>Write the selected report to a file instead of stdout. Example: <code>--output review.html</code>.</span>
             <code>--jobs N</code><span>Concurrent repositories, 1–128; default <code>4</code>. Docker caps effective concurrency at 4.</span>
-            <code>--config PATH</code><span>Load a reviewed version-1 YAML file with custom rules and suppressions. See <a href="./configuration.html">configuration</a>.</span>
+            <code>--config PATH</code><span>Load a reviewed version-1 YAML file with custom rules and suppressions. See <a href="../configuration/">configuration</a>.</span>
             <code>--include-dependencies</code><span>Include dependency and cache trees such as <code>node_modules</code>, <code>.venv</code>, <code>vendor</code>, <code>target</code>, and <code>Pods</code>, which are skipped by default.</span>
             <code>--history N|all</code><span>Remote Git history depth; default <code>1</code>. <code>all</code> requests full history.</span>
             <code>--keep-workdir</code><span>Keep a host-mode remote checkout. Unsupported with <code>--sandbox docker</code>.</span>
@@ -158,11 +158,11 @@ repyy intel update</code></div>
         <section class="docs-section docs-searchable" id="troubleshooting" data-search="troubleshooting command not found remote git docker incomplete path html">
           <h2>Troubleshooting</h2>
           <div class="docs-table compact" role="table" aria-label="CLI troubleshooting"><div role="row"><b role="cell">Command not found</b><span role="cell">Open a new terminal after installation. Check <code>command -v repyy</code> or <code>where.exe repyy</code>.</span></div><div role="row"><b role="cell">Remote URL fails</b><span role="cell">Check <code>git --version</code>, the URL, and the matching provider token. Never put credentials in the URL.</span></div><div role="row"><b role="cell">Docker preflight fails</b><span role="cell">Start Docker, pull the digest from the matching release, and verify its signature. repyy does not fall back to host mode.</span></div><div role="row"><b role="cell">Incomplete scan</b><span role="cell">Read the target error and check permissions, timeout, file/archive limits, and sandbox mounts before rerunning.</span></div></div>
-          <p>Need trusted rules or suppressions? Follow the <a href="./configuration.html">configuration walkthrough ↗</a>. For installation and sandbox setup, return to the <a href="./docs.html">documentation home ↗</a>.</p>
+          <p>Need trusted rules or suppressions? Follow the <a href="../configuration/">configuration walkthrough ↗</a>. For installation and sandbox setup, return to the <a href="../docs/">documentation home ↗</a>.</p>
         </section>
 
         <div class="docs-empty" id="docs-empty" hidden><strong>No matching CLI documentation</strong><p>Try a command, flag, output format, or concept such as Docker.</p></div>
-        <footer class="docs-footer"><p>repyy CLI reference</p><a href="./docs.html">Documentation home ↗</a></footer>
+        <footer class="docs-footer"><p>repyy CLI reference</p><a href="../docs/">Documentation home ↗</a></footer>
       </main>
     </div>
   </body>

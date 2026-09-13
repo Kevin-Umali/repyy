@@ -71,10 +71,10 @@ func (r Rule) Applies(path string) bool {
 	if len(r.Globs) == 0 {
 		return true
 	}
-	path = filepath.ToSlash(innerPath(path))
+	path = strings.ToLower(filepath.ToSlash(innerPath(path)))
 	base := filepath.Base(path)
 	for _, glob := range r.Globs {
-		glob = filepath.ToSlash(glob)
+		glob = strings.ToLower(filepath.ToSlash(glob))
 		if ok, _ := filepath.Match(glob, base); ok {
 			return true
 		}

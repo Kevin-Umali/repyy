@@ -3,12 +3,15 @@
 The canonical landing page and documentation site are:
 
 - `index.html`: the product site for take-home and interview repository review.
-- `docs.html`: the documentation hub with a first scan, result overview, and
+- `docs/index.html`: the documentation hub with a first scan, result overview, and
   links to the detailed guides.
-- `installation.html`, `cli.html`, `configuration.html`, `isolation.html`,
-  `coverage.html`, `intelligence.html`, and `agent-skill.html`: complete web
-  guides for people using the site. The files in `docs/` are the detailed
-  offline counterparts for repository readers and should stay aligned with behavior.
+- `installation/index.html`, `cli/index.html`, `configuration/index.html`,
+  `isolation/index.html`, `coverage/index.html`, `intelligence/index.html`, and
+  `agent-skill/index.html`: complete web guides for people using the site. This
+  directory-index layout keeps public URLs clean, such as `/docs/` and
+  `/coverage/#map`, when deployed with Dokploy Static. The files in `docs/` are
+  the detailed offline counterparts for repository readers and should stay
+  aligned with behavior.
 
 Preview them from the repository root:
 
@@ -16,7 +19,8 @@ Preview them from the repository root:
 python3 -m http.server 4173 -d site
 ```
 
-Then open `http://localhost:4173`.
+Then open `http://localhost:4173`, `http://localhost:4173/docs/`, or
+`http://localhost:4173/coverage/#map`.
 
 The pages use no package manager or runtime dependency. Shared behavior lives in
 `site.js`; index-only interaction lives in `landing.js`. The landing page uses

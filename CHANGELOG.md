@@ -3,7 +3,7 @@
 All notable changes are documented here. The project follows Semantic
 Versioning after the first published release.
 
-## Unreleased
+## [0.5.0] - 2026-09-13
 
 ### Added
 
@@ -13,6 +13,16 @@ Versioning after the first published release.
 - Added detailed web and Markdown guides for installation, CLI usage,
   configuration, detection coverage, intelligence, Docker, Windows Sandbox,
   macOS/Linux VM workflows, and the optional AI agent skill.
+- Added a manually dispatched release workflow that validates the version in
+  `Makefile` and the changelog before creating a tag and publishing assets.
+- Added inert adversarial fixtures and static SVG active-content checks for
+  scripts, event handlers, and JavaScript links; no fixture payload is run.
+- Added supply-chain review for npm aliases, overrides, and additional dependency scopes,
+  pip/uv indexes, Bundler mirrors, Go workspace replacements, Cargo build
+  scripts and source overrides, Composer repositories/plugins, JVM wrapper
+  distributions, NuGet feeds, and MSBuild commands.
+- Added GitHub workflow review for upstream artifacts in privileged jobs,
+  low-trust cache writes, and pull requests on self-hosted runners.
 
 ### Changed
 
@@ -26,6 +36,16 @@ Versioning after the first published release.
   remotes and `--keep-workdir`.
 - Reorganized the documentation site around a concise hub, focused guides,
   visible back navigation, and bundled cross-guide search that works offline.
+- Run relevant CI jobs after changed-file detection, cancel superseded pull
+  request runs, cache sandbox image layers, lint workflows, and smoke-test CLI
+  builds on Linux, macOS, and Windows.
+- Parse centrally managed NuGet versions in `Directory.Packages.props` and
+  inspect project-local `.bundle/config` instead of skipping that directory.
+- Organize supply-chain, CI workflow, and SVG detectors in focused scan
+  subpackages with their tests, and separate archive and repository inspection
+  from the core scan loop. Cargo build-script inventory stays local to each scan.
+- Serve the Dokploy Static site through directory-index routes such as `/docs/`
+  and `/coverage/`, and use those clean URLs in navigation and search.
 
 ### Fixed
 
@@ -42,6 +62,11 @@ Versioning after the first published release.
 - Resolve symlinked repository roots; bound and confine Git metadata reads;
   reject spoofed trusted-registry hosts and archive-link traversal; report
   undecodable source as incomplete; and redact source-derived report fields.
+- Match rule paths without case sensitivity and treat common mixed-case and
+  alternate-format agent instruction files as active instructions.
+- Inspect decoded multiline workflow commands for untrusted event interpolation
+  and secret egress, and report unreadable supply-chain configuration as
+  incomplete coverage.
 
 ## [0.4.0] - 2026-09-12
 
@@ -137,6 +162,7 @@ Versioning after the first published release.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.5.0]: https://github.com/Kevin-Umali/repyy/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Kevin-Umali/repyy/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Kevin-Umali/repyy/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Kevin-Umali/repyy/compare/v0.3.0...v0.3.1

@@ -25,7 +25,8 @@ repyy scan ./checkout --config my-repyy.yaml
 
 Custom rules are declarative regular-expression matches. They cannot execute
 commands. Required fields are `id`, `category`, `severity`, `confidence`,
-`description`, and `pattern`. `globs` limits matching to file names or paths;
+`description`, and `pattern`. `globs` limits matching to file names or paths
+using case-insensitive comparisons;
 `match_scope` defaults to `raw` and may be `raw` or `code` for custom rules.
 `structured` is reserved for built-in structured detectors and is rejected in a
 custom configuration. Optional `remediation`, `rationale`, `legitimate_use`,

@@ -10,14 +10,14 @@ from urllib.parse import unquote, urlsplit
 
 SITE = Path(__file__).resolve().parent
 GUIDES = {
-    "docs.html",
-    "installation.html",
-    "cli.html",
-    "configuration.html",
-    "isolation.html",
-    "coverage.html",
-    "intelligence.html",
-    "agent-skill.html",
+    "/docs/",
+    "/installation/",
+    "/cli/",
+    "/configuration/",
+    "/isolation/",
+    "/coverage/",
+    "/intelligence/",
+    "/agent-skill/",
 }
 
 
@@ -43,7 +43,7 @@ class Page(HTMLParser):
 def main():
     pages = {}
     errors = []
-    for path in SITE.glob("*.html"):
+    for path in SITE.rglob("*.html"):
         page = Page()
         page.feed(path.read_text(encoding="utf-8"))
         pages[path.resolve()] = page
@@ -56,11 +56,17 @@ def main():
             url = urlsplit(reference)
             if url.scheme or url.netloc:
                 continue
-            destination = (path.parent / unquote(url.path)).resolve() if url.path else path
+            if url.path.startswith("/"):
+                destination = (SITE / unquote(url.path).lstrip("/")).resolve()
+            elif url.path:
+                destination = (path.parent / unquote(url.path)).resolve()
+            else:
+                destination = path
             if not destination.exists():
                 errors.append(f"{path.name}: missing {reference}")
-            elif url.fragment and destination.suffix == ".html":
-                target = pages.get(destination)
+            elif url.fragment:
+                target_path = (destination / "index.html").resolve() if destination.is_dir() else destination
+                target = pages.get(target_path)
                 if target is None or unquote(url.fragment) not in target.ids:
                     errors.append(f"{path.name}: missing anchor {reference}")
 
@@ -76,22 +82,22 @@ def main():
         if len(entry) != 5:
             errors.append(f"search index: malformed entry {entry!r}")
             continue
-        filename, _, ident, _, _ = entry
-        key = (filename, ident)
+        route, _, ident, _, _ = entry
+        key = (route, ident)
         if key in indexed:
-            errors.append(f"search index: duplicate {filename}#{ident}")
+            errors.append(f"search index: duplicate {route}#{ident}")
         indexed.add(key)
-        target = pages.get((SITE / filename).resolve())
-        if filename not in GUIDES or target is None or ident not in target.ids:
-            errors.append(f"search index: missing {filename}#{ident}")
-    for filename in GUIDES:
-        page = pages.get((SITE / filename).resolve())
+        target = pages.get((SITE / route.lstrip("/") / "index.html").resolve())
+        if route not in GUIDES or target is None or ident not in target.ids:
+            errors.append(f"search index: missing {route}#{ident}")
+    for route in GUIDES:
+        page = pages.get((SITE / route.lstrip("/") / "index.html").resolve())
         if page is None:
-            errors.append(f"missing guide {filename}")
+            errors.append(f"missing guide {route}")
             continue
         for ident in page.searchable:
-            if (filename, ident) not in indexed:
-                errors.append(f"search index: unindexed {filename}#{ident}")
+            if (route, ident) not in indexed:
+                errors.append(f"search index: unindexed {route}#{ident}")
 
     if errors:
         raise SystemExit("\n".join(errors))

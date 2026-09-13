@@ -416,7 +416,7 @@ func TestRuleCatalogMetadataIsComplete(t *testing.T) {
 			t.Errorf("rule %s is missing from catalog", rule.ID)
 		}
 	}
-	for _, id := range []string{"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "EXECBIT-001", "GITHOOK-002", "IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002"} {
+	for _, id := range []string{"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "CICD-006", "CICD-007", "CICD-008", "EXECBIT-001", "GITHOOK-002", "IMAGE-001", "IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002"} {
 		if !seen[id] {
 			t.Errorf("structured rule %s is missing from catalog", id)
 		}
