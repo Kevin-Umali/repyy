@@ -1,6 +1,6 @@
 # Security
 
-Use GitHub's **Report a vulnerability** option if you find a security problem in
+Use GitHub's [Report a vulnerability](https://github.com/Kevin-Umali/repyy/security/advisories/new) option if you find a security problem in
 `repyy` itself. Examples include target code being executed, access outside the
 target directory, a secret being printed without redaction, sandbox escape,
 unsafe Git behavior, or an incomplete scan being reported as clean.

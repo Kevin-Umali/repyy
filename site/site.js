@@ -256,7 +256,7 @@ const docsGlobalIndex = [
   ["/docs/", "Documentation", "verdicts-docs", "Read the result", "verdict findings no findings review required do not run incomplete exit code"],
   ["/docs/", "Documentation", "reports-docs", "Choose a report", "terminal json sarif html report output offline file"],
   ["/docs/", "Documentation", "privacy", "Know the boundary", "privacy network credentials telemetry upload"],
-  ["/docs/", "Documentation", "intelligence", "What \u201cintel\u201d means", "intel intelligence indicators packages hashes snapshot status update rollback"],
+  ["/docs/", "Documentation", "intelligence", "What “intel” means", "intel intelligence indicators packages hashes snapshot status update rollback"],
   ["/docs/", "Documentation", "agent-skill-docs", "Give your coding agent a safe first step", "agent skill codex instructions workflow"],
   ["/docs/", "Documentation", "limits-docs", "When coverage is incomplete", "limits timeout files archive incomplete coverage"],
   ["/installation/", "Installation", "overview", "Installation", "install first scan binary"],
@@ -415,7 +415,7 @@ const docsGlobalIndex = [
     "Releases and Verification",
     "current-evidence-status",
     "Current evidence status",
-    " v0 5 1 is prepared on the development branch it is not yet a published verified release Release v0 5 0 publishes checksums and signing certificates a signed sandbox image digest and per archive SBOMs The next release workflow adds GitHub attestations and a release set SPDX SBOM Do not assume older releases have these new attestations A configured workflow is not published verification evidence The new workflow keeps the GitHub release draft until download verification succeeds A failed gate mus",
+    " v0 5 1 is published https github com Kevin Umali repyy releases tag v0 5 1 from commit 261cc64bde67b9c73ba23021e052c330f64bbd05 Its release workflow https github com Kevin Umali repyy actions runs 34874376636 passed the fresh download gate before publication including checksum signatures hashes build provenance SPDX attestations and container signatures provenance Homebrew and Scoop manifests were updated after that gate passed A separate local download verification also passed using GitHub CLI",
   ],
   [
     "/verification/",
@@ -464,7 +464,7 @@ const docsGlobalIndex = [
     "Releases and Verification",
     "repository-security-signals",
     "Repository security signals",
-    " CodeQL is configured for Go and GitHub Actions workflow security analysis https docs github com en code security reference code scanning codeql codeql queries actions built in queries The added workflow analysis still needs its first CI run Inspect CodeQL runs https github com Kevin Umali repyy actions workflows codeql yml Scorecard workflow https github com Kevin Umali repyy actions workflows scorecard yml the Scorecard breakdown https scorecard dev viewer uri github com Kevin Umali repyy and ",
+    " CodeQL is configured for Go and GitHub Actions workflow security analysis https docs github com en code security reference code scanning codeql codeql queries actions built in queries Go and Actions analysis passed on the v0 5 1 source commit Inspect CodeQL runs https github com Kevin Umali repyy actions workflows codeql yml Scorecard workflow https github com Kevin Umali repyy actions workflows scorecard yml the Scorecard breakdown https scorecard dev viewer uri github com Kevin Umali repyy an",
   ],
   [
     "/verification/",
@@ -543,7 +543,7 @@ const docsGlobalIndex = [
     "Demo and Sample Report",
     "expected-outcomes-and-controls",
     "Expected outcomes and controls",
-    " Fixture Rule evidence Regression check Paired control Install lifecycle script https github com Kevin Umali repyy blob main demo cases json L5 PKG 001 https github com Kevin Umali repyy blob main internal scan catalog go L158 Benchmark runner https github com Kevin Umali repyy blob main scripts benchmark py Ordinary test script Startup configuration dynamically imports a harmless local module https github com Kevin Umali repyy blob main demo cases json L20 IMPORT 001 https github com Kevin Umal",
+    " Fixture Rule evidence Regression check Paired control Install lifecycle script https github com Kevin Umali repyy blob v0 5 1 demo cases json L5 PKG 001 https github com Kevin Umali repyy blob v0 5 1 internal scan catalog go L158 Benchmark runner https github com Kevin Umali repyy blob v0 5 1 scripts benchmark py Ordinary test script Startup configuration dynamically imports a harmless local module https github com Kevin Umali repyy blob v0 5 1 demo cases json L18 IMPORT 001 https github com Ke",
   ],
   [
     "/demo/",

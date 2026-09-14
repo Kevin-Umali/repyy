@@ -132,7 +132,10 @@ jobs:
 
   build:
     needs: [changes, test, workflow-lint]
-    if: needs.changes.outputs.go == 'true'
+    # Main protection requires each platform check, including on documentation-only PRs.
+    if: >-
+      !cancelled() && needs.changes.result == 'success' && needs.workflow-lint.result == 'success'
+      && (needs.test.result == 'success' || needs.test.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:

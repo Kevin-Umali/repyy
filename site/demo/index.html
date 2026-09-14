@@ -86,7 +86,11 @@
             image on a reserved <code>.invalid</code> registry. Credential references are fake path strings; no file read or credential collection exists.
             Network/evaluation examples are quoted text, with no callable downloader or execution chain. Fixtures are created without executable permissions.
           </p>
-          <p>branch does not claim that separate repository has already been published.</p>
+          <p>
+            The standalone <a href="https://github.com/Kevin-Umali/repyy-demo">repyy-demo repository</a> publishes this inert corpus as benchmark
+            <a href="https://github.com/Kevin-Umali/repyy-demo/tree/v1.1.0">v1.1.0</a>. Its checked-in reports were generated with the verified official Repyy
+            v0.5.1 Linux binary from commit <code>261cc64bde67b9c73ba23021e052c330f64bbd05</code>. The same samples are available on this site.
+          </p>
         </section>
         <section class="docs-section docs-searchable" id="reproduce">
           <h2>Reproduce</h2>
@@ -115,55 +119,55 @@ python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/repyy-demo --chec
               </thead>
               <tbody>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L5">Install lifecycle script</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/catalog.go#L158">PKG-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L5">Install lifecycle script</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/catalog.go#L158">PKG-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Ordinary test script</td>
                 </tr>
                 <tr>
                   <td>
-                    <a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L20"
+                    <a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L18"
                       >Startup configuration dynamically imports a harmless local module</a
                     >
                   </td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L44">IMPORT-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L44">IMPORT-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Static harmless PostCSS configuration</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L36">Executable-looking text in an image filename</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L14">EXEC-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L32">Executable-looking text in an image filename</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L14">EXEC-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>SVG with only image markup</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L51">IDE folder-open task</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L47">IDE-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L45">IDE folder-open task</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L47">IDE-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Manual task without automatic run option</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L66">Git commit hook</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L60">GITHOOK-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L58">Git commit hook</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L60">GITHOOK-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Inactive sample hook</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L81">Encoded download-and-execute indicators</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L27">CHAIN-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L71">Encoded download-and-execute indicators</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L27">CHAIN-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Normal display string</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L96">Credential path reference</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L30">CRED-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L84">Credential path reference</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L30">CRED-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Specific benign environment variable</td>
                 </tr>
                 <tr>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L111">Docker socket mount</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L57">DOCKER-001</a></td>
-                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L97">Docker socket mount</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L57">DOCKER-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
                   <td>Ordinary read-only data volume</td>
                 </tr>
               </tbody>
@@ -197,9 +201,9 @@ python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/repyy-demo --chec
           </p>
           <p>
             The folder-open fixture is unchanged. Repyy v0.5.1 corrects IDE-001 to recognize the quoted JSON <code>&quot;runOn&quot;</code> key. Its
-            <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/ide_test.go">paired scanner regression</a> checks that automatic execution is
-            flagged and the manual-task control is not. No difficult fixture was removed to improve the result. Prior 1.0.0 fixtures and results remain in Git
-            history.
+            <a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/ide_test.go">paired scanner regression</a> checks that automatic execution
+            is flagged and the manual-task control is not. No difficult fixture was removed to improve the result. Prior 1.0.0 fixtures and results remain in
+            Git history.
           </p>
           <p>samples under <code>site/demo/sample/</code> are product artifacts. Never commit reports from private repositories.</p>
         </section>

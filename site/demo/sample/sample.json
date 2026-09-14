@@ -1,15 +1,15 @@
 {
   "schema_version": "1",
-  "tool_commit": "unknown",
+  "tool_commit": "261cc64bde67b9c73ba23021e052c330f64bbd05",
   "limitation": "Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.",
-  "tool_version": "0.5.1-dev",
+  "tool_version": "0.5.1",
   "rules_version": "2026.09.15",
   "intelligence": {
     "version": "2026-09-12.1",
     "date": "2026-09-12",
     "source": "embedded"
   },
-  "generated_at": "2026-09-14T17:06:34.981246092Z",
+  "generated_at": "2026-09-14T17:32:25.222033217Z",
   "results": [
     {
       "target": "demo/lifecycle/risky",

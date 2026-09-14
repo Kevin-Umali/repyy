@@ -1,4 +1,5 @@
-FROM --platform=$BUILDPLATFORM golang:1.25.13-alpine AS builder
+FROM --platform=$BUILDPLATFORM \
+    golang:1.25.13-alpine@sha256:1e0126852075c9c60731c8ba49088448b91f63e2aed97ca9d1a9791622a05946 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -20,7 +21,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
       -X 'github.com/Kevin-Umali/repyy/internal/buildinfo.BuiltBy=${BUILT_BY}'" \
     -o /repyy ./cmd/repyy
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
 RUN apk add --no-cache ca-certificates git \
     && addgroup -S -g 65532 repyy \
     && adduser -S -D -H -u 65532 -G repyy repyy \

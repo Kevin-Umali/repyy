@@ -8,14 +8,16 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
 
 jobs:
   tag:
     name: Tag current main version
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
