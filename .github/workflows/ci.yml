@@ -43,9 +43,9 @@ jobs:
             if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- "$@"; then echo false; else echo true; fi
           }
           go="$(changed ':(glob)**/*.go' go.mod go.sum Makefile .github/workflows/ci.yml)"
-          site="$(changed site docs README.md .github/workflows/ci.yml)"
+          site="$(changed site docs demo README.md .github/workflows/ci.yml)"
           sandbox="$(changed Dockerfile.sandbox .dockerignore ':(glob)**/*.go' go.mod go.sum .github/workflows/ci.yml)"
-          release="$(changed ':(glob)**/*.go' go.mod go.sum .goreleaser.yaml Dockerfile.sandbox .dockerignore .github/workflows/ci.yml .github/workflows/release.yml .github/workflows/prepare-release.yml)"
+          release="$(changed ':(glob)**/*.go' go.mod go.sum scripts .goreleaser.yaml Dockerfile.sandbox .dockerignore .github/workflows/ci.yml .github/workflows/release.yml .github/workflows/prepare-release.yml)"
           {
             echo "go=$go"
             echo "site=$site"
@@ -75,7 +75,7 @@ jobs:
           python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ landing.css docs.css site.js landing.js; do
+          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ trust/ verification/ demo/ security-testing/ about/ landing.css docs.css site.js landing.js; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
           done
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
@@ -114,6 +114,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
   vulnerability-scan:
     needs: [changes, test, workflow-lint]
@@ -158,9 +159,8 @@ jobs:
     name: 3 · Build sandbox image
     needs: [changes, test, workflow-lint]
     if: >-
-      always() && needs.changes.outputs.sandbox == 'true' &&
-      needs.workflow-lint.result == 'success' &&
-      (needs.test.result == 'success' || needs.test.result == 'skipped')
+      always() && needs.changes.outputs.sandbox == 'true' && needs.workflow-lint.result == 'success'
+      && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -181,9 +181,8 @@ jobs:
   release-config:
     needs: [changes, test, workflow-lint]
     if: >-
-      always() && needs.changes.outputs.release == 'true' &&
-      needs.workflow-lint.result == 'success' &&
-      (needs.test.result == 'success' || needs.test.result == 'skipped')
+      always() && needs.changes.outputs.release == 'true' && needs.workflow-lint.result == 'success'
+      && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -197,13 +196,13 @@ jobs:
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: 'v2.18.0'
+          version: "v2.18.0"
           args: check
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         if: github.event_name == 'push'
         with:
           distribution: goreleaser
-          version: 'v2.18.0'
+          version: "v2.18.0"
           args: release --snapshot --clean --skip=sign,sbom,publish
         env:
-          REPYY_SANDBOX_IMAGE_DIGEST: ''
+          REPYY_SANDBOX_IMAGE_DIGEST: ""

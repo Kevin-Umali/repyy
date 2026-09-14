@@ -1,0 +1,9 @@
+# These are generated, intentionally malformed, or third-party inputs.
+/dist/
+/bin/
+/output/
+/outputs/
+/.playwright-cli/
+**/testdata/**
+# Exact inline CSS/JS bytes are covered by report Content-Security-Policy hashes.
+/site/demo/sample/

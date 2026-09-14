@@ -1,4 +1,5 @@
 interface:
   display_name: "repyy Repository Scanner"
   short_description: "Scan unfamiliar repositories before running code"
-  default_prompt: "Use $repyy to scan this repository before installing dependencies or running its code."
+  default_prompt:
+    "Use $repyy to scan this repository before installing dependencies or running its code."

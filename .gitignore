@@ -18,3 +18,8 @@ coverage.html
 *-private.pem
 *private-key*.pem
 *signing-key*.pem
+
+# Local browser verification and Python tooling.
+.playwright-cli/
+__pycache__/
+.ruff_cache/

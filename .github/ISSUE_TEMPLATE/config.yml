@@ -2,4 +2,6 @@ blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability privately
     url: https://github.com/Kevin-Umali/repyy/security/advisories/new
-    about: Do not disclose vulnerabilities, live malware, credentials, or private source in public issues.
+    about:
+      Do not disclose vulnerabilities, live malware, credentials, or private source in public
+      issues.

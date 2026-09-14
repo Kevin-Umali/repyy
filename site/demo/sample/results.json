@@ -1,0 +1,241 @@
+{
+  "benchmark_version": "1.0.0",
+  "tool_version": "0.5.0-dev",
+  "build_identity": "repyy 0.5.0-dev\ncommit: unknown\nbuilt-by: development\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: unknown\nrules: 2026.09.9",
+  "risky_detected": 6,
+  "risky_total": 8,
+  "controls_high_flagged": 0,
+  "controls_total": 8,
+  "incomplete_scans": 0,
+  "unsupported_fixtures": 0,
+  "cases": [
+    {
+      "id": "lifecycle",
+      "expected_rules": [
+        "PKG-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "PKG-001"
+        ],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "startup",
+      "expected_rules": [
+        "IMPORT-001"
+      ],
+      "known_missing": [
+        "IMPORT-001"
+      ],
+      "risky": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": [
+        "IMPORT-001"
+      ]
+    },
+    {
+      "id": "disguised-asset",
+      "expected_rules": [
+        "EXEC-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "EXEC-001",
+          "OBFS-002"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "EXEC-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "folder-open",
+      "expected_rules": [
+        "IDE-001"
+      ],
+      "known_missing": [
+        "IDE-001"
+      ],
+      "risky": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": [
+        "IDE-001"
+      ]
+    },
+    {
+      "id": "git-hook",
+      "expected_rules": [
+        "GITHOOK-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "EXECBIT-001",
+          "GITHOOK-001"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "GITHOOK-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "obfuscated-download",
+      "expected_rules": [
+        "CHAIN-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "CHAIN-001",
+          "NET-001",
+          "OBFS-002"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "CHAIN-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "credential-path",
+      "expected_rules": [
+        "CRED-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "CRED-001"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "CRED-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [
+          "ENV-001"
+        ],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "docker-socket",
+      "expected_rules": [
+        "DOCKER-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "DOCKER-001"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "DOCKER-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    }
+  ]
+}

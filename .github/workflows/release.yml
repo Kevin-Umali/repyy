@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:
@@ -13,6 +13,7 @@ permissions:
   contents: write
   id-token: write
   packages: write
+  attestations: write
 
 jobs:
   release:
@@ -40,6 +41,8 @@ jobs:
           test -z "$(gofmt -l .)"
           go vet ./...
           go test -race ./...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+          python3 site/check_docs.py
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
       - uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
@@ -58,6 +61,9 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg "VERSION=$version" \
+            --build-arg "COMMIT=$GITHUB_SHA" \
+            --build-arg "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg "BUILT_BY=GitHub Actions" \
             --tag "$IMAGE:$GITHUB_REF_NAME" \
             --metadata-file "$RUNNER_TEMP/repyy-sandbox-image.json" \
             --file Dockerfile.sandbox \
@@ -72,6 +78,13 @@ jobs:
           echo "REPYY_SANDBOX_IMAGE_DIGEST=$digest" >> "$GITHUB_ENV"
           docker pull "$IMAGE@$digest"
           docker run --rm --network none "$IMAGE@$digest" version
+      - name: Attest sandbox image
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/kevin-umali/repyy-sandbox
+          subject-digest: ${{ env.REPYY_SANDBOX_IMAGE_DIGEST }}
+          push-to-registry: true
+          create-storage-record: false
       - name: Create and verify signed intelligence snapshot
         env:
           REPYY_INTEL_SIGNING_KEY: ${{ secrets.REPYY_INTEL_SIGNING_KEY }}
@@ -97,12 +110,10 @@ jobs:
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: 'v2.18.0'
+          version: "v2.18.0"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Fine-grained PAT limited to contents:write on the tap and bucket.
-          REPYY_RELEASE_TOKEN: ${{ secrets.REPYY_RELEASE_TOKEN }}
       - name: Smoke-test released binary
         run: |
           set -euo pipefail
@@ -119,7 +130,102 @@ jobs:
       - name: Attach signed intelligence snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json" "$RUNNER_TEMP/repyy-intelligence.json.sig" "$RUNNER_TEMP/repyy-sandbox-image.txt" --clobber
+        run:
+          gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json"
+          "$RUNNER_TEMP/repyy-intelligence.json.sig" "$RUNNER_TEMP/repyy-sandbox-image.txt"
+          --clobber
+      - name: Generate release-set SBOM and benchmark
+        run: |
+          set -euo pipefail
+          syft dir:dist -o spdx-json="$RUNNER_TEMP/repyy-release.spdx.json"
+          python3 scripts/benchmark.py \
+            --binary dist/repyy_linux_amd64_v1/repyy \
+            --output "$RUNNER_TEMP/benchmark" --check
+          image=ghcr.io/kevin-umali/repyy-sandbox
+          docker buildx imagetools inspect "$image@$REPYY_SANDBOX_IMAGE_DIGEST" --raw \
+            > "$RUNNER_TEMP/repyy-image-index.json"
+          for arch in amd64 arm64; do
+            digest="$(jq -er --arg arch "$arch" '
+              [.manifests[] | select(.platform.os == "linux" and .platform.architecture == $arch)]
+              | if length == 1 then .[0].digest else error("expected one platform") end
+            ' "$RUNNER_TEMP/repyy-image-index.json")"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            printf '%s\n' "$image@$digest" > "$RUNNER_TEMP/repyy-container-linux-$arch.txt"
+            echo "REPYY_IMAGE_$arch=$digest" >> "$GITHUB_ENV"
+            syft "registry:$image@$digest" \
+              -o spdx-json="$RUNNER_TEMP/repyy-container-linux-$arch.spdx.json"
+          done
+      - name: Attest distributed files and extracted binaries
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.deb
+            dist/*.rpm
+            dist/*.apk
+            dist/*.sbom.json
+            dist/checksums.txt*
+            dist/**/repyy
+            dist/**/repyy.exe
+            ${{ runner.temp }}/repyy-intelligence.json*
+            ${{ runner.temp }}/repyy-sandbox-image.txt
+            ${{ runner.temp }}/repyy-release.spdx.json
+            ${{ runner.temp }}/repyy-container-linux-*.spdx.json
+            ${{ runner.temp }}/repyy-container-linux-*.txt
+            ${{ runner.temp }}/benchmark/results.json
+            ${{ runner.temp }}/benchmark/results.md
+      - name: Attest Linux amd64 container SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/kevin-umali/repyy-sandbox
+          subject-digest: ${{ env.REPYY_IMAGE_amd64 }}
+          sbom-path: ${{ runner.temp }}/repyy-container-linux-amd64.spdx.json
+          push-to-registry: true
+          create-storage-record: false
+      - name: Attest Linux arm64 container SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/kevin-umali/repyy-sandbox
+          subject-digest: ${{ env.REPYY_IMAGE_arm64 }}
+          sbom-path: ${{ runner.temp }}/repyy-container-linux-arm64.spdx.json
+          push-to-registry: true
+          create-storage-record: false
+      - name: Attest release-set SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.deb
+            dist/*.rpm
+            dist/*.apk
+            dist/**/repyy
+            dist/**/repyy.exe
+          sbom-path: ${{ runner.temp }}/repyy-release.spdx.json
+      - name: Attach evidence and verify downloaded draft assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "$GITHUB_REF_NAME" \
+            "$RUNNER_TEMP/repyy-release.spdx.json" \
+            "$RUNNER_TEMP"/repyy-container-linux-*.spdx.json \
+            "$RUNNER_TEMP"/repyy-container-linux-*.txt \
+            "$RUNNER_TEMP/benchmark/results.json" \
+            "$RUNNER_TEMP/benchmark/results.md" --clobber
+          bash scripts/verify-release.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/release-verification"
+          gh release view "$GITHUB_REF_NAME" --json body --jq .body > "$RUNNER_TEMP/release-notes.md"
+          {
+            printf '\nSource commit: `%s`\n\n' "$GITHUB_SHA"
+            printf 'Build provenance: https://github.com/Kevin-Umali/repyy/attestations\n\n'
+            printf 'Verification guide: https://github.com/Kevin-Umali/repyy/blob/%s/docs/VERIFICATION.md\n' "$GITHUB_SHA"
+          } >> "$RUNNER_TEMP/release-notes.md"
+          gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md" --draft=false
+      - name: Publish package-manager manifests after verification
+        env:
+          GH_TOKEN: ${{ secrets.REPYY_RELEASE_TOKEN }}
+        run: python3 scripts/publish-packages.py "$GITHUB_REF_NAME"
       - name: Summarize release
         if: success()
         run: |

@@ -53,6 +53,8 @@ func WriteWithOptions(w io.Writer, format string, report model.Report, opts Opti
 
 func sanitizedReport(report model.Report) model.Report {
 	report.ToolVersion = sanitizeSourceText(report.ToolVersion)
+	report.ToolCommit = sanitizeSourceText(report.ToolCommit)
+	report.Limitation = model.Limitation
 	report.RulesVersion = sanitizeSourceText(report.RulesVersion)
 	report.Intelligence.Version = sanitizeSourceText(report.Intelligence.Version)
 	report.Intelligence.Date = sanitizeSourceText(report.Intelligence.Date)
@@ -159,7 +161,7 @@ func terminal(w io.Writer, report model.Report, opts Options) error {
 		} else if result.Verdict == model.VerdictNoFindings {
 			verdictColor = "32"
 		}
-		fmt.Fprintf(w, "%s · %s\n", paint(verdictColor, displayText(result.Verdict)), displayText(abbreviateHome(result.Target)))
+		fmt.Fprintf(w, "%s · %s\n", paint(verdictColor, displayText(result.DecisionStatus())), displayText(abbreviateHome(result.Target)))
 		if result.Error != "" {
 			fmt.Fprintf(w, "  error: %s\n", displayText(result.Error))
 		}
@@ -228,7 +230,7 @@ func terminal(w io.Writer, report model.Report, opts Options) error {
 		fmt.Fprintln(w)
 	}
 	fmt.Fprintln(w, "Findings are repository evidence, not proof that code executed or a host was compromised.")
-	fmt.Fprintln(w, "NO FINDINGS does not guarantee that a repository is safe.")
+	fmt.Fprintln(w, model.Limitation)
 	return nil
 }
 
@@ -479,6 +481,8 @@ func sarifOut(w io.Writer, report model.Report) error {
 	sort.Slice(ruleList, func(i, j int) bool { return ruleList[i].ID < ruleList[j].ID })
 	properties := map[string]any{
 		"rulesVersion": report.RulesVersion,
+		"toolCommit":   report.ToolCommit,
+		"limitation":   model.Limitation,
 		"intelligence": report.Intelligence,
 	}
 	doc := sarif{Version: "2.1.0", Schema: "https://json.schemastore.org/sarif-2.1.0.json", Runs: []sarifRun{{Tool: sarifTool{Driver: sarifDriver{Name: "repyy", Version: report.ToolVersion, InformationURI: "https://github.com/Kevin-Umali/repyy", Rules: ruleList}}, Results: results, Invocations: []sarifInvocation{{ExecutionSuccessful: success, Properties: properties}}}}}

@@ -19,6 +19,7 @@ import (
 
 type htmlReportView struct {
 	ReportID     string
+	ToolCommit   string
 	ToolVersion  string
 	RulesVersion string
 	Intelligence model.IntelligenceInfo
@@ -77,6 +78,7 @@ func htmlOut(w io.Writer, report model.Report) error {
 	styleHash := sha256.Sum256([]byte(htmlStyle))
 	view := htmlReportView{
 		ReportID: "sha256:" + hex.EncodeToString(reportHash[:]), ToolVersion: displayText(report.ToolVersion),
+		ToolCommit:   displayText(report.ToolCommit),
 		RulesVersion: displayText(report.RulesVersion), Intelligence: report.Intelligence,
 		GeneratedAt:  report.GeneratedAt.UTC().Format(time.RFC3339),
 		Severities:   []string{"critical", "high", "medium", "low"},
@@ -91,7 +93,7 @@ func htmlOut(w io.Writer, report model.Report) error {
 	categories, rules, files := map[string]bool{}, map[string]bool{}, map[string]bool{}
 	for _, repo := range report.Results {
 		repoView := htmlRepoView{
-			Target: displayText(repo.Target), Verdict: displayText(repo.Verdict), VerdictClass: strings.ToLower(strings.ReplaceAll(repo.Verdict, " ", "-")),
+			Target: displayText(repo.Target), Verdict: displayText(repo.DecisionStatus()), VerdictClass: strings.ToLower(strings.ReplaceAll(repo.Verdict, " ", "-")),
 			Reason: htmlVerdictReason(repo), FilesScanned: repo.Coverage.FilesScanned,
 			BytesScanned: formatHTMLBytes(repo.Coverage.BytesScanned), Duration: formatHTMLDuration(repo.Duration),
 			Coverage: repo.Coverage, Counts: map[string]int{}, ActionableCounts: map[string]int{}, DispositionCounts: map[string]int{}, FindingCount: len(repo.Findings),
@@ -483,6 +485,7 @@ pre { margin: .4rem 0 0; padding: .7rem .8rem; overflow-wrap: anywhere; border-r
 [hidden] { display: none !important }
 @media (max-width: 720px) {
   main { width: min(100% - 1.5rem, 980px); padding-top: 2.5rem }
+  .review-controls { margin-inline: -.75rem; padding-inline: .75rem }
   .filters { grid-template-columns: 1fr 1fr }
   .filters input { grid-column: 1 / -1 }
   .more-filters-grid { grid-template-columns: 1fr 1fr }
@@ -518,7 +521,7 @@ const htmlTemplate = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-{{.StyleHash}}'; script-src 'sha256-{{.ScriptHash}}'; img-src data:; base-uri 'none'; form-action 'none'; connect-src 'none'; object-src 'none'">
 <title>repyy security review</title><style>` + htmlStyle + `</style></head><body><a class="skip-link" href="#report-content">Skip to report</a><main id="report-content">
-<header class="masthead" aria-labelledby="report-title"><div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span><small>Report</small></div><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy {{.ToolVersion}}</span><span class="pill">rules {{.RulesVersion}}</span><span class="pill">intelligence {{.Intelligence.Version}}</span><span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time></span></div><p class="muted spaced">Report <code>{{.ReportID}}</code></p></header>
+<header class="masthead" aria-labelledby="report-title"><div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span><small>Report</small></div><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy {{.ToolVersion}}</span><span class="pill">commit {{if .ToolCommit}}{{.ToolCommit}}{{else}}unknown{{end}}</span><span class="pill">rules {{.RulesVersion}}</span><span class="pill">intelligence {{.Intelligence.Version}}</span><span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time></span></div><p class="muted spaced">Report <code>{{.ReportID}}</code></p></header>
 <section class="review-controls" aria-label="Review controls">
 <div class="view-switch" role="group" aria-label="Report view"><button data-view="findings" aria-pressed="true" type="button">Findings</button><button data-view="files" aria-pressed="false" type="button">Files</button><span class="pill"><output data-visible-count aria-live="polite">0</output> results</span></div>
 <section class="filters" aria-label="Finding filters">
@@ -536,4 +539,4 @@ const htmlTemplate = `<!doctype html>
 <section data-view-panel="findings" aria-label="Findings for {{.Target}}"><h2 class="section-heading">Findings</h2>{{if not .Findings}}<p>No enabled rule matched. This is not a guarantee that the repository is safe.</p>{{end}}{{range .Findings}}<article class="finding" data-finding data-search="{{.SearchText}}" data-severity="{{.Severity}}" data-confidence="{{.Confidence}}" data-disposition="{{.Disposition}}" data-category="{{.Category}}" data-rule="{{.RuleID}}" data-file="{{.Path}}"><header class="finding-head"><div><h3>{{.RuleID}} · {{.Message}}</h3><p class="tags"><span>{{.Severity}}</span><span>{{.Confidence}} confidence</span><span>{{.Disposition}}</span><span>{{.Context}}</span><span>{{.Category}}</span></p></div><span aria-label="{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}">{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}</span></header>{{range .Locations}}<div class="location">{{if .Link}}<a href="{{.Link}}" rel="noreferrer">{{.Label}}</a>{{else}}<strong>{{.Label}}</strong>{{end}}{{if .Evidence}}<pre aria-label="Redacted evidence"><code>{{.Evidence}}</code></pre>{{end}}</div>{{end}}{{if .LocationsOmitted}}<p class="muted">{{.LocationsOmitted}} additional locations omitted by report limits.</p>{{end}}{{if .ContributingRuleIDs}}<p><strong>Contributing rules:</strong> {{join .ContributingRuleIDs ", "}}</p>{{end}}<details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>{{.Rule.Rationale}}</p>{{if .Rule.ApplicablePaths}}<p><strong>Applies to:</strong> {{join .Rule.ApplicablePaths ", "}}</p>{{end}}</div><div><strong>Common legitimate use</strong><p>{{.Rule.LegitimateUse}}</p></div><div><strong>Recommended action</strong><p>{{.Remediation}}</p></div></div></details></article>{{end}}</section>
 <section data-view-panel="files" aria-label="Files with findings for {{.Target}}"><h2 class="section-heading">Files</h2><ul class="file-list">{{range .Files}}<li class="file-row" data-file-row data-file="{{.Path}}"><span>{{.Path}}</span><span>{{.Count}} findings · highest {{.Severity}}</span></li>{{end}}</ul></section>
 {{if .Isolation}}<p class="isolation muted">Isolation: {{.Isolation.Backend}} · scan network {{.Isolation.ScanNetwork}}{{if .Isolation.ImageDigest}} · image {{.Isolation.ImageDigest}}{{end}}</p>{{end}}<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>{{if .Coverage.Complete}}Complete{{else}}Incomplete{{end}} · {{.Coverage.FilesScanned}} files · {{.BytesScanned}}</p>{{if .Coverage.Warnings}}<h4>Warnings</h4><ul>{{range .Coverage.Warnings}}<li>{{.}}</li>{{end}}</ul>{{end}}{{if .Coverage.Skipped}}<h4>Skipped areas</h4><ul>{{range .Coverage.Skipped}}<li>{{.}}</li>{{end}}</ul>{{end}}</section></article>{{end}}
-<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. NO FINDINGS does not guarantee that a repository is safe.</footer></main><script>` + htmlScript + `</script></body></html>`
+<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.</footer></main><script>` + htmlScript + `</script></body></html>`

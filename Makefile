@@ -25,3 +25,17 @@ install:
 
 clean:
 	rm -f $(BINARY)
+
+# Generated reports and inert test fixtures retain their exact bytes.
+.PHONY: format format-check
+format:
+	gofmt -w cmd internal test
+	npx --yes prettier@3.6.2 --write . --ignore-unknown
+	uvx ruff==0.16.0 format scripts site/check_docs.py
+	go run mvdan.cc/sh/v3/cmd/shfmt@v3.12.0 -w -i 2 scripts/*.sh
+
+format-check:
+	test -z "$$(gofmt -l cmd internal test)"
+	npx --yes prettier@3.6.2 --check . --ignore-unknown
+	uvx ruff==0.16.0 format --check scripts site/check_docs.py
+	go run mvdan.cc/sh/v3/cmd/shfmt@v3.12.0 -d -i 2 scripts/*.sh

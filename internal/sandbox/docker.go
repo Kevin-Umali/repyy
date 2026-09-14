@@ -94,7 +94,7 @@ func resolveImage(opts Options) string {
 // Local paths are mounted read-only and scanned with networking disabled.
 // HTTPS remotes are fetched in a temporary networked stage, then scanned
 // from a read-only mount in a second, network-disabled container.
-func Scan(ctx context.Context, target string, opts Options) (model.RepoResult, error) {
+func Scan(ctx context.Context, target string, opts Options) (result model.RepoResult, scanErr error) {
 	image := resolveImage(opts)
 	if strings.HasPrefix(target, "git@") || strings.HasPrefix(target, "ssh://") {
 		return model.RepoResult{}, errors.New("SSH URLs are not supported by Docker sandbox; use an HTTPS Git URL")
@@ -117,7 +117,18 @@ func Scan(ctx context.Context, target string, opts Options) (model.RepoResult, e
 	if err != nil {
 		return model.RepoResult{}, err
 	}
-	defer os.RemoveAll(tmp)
+	defer func() {
+		if err := os.RemoveAll(tmp); err != nil {
+			const warning = "temporary sandbox checkout cleanup failed; private files may remain in the system temporary directory"
+			if scanErr != nil {
+				scanErr = errors.Join(scanErr, errors.New(warning))
+			} else {
+				result.Coverage.Complete = false
+				result.Verdict = model.VerdictIncomplete
+				result.Coverage.Warnings = append(result.Coverage.Warnings, warning)
+			}
+		}
+	}()
 	stageDir := filepath.Join(tmp, "stage")
 	if err := os.Mkdir(stageDir, 0o700); err != nil {
 		return model.RepoResult{}, err
@@ -131,7 +142,7 @@ func Scan(ctx context.Context, target string, opts Options) (model.RepoResult, e
 	if err != nil {
 		return model.RepoResult{}, err
 	}
-	result, err := runContainer(ctx, image, filepath.Join(stageDir, "repo"), true, opts)
+	result, err = runContainer(ctx, image, filepath.Join(stageDir, "repo"), true, opts)
 	if err != nil {
 		return model.RepoResult{}, err
 	}
@@ -164,7 +175,7 @@ func tokenFor(target string) string {
 	}
 }
 
-func fetch(ctx context.Context, image, target, tmp string, opts Options) (string, error) {
+func fetch(ctx context.Context, image, target, tmp string, opts Options) (revision string, fetchErr error) {
 	args := []string{"run", "--rm", "--network", "bridge", "--read-only", "--cap-drop=ALL", "--security-opt", "no-new-privileges", "--pids-limit", "256", "--memory", "1g", "--cpus", "1", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m,mode=1777", "--env", "GIT_CONFIG_NOSYSTEM=1", "--env", "GIT_CONFIG_GLOBAL=/dev/null", "--env", "GIT_TERMINAL_PROMPT=0", "--env", "GIT_ALLOW_PROTOCOL=https", "--env", "GIT_PROTOCOL_FROM_USER=0", "--entrypoint", "git", "--mount", bindMount(tmp, "/work", false)}
 	args = append(args, containerUserArgs()...)
 	args = append(args, image, "-c", "core.hooksPath=/dev/null", "-c", "protocol.file.allow=never", "-c", "http.followRedirects=false", "clone", "--no-recurse-submodules", "--template=")
@@ -179,19 +190,22 @@ func fetch(ctx context.Context, image, target, tmp string, opts Options) (string
 			return "", err
 		}
 		envFile = f.Name()
+		defer func() {
+			if err := os.Remove(envFile); err != nil && !os.IsNotExist(err) {
+				fetchErr = errors.Join(fetchErr, errors.New("temporary authentication file cleanup failed; credentials may remain in the system temporary directory"))
+			}
+		}()
 		basic := base64.StdEncoding.EncodeToString([]byte("x-access-token:" + token))
 		u, _ := url.Parse(target)
 		contents := "GIT_CONFIG_NOSYSTEM=1\nGIT_CONFIG_GLOBAL=/dev/null\nGIT_TERMINAL_PROMPT=0\nGIT_CONFIG_COUNT=1\nGIT_CONFIG_KEY_0=http.https://" + strings.ToLower(u.Hostname()) + "/.extraHeader\nGIT_CONFIG_VALUE_0=Authorization: Basic " + basic + "\n"
 		if _, err := f.WriteString(contents); err != nil {
 			f.Close()
-			os.Remove(envFile)
 			return "", err
 		}
 		f.Close()
 		if err := os.Chmod(envFile, 0o600); err != nil {
 			return "", err
 		}
-		defer os.Remove(envFile)
 		args = append(args[:2], append([]string{"--env-file", envFile}, args[2:]...)...)
 	}
 	var fetchOutput limitedBuffer
@@ -211,7 +225,7 @@ func fetch(ctx context.Context, image, target, tmp string, opts Options) (string
 	if err != nil || revOut.tooLarge {
 		return "", errors.New("sandbox could not resolve fetched revision")
 	}
-	revision := strings.TrimSpace(revOut.String())
+	revision = strings.TrimSpace(revOut.String())
 	if !gitRevision.MatchString(revision) {
 		return "", errors.New("sandbox returned an invalid fetched revision")
 	}
@@ -374,7 +388,9 @@ func runDocker(ctx context.Context, args []string, stdout, stderr io.Writer) err
 		defer cancel()
 		cleanup := exec.CommandContext(cleanupCtx, "docker", "rm", "--force", name)
 		cleanup.Stdout, cleanup.Stderr = io.Discard, io.Discard
-		_ = cleanup.Run()
+		if cleanupErr := cleanup.Run(); cleanupErr != nil {
+			err = errors.Join(err, errors.New("timed-out sandbox container cleanup failed; inspect Docker for remaining repyy containers"))
+		}
 	}
 	return err
 }

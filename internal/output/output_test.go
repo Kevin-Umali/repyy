@@ -21,7 +21,7 @@ func TestTerminalIncludesVerdictAndDisclaimer(t *testing.T) {
 	if err := Write(&out, "terminal", sampleReport()); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), model.VerdictReview) || !strings.Contains(out.String(), "does not guarantee") || !strings.Contains(out.String(), "not proof that code executed") {
+	if !strings.Contains(out.String(), model.VerdictReview) || !strings.Contains(out.String(), "does not prove") || !strings.Contains(out.String(), "not proof that code executed") {
 		t.Fatalf("unexpected terminal output: %s", out.String())
 	}
 }
