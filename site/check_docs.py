@@ -1,7 +1,10 @@
 """Check static documentation links and the bundled cross-page search index."""
 
 import ast
+import base64
+import hashlib
 from collections import Counter
+from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
 import re
@@ -10,6 +13,11 @@ from urllib.parse import unquote, urlsplit
 
 SITE = Path(__file__).resolve().parent
 GUIDES = {
+    "/trust/",
+    "/verification/",
+    "/demo/",
+    "/security-testing/",
+    "/about/",
     "/docs/",
     "/installation/",
     "/cli/",
@@ -65,10 +73,23 @@ def main():
             if not destination.exists():
                 errors.append(f"{path.name}: missing {reference}")
             elif url.fragment:
-                target_path = (destination / "index.html").resolve() if destination.is_dir() else destination
+                target_path = (
+                    (destination / "index.html").resolve()
+                    if destination.is_dir()
+                    else destination
+                )
                 target = pages.get(target_path)
                 if target is None or unquote(url.fragment) not in target.ids:
                     errors.append(f"{path.name}: missing anchor {reference}")
+
+    # Reports carry hashes over exact inline bytes. Reformatting them would
+    # silently disable styles or filtering in a browser enforcing the CSP.
+    report = (SITE / "demo/sample/sample.html").read_text(encoding="utf-8")
+    for tag in ("style", "script"):
+        for body in re.findall(rf"<{tag}[^>]*>(.*?)</{tag}>", report, re.S):
+            digest = base64.b64encode(hashlib.sha256(body.encode()).digest()).decode()
+            if f"sha256-{digest}" not in unescape(report):
+                errors.append(f"sample.html: {tag} content does not match its CSP hash")
 
     script = (SITE / "site.js").read_text(encoding="utf-8")
     match = re.search(r"const docsGlobalIndex = (\[.*?\n\]);", script, re.S)

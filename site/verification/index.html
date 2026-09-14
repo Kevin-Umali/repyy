@@ -1,0 +1,209 @@
+<!doctype html>
+<html class="docs-root" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Releases and Verification: Repyy reviews take-home assignments before execution, with evidence and visible limitations."
+    />
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>Releases and Verification · repyy documentation</title>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#docs-main">Skip to Releases and Verification</a>
+    <header class="docs-header">
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <div class="docs-search">
+        <label for="docs-search"
+          ><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off"
+        /></label>
+      </div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+    </header>
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <a class="docs-back" href="../docs/">← All docs</a>
+        <details class="docs-mobile-menu">
+          <summary>Browse documentation</summary>
+          <div class="docs-mobile-menu-links">
+            <a href="../trust/">Trust and Limitations</a>
+            <a href="../verification/">Releases and Verification</a>
+            <a href="../security-testing/">Security Testing</a>
+            <a href="../about/">About Repyy</a>
+            <a href="../demo/">Demo and Sample Report</a><span>On this page</span><a href="#current-evidence-status">Current evidence status</a>
+            <a href="#version-and-commit-identity">Version and commit identity</a>
+            <a href="#verify-provenance">Verify provenance</a>
+            <a href="#checksums-and-existing-signatures">Checksums and existing signatures</a>
+            <a href="#sbom-access-and-scope">SBOM access and scope</a>
+            <a href="#container-verification">Container verification</a>
+            <a href="#fresh-download-release-gate">Fresh-download release gate</a>
+            <a href="#repository-security-signals">Repository security signals</a>
+          </div>
+        </details>
+        <nav aria-label="Releases and Verification navigation" tabindex="0">
+          <strong>On this page</strong><a href="#overview">Overview</a><a href="#current-evidence-status">Current evidence status</a>
+          <a href="#version-and-commit-identity">Version and commit identity</a>
+          <a href="#verify-provenance">Verify provenance</a>
+          <a href="#checksums-and-existing-signatures">Checksums and existing signatures</a>
+          <a href="#sbom-access-and-scope">SBOM access and scope</a>
+          <a href="#container-verification">Container verification</a>
+          <a href="#fresh-download-release-gate">Fresh-download release gate</a>
+          <a href="#repository-security-signals">Repository security signals</a><strong>Trust and evidence</strong><a href="../trust/">Trust and Limitations</a>
+          <a href="../verification/">Releases and Verification</a>
+          <a href="../security-testing/">Security Testing</a>
+          <a href="../about/">About Repyy</a>
+          <a href="../demo/">Demo and Sample Report</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a>
+        </nav>
+      </aside>
+      <main class="docs-main" id="docs-main">
+        <p class="docs-breadcrumb">
+          <a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span
+          ><span>Releases and Verification</span>
+        </p>
+        <section class="docs-hero docs-searchable" id="overview">
+          <p class="docs-kicker">Releases and Verification</p>
+          <h1>Verify what you download.<span>Know what it proves.</span></h1>
+          <p>Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified explicitly.</p>
+          <p>
+            Download only from
+            <a href="https://github.com/Kevin-Umali/repyy/releases">official GitHub Releases</a>. The sandbox image is
+            <code>ghcr.io/kevin-umali/repyy-sandbox</code>. Verify downloaded artifacts before executing them.
+          </p>
+          <p>
+            Provenance identifies a build's source and workflow. It does not prove the code is harmless, that the maintainer account was uncompromised, or that
+            a scan will detect every risk.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="current-evidence-status">
+          <h2>Current evidence status</h2>
+          <p>v0.5.1 is prepared on the development branch; it is not yet a published, verified release.</p>
+          <p>
+            Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and per-archive SBOMs. The next release workflow adds
+            GitHub attestations and a release-set SPDX SBOM. Do not assume older releases have these new attestations. A configured workflow is not published
+            verification evidence.
+          </p>
+          <p>
+            The new workflow keeps the GitHub release draft until download verification succeeds. A failed gate must remain visible and must not be described as
+            a verified release. Homebrew and Scoop manifests are generated without upload, then published in a separate step only after verification and GitHub
+            release publication. Container blobs are pushed earlier to obtain the digest; availability alone is not verification.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="version-and-commit-identity">
+          <h2>Version and commit identity</h2>
+          <p>
+            Run <code>repyy version</code> only after verifying the downloaded artifact. It reports version, full source commit, builder label, fixed source
+            repository, Go version, build date and rules version. Missing values are <code>unknown</code>; local builds label their builder
+            <code>development</code>. These strings are diagnostics, not cryptographic identity. Official workflow builds inject metadata into binaries and the
+            sandbox image.
+          </p>
+          <p>
+            Local scan reports cannot claim an immutable checkout commit: local content may be uncommitted or change during inspection. Remote reports include
+            the fetched revision. Report conversion preserves the original scanner identity rather than substituting the converter's version.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="verify-provenance">
+          <h2>Verify provenance</h2>
+          <p>
+            Use a recent GitHub CLI with the <code>gh attestation</code> command. For a downloaded archive or extracted binary, replace the placeholders with
+            the exact release and filename:
+          </p>
+          <pre
+            class="docs-example"
+          ><code>gh attestation verify ARTIFACT --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z
+</code></pre>
+          <p>
+            Require the expected repository, workflow and release ref. Check the source commit in the verification output against the release notes.
+            Attestations for extracted binaries let users verify after unpacking; archives and Linux packages also receive provenance.
+            <a href="https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations"
+              >GitHub's attestation guide</a
+            >
+            explains verification and available policy controls.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="checksums-and-existing-signatures">
+          <h2>Checksums and existing signatures</h2>
+          <p>
+            A checksum detects changed bytes only after the checksum list itself is authenticated. Existing releases use Cosign keyless signatures; this work
+            retains that existing path rather than adding a second signing system.
+          </p>
+          <pre
+            class="docs-example"
+          ><code>cosign verify-blob checksums.txt --signature checksums.txt.sig --certificate checksums.txt.pem --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
+sha256sum --check checksums.txt
+</code></pre>
+          <p>
+            On macOS, use <code>shasum -a 256 --check checksums.txt</code>. Windows users can verify individual hashes with <code>Get-FileHash</code>, after
+            authenticating the checksum list. Do not treat a filename or download location alone as verification.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="sbom-access-and-scope">
+          <h2>SBOM access and scope</h2>
+          <p>
+            Container inventories are published separately as
+            <code>repyy-container-linux-amd64.spdx.json</code> and <code>repyy-container-linux-arm64.spdx.json</code>. Each is attested against its platform
+            image digest, recorded in the corresponding <code>.txt</code> asset. These platform digests are selected from the signed multi-platform image index;
+            an inventory for one architecture does not claim coverage of the other. Per-archive <code>*.sbom.json</code> assets identify archive contents.
+            <code>repyy-release.spdx.json</code> describes the release build directory as a set, including platform binaries and packages. It is not a separate
+            per-platform dependency assertion. The workflow binds that set inventory to each binary/archive/package digest using an SPDX attestation. Read its
+            package inventory and relationships rather than interpreting an SBOM as a vulnerability scan.
+          </p>
+          <pre
+            class="docs-example"
+          ><code>gh attestation verify ARTIFACT --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z --predicate-type https://spdx.dev/Document
+</code></pre>
+        </section>
+        <section class="docs-section docs-searchable" id="container-verification">
+          <h2>Container verification</h2>
+          <p>
+            Read the exact image digest from the verified
+            <code>repyy-sandbox-image.txt</code> asset. Replace <code>DIGEST</code> and the version below:
+          </p>
+          <pre
+            class="docs-example"
+          ><code>gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z
+cosign verify ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
+</code></pre>
+          <p>
+            Pull that digest explicitly after verification. A digest pins bytes; signing/provenance identifies who built them. Neither supplies VM isolation.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="fresh-download-release-gate">
+          <h2>Fresh-download release gate</h2>
+          <p>Maintainers can run the same Linux gate used by the workflow, with a directory that does not yet exist:</p>
+          <pre class="docs-example"><code>bash scripts/verify-release.sh vX.Y.Z /tmp/repyy-verification-vX.Y.Z
+</code></pre>
+          <p>
+            This needs GitHub CLI with attestation support, Cosign and SHA-256 tooling; GitHub Actions supplies the tools for maintainers who do not want local
+            installations. It downloads release assets into the fresh directory and checks checksum signatures, hashes, artifact provenance, SBOM attestations
+            and container signatures/provenance. A nonzero result blocks publication. Public verification of the next release remains a launch gate until that
+            workflow actually runs successfully.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="repository-security-signals">
+          <h2>Repository security signals</h2>
+          <p>
+            CodeQL is configured for Go and
+            <a href="https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries"
+              >GitHub Actions workflow security analysis</a
+            >. The added workflow analysis still needs its first CI run.
+          </p>
+          <p>
+            Inspect
+            <a href="https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml">CodeQL runs</a>,
+            <a href="https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml">Scorecard workflow</a>, the
+            <a href="https://scorecard.dev/viewer/?uri=github.com/Kevin-Umali/repyy">Scorecard breakdown</a>, and
+            <a href="https://github.com/Kevin-Umali/repyy/attestations">artifact attestations</a>. Scorecard results may be unavailable before its first
+            default-branch run. A passing check is limited evidence, not certification.
+          </p>
+          <p>
+            Review high-risk Scorecard checks individually. Protected tags, branch protection, review requirements and repository security settings need
+            verification in GitHub; a workflow file alone cannot enforce them. No extra paid service or separate badging account is required for this pipeline.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

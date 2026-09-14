@@ -41,7 +41,7 @@ rules:
     confidence: medium
     description: Reads the organization's private token file
     pattern: '(?i)\.config/acme/token'
-    globs: ['*.js', '*.ts', '*.py']
+    globs: ["*.js", "*.ts", "*.py"]
     remediation: Confirm the access is required and remove secrets from source.
     rationale: This path contains credentials on developer machines.
     legitimate_use: A documented security tool may read this file intentionally.
@@ -62,9 +62,9 @@ expiry (`YYYY-MM-DD`):
 ```yaml
 version: 1
 suppressions:
-  - fingerprint: 'sha256:replace-with-report-fingerprint'
-    reason: 'Reviewed internal fixture; no executable path.'
-    expires: '2026-12-31'
+  - fingerprint: "sha256:replace-with-report-fingerprint"
+    reason: "Reviewed internal fixture; no executable path."
+    expires: "2026-12-31"
 ```
 
 Every suppression needs a fingerprint and reason. Expired suppressions stop

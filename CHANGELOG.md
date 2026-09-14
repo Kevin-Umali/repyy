@@ -1,7 +1,37 @@
 # Changelog
 
-All notable changes are documented here. The project follows Semantic
-Versioning after the first published release.
+All notable changes are documented here. The project follows Semantic Versioning after the first published release.
+
+## [0.5.1] - 2026-09-15
+
+### Added
+
+- Build identity with scanner commit, builder, source, Go version, build date, and rules revision.
+- Trust, verification, security-testing, and project-story guides, plus an independent-review brief.
+- Eight bounded fuzz targets, including valid and malformed archives, nested archives, traversal paths, and resource-limit cases.
+- An inert paired benchmark with generated terminal, JSON, and offline HTML reports and direct fixture, rule, and regression links.
+- Release provenance, platform-specific container SBOM attestations, draft-download verification, and Scorecard configuration.
+- CodeQL security analysis for GitHub Actions workflows alongside the existing Go analysis.
+- Repository formatting commands matching the maintainer's VS Code Prettier settings and generated-report CSP integrity checks.
+
+### Changed
+
+- Reorganize the landing page around reviewing unfamiliar assignments while preserving the original coverage-limit design.
+- Use conservative human decision labels while retaining schema-1 machine verdicts and exit-code behavior.
+- Record host/Docker scan mode per repository; show unavailable local commits and unknown legacy metadata explicitly in HTML reports.
+- Publish Homebrew and Scoop manifests only after release verification succeeds; validate both manifest versions before either update.
+- Version the benchmark as 1.1.0: replace the misleading quoted startup expectation with a harmless local dynamic import, preserving the original marker.
+- Bump the rules revision to `2026.09.15` for the folder-open detection correction.
+
+### Fixed
+
+- Keep documentation navigation aligned with the section being read during scrolling, anchor navigation, and viewport changes.
+- Keep the active documentation link visible within the desktop sidebar without moving the document.
+- Recognize the quoted JSON `runOn` property in automatic folder-open tasks without flagging the paired manual-task control.
+- Surface temporary checkout, authentication-file, and forced-container cleanup failures; preserve findings when checkout cleanup makes a scan incomplete.
+- Prevent horizontal overflow from the offline report's mobile controls.
+
+Release provenance, SBOM attestations, and Scorecard configuration require successful GitHub workflow runs before being presented as verified public evidence.
 
 ## [0.5.0] - 2026-09-13
 
@@ -76,7 +106,7 @@ Versioning after the first published release.
   light review layout, focused review queue, filtering, file views, coverage
   details, redacted matched lines, exact remote source links, and print styling.
 - Added `repyy report` for rendering existing JSON scans and `repyy rules
-  explain` for offline rule guidance.
+explain` for offline rule guidance.
 - Added complete, bounded occurrence locations and review dispositions while
   retaining the version 1 report schema and legacy finding fields.
 - Added terminal detail, grouping, display-filter, progress, and color controls.

@@ -8,8 +8,8 @@ rules:
     description: An unapproved bootstrap host is referenced
     pattern: 'bootstrap\.example\.invalid'
     globs:
-      - '*.sh'
-      - '*.ps1'
+      - "*.sh"
+      - "*.ps1"
     match_scope: raw
     disposition: review
     rationale: Organization policy requires bootstrap hosts to be independently approved.
@@ -19,4 +19,4 @@ rules:
 suppressions:
   - fingerprint: sha256:replace-with-a-finding-fingerprint
     reason: Reviewed vendored test fixture
-    expires: '2026-12-31'
+    expires: "2026-12-31"

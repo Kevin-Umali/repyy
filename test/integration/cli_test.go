@@ -40,7 +40,7 @@ func TestCleanRepositoryFromBuiltCLI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("scan clean fixture: %v\n%s", err, output)
 	}
-	if !strings.Contains(string(output), "NO FINDINGS") {
+	if !strings.Contains(string(output), "NO RELEVANT FINDINGS DETECTED") {
 		t.Fatalf("unexpected output:\n%s", output)
 	}
 }

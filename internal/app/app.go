@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Kevin-Umali/repyy/internal/buildinfo"
 	"github.com/Kevin-Umali/repyy/internal/config"
 	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/model"
@@ -80,7 +81,7 @@ func Run(args []string, stdout, stderr io.Writer, version string) (int, error) {
 		fmt.Fprint(stdout, usage)
 		return 0, nil
 	case "version", "--version":
-		fmt.Fprintf(stdout, "repyy %s (rules %s)\n", version, scan.BuiltinRulesVersion)
+		buildinfo.Write(stdout, version, scan.BuiltinRulesVersion)
 		return 0, nil
 	case "rules":
 		return runRules(args[1:], stdout)
@@ -389,6 +390,11 @@ func normalizeAndValidateReport(report *model.Report) error {
 	}
 	for resultIndex := range report.Results {
 		result := &report.Results[resultIndex]
+		switch result.ScanMode {
+		case "", model.ScanModeHost, model.ScanModeDocker:
+		default:
+			return fmt.Errorf("result %d has invalid scan mode %q", resultIndex, result.ScanMode)
+		}
 		locationsStored := 0
 		locationsTruncated := false
 		switch result.Verdict {
@@ -801,6 +807,8 @@ func runScan(args []string, stdout, stderr io.Writer, version string) (int, erro
 	report := model.Report{
 		SchemaVersion: "1",
 		ToolVersion:   version,
+		ToolCommit:    buildinfo.Commit,
+		Limitation:    model.Limitation,
 		RulesVersion:  scan.BuiltinRulesVersion,
 		Intelligence: model.IntelligenceInfo{
 			Version: intelStatus.SnapshotVersion,
@@ -866,12 +874,13 @@ func exitCodeForResults(results []model.RepoResult, threshold model.Severity) in
 	return 0
 }
 
-func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) model.RepoResult {
+func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) (result model.RepoResult) {
 	started := time.Now()
-	result := model.RepoResult{Target: displayTarget(target), Findings: []model.Finding{}}
+	result = model.RepoResult{Target: displayTarget(target), ScanMode: model.ScanModeHost, Findings: []model.Finding{}}
 	ctx, cancel := context.WithTimeout(context.Background(), opts.timeout)
 	defer cancel()
 	if opts.sandbox == "docker" {
+		result.ScanMode = model.ScanModeDocker
 		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
 		if err != nil {
 			result.Error = err.Error()
@@ -900,7 +909,7 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 		result.Duration = time.Since(started)
 		return result
 	}
-	defer prepared.Cleanup()
+	defer finishCheckout(&result, prepared.Cleanup)
 	if opts.keep && prepared.Remote {
 		result.Resolved = prepared.Path
 	}
@@ -919,6 +928,17 @@ func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[s
 	result.Verdict = verdict(result.Coverage, result.Findings)
 	result.Duration = time.Since(started)
 	return result
+}
+
+// finishCheckout runs before scanOne returns its named result so cleanup failures
+// participate in the ordinary incomplete-scan exit policy without losing findings.
+func finishCheckout(result *model.RepoResult, cleanup func() error) {
+	if err := cleanup(); err != nil {
+		result.Coverage.Complete = false
+		result.Verdict = model.VerdictIncomplete
+		result.Coverage.Warnings = append(result.Coverage.Warnings,
+			"temporary checkout cleanup failed; private files may remain in the system temporary directory")
+	}
 }
 
 func displayTarget(target string) string {

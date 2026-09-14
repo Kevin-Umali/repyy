@@ -62,7 +62,7 @@ folder scans with an installed `repyy` binary do not.
 5. Treat `SCAN INCOMPLETE` as unresolved. Report skipped paths and warnings.
 6. Summarize blocking and review findings first, including every reported
    location, context, confidence, and remediation. Use `repyy rules explain
-   RULE-ID` when additional offline rationale is needed.
+RULE-ID` when additional offline rationale is needed.
 7. State that `NO FINDINGS` is not proof of safety. Recommend isolation and manual review before execution.
 
 ## Safety and privacy

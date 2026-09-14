@@ -3,6 +3,9 @@ FROM --platform=$BUILDPLATFORM golang:1.25.13-alpine AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+ARG BUILT_BY=development
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -10,7 +13,11 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
-    -ldflags="-s -w -X main.version=${VERSION}" \
+    -ldflags="-s -w \
+      -X main.version=${VERSION} \
+      -X github.com/Kevin-Umali/repyy/internal/buildinfo.Commit=${COMMIT} \
+      -X github.com/Kevin-Umali/repyy/internal/buildinfo.Date=${BUILD_DATE} \
+      -X 'github.com/Kevin-Umali/repyy/internal/buildinfo.BuiltBy=${BUILT_BY}'" \
     -o /repyy ./cmd/repyy
 
 FROM alpine:3.22

@@ -1,0 +1,185 @@
+<!doctype html>
+<html class="docs-root" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Security Testing: Repyy reviews take-home assignments before execution, with evidence and visible limitations." />
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>Security Testing · repyy documentation</title>
+    <link rel="stylesheet" href="../docs.css" />
+    <script src="../site.js" defer></script>
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#docs-main">Skip to Security Testing</a>
+    <header class="docs-header">
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+      <div class="docs-search">
+        <label for="docs-search"
+          ><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off"
+        /></label>
+      </div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+    </header>
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <a class="docs-back" href="../docs/">← All docs</a>
+        <details class="docs-mobile-menu">
+          <summary>Browse documentation</summary>
+          <div class="docs-mobile-menu-links">
+            <a href="../trust/">Trust and Limitations</a>
+            <a href="../verification/">Releases and Verification</a>
+            <a href="../security-testing/">Security Testing</a>
+            <a href="../about/">About Repyy</a>
+            <a href="../demo/">Demo and Sample Report</a><span>On this page</span><a href="#existing-regression-coverage">Existing regression coverage</a>
+            <a href="#fuzz-targets-and-properties">Fuzz targets and properties</a>
+            <a href="#run-and-reproduce">Run and reproduce</a>
+            <a href="#public-benchmark">Public benchmark</a>
+            <a href="#known-gaps-and-independent-review">Known gaps and independent review</a>
+          </div>
+        </details>
+        <nav aria-label="Security Testing navigation" tabindex="0">
+          <strong>On this page</strong><a href="#overview">Overview</a><a href="#existing-regression-coverage">Existing regression coverage</a>
+          <a href="#fuzz-targets-and-properties">Fuzz targets and properties</a>
+          <a href="#run-and-reproduce">Run and reproduce</a>
+          <a href="#public-benchmark">Public benchmark</a>
+          <a href="#known-gaps-and-independent-review">Known gaps and independent review</a><strong>Trust and evidence</strong
+          ><a href="../trust/">Trust and Limitations</a>
+          <a href="../verification/">Releases and Verification</a>
+          <a href="../security-testing/">Security Testing</a>
+          <a href="../about/">About Repyy</a>
+          <a href="../demo/">Demo and Sample Report</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a>
+        </nav>
+      </aside>
+      <main class="docs-main" id="docs-main">
+        <p class="docs-breadcrumb">
+          <a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span
+          ><span>Security Testing</span>
+        </p>
+        <section class="docs-hero docs-searchable" id="overview">
+          <p class="docs-kicker">Security Testing</p>
+          <h1>Test the scanner.<span>Keep the gaps visible.</span></h1>
+          <p>Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified explicitly.</p>
+          <p>
+            Repyy processes hostile input. Tests exercise the scanner itself; no fixture is intentionally executed as an assignment. Passing tests do not
+            establish that a repository or Repyy is free of vulnerabilities.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="existing-regression-coverage">
+          <h2>Existing regression coverage</h2>
+          <p>
+            Unit tests cover rule matching, severity/context, configuration and suppressions, report fields and exit policy. Integration tests invoke the built
+            CLI against inert local fixtures. Source tests verify URL rejection and sanitized Git configuration. Docker unit tests use a fake Docker executable
+            to test invocation and hostile JSON handling; they are not live isolation-escape tests. CI separately builds and starts the worker image for a
+            version smoke check.
+          </p>
+          <p>
+            <code>internal/scan/security_regression_test.go</code>, <code>scanner_test.go</code>, and <code>adversarial_test.go</code> cover traversal,
+            symlinks, archive limits, malformed content, unusual encodings, Git metadata and deceptive source patterns.
+            <code>internal/output/output_test.go</code> checks terminal control neutralization, HTML escaping, source-link validation, redaction and report
+            integrity. <code>internal/intel/update_test.go</code> covers signed updates and failure behavior.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="fuzz-targets-and-properties">
+          <h2>Fuzz targets and properties</h2>
+          <div class="docs-table-scroll" role="region" aria-label="Evidence table" tabindex="0">
+            <table class="docs-data-table">
+              <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Input surface</th>
+                  <th>Property / bounds</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>FuzzArchiveInspection</td>
+                  <td>ZIP, TAR and gzip bytes</td>
+                  <td>No crash or unbounded diagnostics; 64 KiB input, 32 entries, 64 KiB expansion, 16 KiB file, depth 2, context deadline</td>
+                </tr>
+                <tr>
+                  <td>FuzzArchivePaths</td>
+                  <td>Portable archive paths</td>
+                  <td>Accepted paths cannot normalize outside the root; 4 KiB input; Windows and POSIX seeds</td>
+                </tr>
+                <tr>
+                  <td>FuzzSymlinkConfinement</td>
+                  <td>Symbolic-link targets</td>
+                  <td>Scanner reads no bytes through repository symlinks; 4 KiB target, controlled external sentinel</td>
+                </tr>
+                <tr>
+                  <td>FuzzGitMetadata</td>
+                  <td><code>.git/config</code></td>
+                  <td>Metadata includes are data and cannot add external file bytes; 8 KiB input in an isolated temp root</td>
+                </tr>
+                <tr>
+                  <td>FuzzConfiguration</td>
+                  <td>Explicit trusted YAML</td>
+                  <td>Parse/validation handles malformed input and rejects unsupported versions; 8 KiB input</td>
+                </tr>
+                <tr>
+                  <td>FuzzManifests</td>
+                  <td>Eight manifest formats</td>
+                  <td>No panic and no negative source locations; 8 KiB input; no package-manager execution</td>
+                </tr>
+                <tr>
+                  <td>FuzzHumanOutput</td>
+                  <td>Repository-controlled filenames/messages</td>
+                  <td>Terminal controls neutralized and injected script markup escaped in HTML; 4 KiB string</td>
+                </tr>
+                <tr>
+                  <td>FuzzJSONReports</td>
+                  <td>Serialized report objects</td>
+                  <td>Accepted input re-renders as valid JSON; 16 KiB input</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Archive seeds include valid ZIP, TAR and TAR.GZ files, nested ZIPs, traversal paths, expansion limits and entry-count limits, alongside malformed
+            inputs. These are bounded starting targets, not exhaustive coverage. Context cancellation is cooperative, not a hard CPU/memory guarantee. CI
+            supplies a 10-minute job timeout and two workers. Concurrent symlink replacement, full Git transport/SSH behavior, live Docker isolation and every
+            report field still need broader testing and independent review.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="run-and-reproduce">
+          <h2>Run and reproduce</h2>
+          <pre class="docs-example"><code>make check
+make security
+go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 30s -parallel 2
+</code></pre>
+          <p>
+            Use the corresponding package and target name for the remaining targets. Ordinary <code>go test</code> runs the seed corpus. The Security evidence
+            workflow runs each target for 10 seconds on changes and 120 seconds on a daily schedule. Read the workflow run rather than assuming a scheduled run
+            happened. Fuzz failures are uploaded as artifacts when available.
+          </p>
+          <p>
+            For a failure, preserve the generated corpus input under the package's <code>testdata/fuzz/TARGET/</code>, minimize it, add a named regression test
+            explaining the violated property, fix the bug and rerun both the seed and fuzz target. Do not replace it with live malware or remove it to obtain a
+            passing run.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="public-benchmark">
+          <h2>Public benchmark</h2>
+          <p>
+            The <a href="../demo/">demo</a> and its versioned paired controls are a separate behavioral check. Per-release results are attached by the release
+            workflow. Known misses and all observed rules remain public; a synthetic benchmark does not establish general accuracy.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="known-gaps-and-independent-review">
+          <h2>Known gaps and independent review</h2>
+          <p>
+            Short fuzz runs cannot exhaust the input space. Tests using fake host tools cannot prove the behavior of every installed Git/Docker version.
+            OS-specific permission and symlink behavior requires platform CI. Resource limits do not provide dedicated-VM isolation. Best-effort cleanup can
+            leave temporary data after failures.
+          </p>
+          <p>
+            The <a href="https://github.com/Kevin-Umali/repyy/blob/main/docs/EXTERNAL-REVIEW.md">external-review brief</a> identifies the required independent
+            scope. Until a reviewer publishes their identity, exact reviewed commit, findings and retest outcome, the project must not claim an independent
+            audit.
+          </p>
+          <p>Report newly found vulnerabilities using <a href="https://github.com/Kevin-Umali/repyy/security/advisories/new">private reporting</a>.</p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

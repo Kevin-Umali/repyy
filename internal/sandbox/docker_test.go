@@ -106,7 +106,7 @@ func TestRunContainerAcceptsValidWorkerJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runContainer() error = %v", err)
 	}
-	if result.Target != "/input" || result.Verdict != model.VerdictNoFindings {
+	if result.Target != "/input" || result.Verdict != model.VerdictNoFindings || result.ScanMode != model.ScanModeDocker {
 		t.Fatalf("unexpected result: %#v", result)
 	}
 	if result.Isolation == nil || result.Isolation.ImageDigest != "sha256:"+strings.Repeat("a", 64) {
@@ -219,5 +219,56 @@ func TestBindMountQuotesSpecialPaths(t *testing.T) {
 		if got := bindMount(tc.path, "/input", strings.HasSuffix(tc.want, ",readonly")); got != tc.want {
 			t.Errorf("bindMount(%q) = %q, want %q", tc.path, got, tc.want)
 		}
+	}
+}
+
+func TestRemoteFetchAndScanHaveSeparateNetworkAndAuthentication(t *testing.T) {
+	requireUnix(t)
+	dir := t.TempDir()
+	script := `#!/bin/sh
+case "$*" in
+  *clone*) printf '%s\n' "$@" > "$FAKE_LOG_DIR/fetch" ;;
+  *rev-parse*) printf '%s\n' "$@" > "$FAKE_LOG_DIR/revision"; printf '%040d\n' 0 ;;
+  *) printf '%s\n' "$@" > "$FAKE_LOG_DIR/scan"; printf '%s' "$FAKE_DOCKER_STDOUT" ;;
+esac
+`
+	if err := os.WriteFile(filepath.Join(dir, "docker"), []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("FAKE_LOG_DIR", dir)
+	t.Setenv("GITHUB_TOKEN", "inert-provider-token")
+	setWorkerOutput(t, validReport(), 0)
+	result, err := Scan(context.Background(), "https://github.com/example/fixture", Options{Image: validImage(), Version: "v1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stage := range []string{"fetch", "revision", "scan"} {
+		data, err := os.ReadFile(filepath.Join(dir, stage))
+		if err != nil {
+			t.Fatal(err)
+		}
+		args := string(data)
+		if strings.Contains(args, "inert-provider-token") {
+			t.Fatal("credential exposed in Docker arguments")
+		}
+		if stage == "fetch" {
+			if !strings.Contains(args, "--network\nbridge\n") || !strings.Contains(args, "--env-file\n") {
+				t.Fatal("fetch boundary missing")
+			}
+			fields := strings.Split(args, "\n")
+			for i, arg := range fields {
+				if arg == "--env-file" {
+					if _, err := os.Stat(fields[i+1]); !os.IsNotExist(err) {
+						t.Fatal("authentication file remained after fetch")
+					}
+				}
+			}
+		} else if !strings.Contains(args, "--network\nnone\n") || strings.Contains(args, "--env-file") {
+			t.Fatalf("network/authentication leaked into %s stage", stage)
+		}
+	}
+	if result.Isolation.FetchNetwork != "bridge" || result.Isolation.ScanNetwork != "none" {
+		t.Fatal("reported network boundary is inaccurate")
 	}
 }

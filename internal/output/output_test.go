@@ -21,7 +21,7 @@ func TestTerminalIncludesVerdictAndDisclaimer(t *testing.T) {
 	if err := Write(&out, "terminal", sampleReport()); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), model.VerdictReview) || !strings.Contains(out.String(), "does not guarantee") || !strings.Contains(out.String(), "not proof that code executed") {
+	if !strings.Contains(out.String(), model.VerdictReview) || !strings.Contains(out.String(), "does not prove") || !strings.Contains(out.String(), "not proof that code executed") {
 		t.Fatalf("unexpected terminal output: %s", out.String())
 	}
 }
@@ -298,5 +298,27 @@ func TestHTMLKeepsFileListReadableWithoutJavaScript(t *testing.T) {
 func TestUnknownFormat(t *testing.T) {
 	if err := Write(&bytes.Buffer{}, "xml", sampleReport()); err == nil {
 		t.Fatal("expected an error")
+	}
+}
+
+func TestHTMLReportsRecordedScanModeWithoutGuessingLegacyMode(t *testing.T) {
+	for _, tc := range []struct{ mode, want string }{
+		{"host", "Scan mode: host"},
+		{"docker", "Scan mode: docker"},
+		{"", "Scan mode: unknown (not recorded)"},
+		{`<script>`, "Scan mode: &lt;script&gt;"},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			report := sampleReport()
+			report.Results[0].ScanMode = model.ScanMode(tc.mode)
+			report.Results[0].Source = nil
+			var out bytes.Buffer
+			if err := Write(&out, "html", report); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), tc.want) || !strings.Contains(out.String(), "Scanned commit: unavailable (not recorded)") {
+				t.Fatalf("missing or guessed scan identity: %s", out.String())
+			}
+		})
 	}
 }

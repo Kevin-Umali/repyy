@@ -9,7 +9,13 @@ builds:
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
     ldflags:
-      - -s -w -X main.version={{.Version}} -X github.com/Kevin-Umali/repyy/internal/sandbox.ImageDigest={{.Env.REPYY_SANDBOX_IMAGE_DIGEST}}
+      - >-
+        -s -w -X main.version={{.Version}} -X
+        github.com/Kevin-Umali/repyy/internal/buildinfo.Commit={{.FullCommit}} -X
+        github.com/Kevin-Umali/repyy/internal/buildinfo.Date={{.Date}} -X
+        "github.com/Kevin-Umali/repyy/internal/buildinfo.BuiltBy={{ if .IsSnapshot }}development{{
+        else }}GitHub Actions{{ end }}" -X
+        github.com/Kevin-Umali/repyy/internal/sandbox.ImageDigest={{.Env.REPYY_SANDBOX_IMAGE_DIGEST}}
 
 archives:
   - formats: [tar.gz]
@@ -31,10 +37,10 @@ nfpms:
 
 homebrew_casks:
   - name: repyy
+    skip_upload: true
     repository:
       owner: Kevin-Umali
       name: homebrew-tap
-      token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
     homepage: https://github.com/Kevin-Umali/repyy
     description: Scan unfamiliar source repositories before running their code
     hooks:
@@ -46,10 +52,10 @@ homebrew_casks:
 
 scoops:
   - name: repyy
+    skip_upload: true
     repository:
       owner: Kevin-Umali
       name: scoop-bucket
-      token: "{{ .Env.REPYY_RELEASE_TOKEN }}"
     homepage: https://github.com/Kevin-Umali/repyy
     description: Scan unfamiliar source repositories before running their code
     license: MIT
@@ -74,3 +80,6 @@ signs:
 
 changelog:
   sort: asc
+
+release:
+  draft: true

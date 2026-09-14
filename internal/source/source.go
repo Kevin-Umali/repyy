@@ -4,6 +4,7 @@ package source
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -75,15 +76,13 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 	cmd.Env = secureGitEnv(target)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		_ = os.RemoveAll(tmp)
-		return Prepared{}, fmt.Errorf("safe clone failed: %s", sanitizeGitError(string(output)))
+		return Prepared{}, errors.Join(fmt.Errorf("safe clone failed: %s", sanitizeGitError(string(output))), removeFailedCheckout(tmp))
 	}
 	revisionCmd := exec.CommandContext(ctx, "git", "-c", "core.hooksPath="+nullDevice(), "-C", dest, "rev-parse", "HEAD")
 	revisionCmd.Env = secureGitEnv(target)
 	revisionOutput, err := revisionCmd.Output()
 	if err != nil {
-		_ = os.RemoveAll(tmp)
-		return Prepared{}, fmt.Errorf("resolve cloned revision: %w", err)
+		return Prepared{}, errors.Join(fmt.Errorf("resolve cloned revision: %w", err), removeFailedCheckout(tmp))
 	}
 	return Prepared{
 		Target: target, Path: dest, Remote: true,
@@ -209,4 +208,11 @@ func sanitizeGitError(v string) string {
 		}
 	}
 	return v
+}
+
+func removeFailedCheckout(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errors.New("temporary checkout cleanup failed; private files may remain in the system temporary directory")
+	}
+	return nil
 }
