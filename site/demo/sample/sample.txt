@@ -1,4 +1,4 @@
-repyy 0.5.1-dev — read-only repository preflight
+repyy 0.5.1 — read-only repository preflight
 rules 2026.09.15 · intelligence 2026-09-12.1 (2026-09-12, embedded)
 
 REVIEW REQUIRED · demo/lifecycle/risky

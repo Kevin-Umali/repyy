@@ -1,7 +1,7 @@
 {
   "benchmark_version": "1.1.0",
-  "tool_version": "0.5.1-dev",
-  "build_identity": "repyy 0.5.1-dev\ncommit: unknown\nbuilt-by: development\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: unknown\nrules: 2026.09.15",
+  "tool_version": "0.5.1",
+  "build_identity": "repyy 0.5.1\ncommit: 261cc64bde67b9c73ba23021e052c330f64bbd05\nbuilt-by: GitHub Actions\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: 2026-09-14T17:24:40Z\nrules: 2026.09.15",
   "risky_detected": 8,
   "risky_total": 8,
   "controls_high_flagged": 0,

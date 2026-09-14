@@ -4,9 +4,9 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,6 +28,7 @@ def materialize(root, files):
 def run(binary, root):
     result = subprocess.run(
         [binary, "scan", str(root), "--format", "json", "--progress", "quiet"],
+        check=False,
         capture_output=True,
         text=True,
         timeout=60,

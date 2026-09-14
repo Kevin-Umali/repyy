@@ -1,6 +1,6 @@
 # Repyy benchmark 1.1.0
 
-Repyy: 0.5.1-dev
+Repyy: 0.5.1
 Expected risky fixtures detected: 8/8
 Clean controls incorrectly flagged at high/critical: 0/8
 Unsupported/skipped fixture scans: 0

@@ -66,10 +66,9 @@
         <section class="docs-hero docs-searchable" id="overview">
           <p class="docs-kicker">Releases and Verification</p>
           <h1>Verify what you download.<span>Know what it proves.</span></h1>
-          <p>Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified explicitly.</p>
+          <p>Reviewed: 2026-09-15. Release evidence is checked against the published version; subsequent changes are identified explicitly.</p>
           <p>
-            Download only from
-            <a href="https://github.com/Kevin-Umali/repyy/releases">official GitHub Releases</a>. The sandbox image is
+            Download only from <a href="https://github.com/Kevin-Umali/repyy/releases">official GitHub Releases</a>. The sandbox image is
             <code>ghcr.io/kevin-umali/repyy-sandbox</code>. Verify downloaded artifacts before executing them.
           </p>
           <p>
@@ -79,15 +78,22 @@
         </section>
         <section class="docs-section docs-searchable" id="current-evidence-status">
           <h2>Current evidence status</h2>
-          <p>v0.5.1 is prepared on the development branch; it is not yet a published, verified release.</p>
           <p>
-            Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and per-archive SBOMs. The next release workflow adds
-            GitHub attestations and a release-set SPDX SBOM. Do not assume older releases have these new attestations. A configured workflow is not published
-            verification evidence.
+            <a href="https://github.com/Kevin-Umali/repyy/releases/tag/v0.5.1">v0.5.1 is published</a> from commit
+            <code>261cc64bde67b9c73ba23021e052c330f64bbd05</code>. Its
+            <a href="https://github.com/Kevin-Umali/repyy/actions/runs/34874376636">release workflow</a> passed the fresh-download gate before publication,
+            including checksum signatures, hashes, build provenance, SPDX attestations, and container signatures/provenance. Homebrew and Scoop manifests were
+            updated after that gate passed. A separate local download verification also passed using GitHub CLI 2.100.0 and Cosign 3.1.3. The extracted Linux
+            binary's provenance was verified before reproducing benchmark 1.1.0: eight expected indicators, no high/critical control findings, no skipped or
+            incomplete scans.
           </p>
           <p>
-            The new workflow keeps the GitHub release draft until download verification succeeds. A failed gate must remain visible and must not be described as
-            a verified release. Homebrew and Scoop manifests are generated without upload, then published in a separate step only after verification and GitHub
+            Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and per-archive SBOMs. v0.5.1 adds GitHub attestations
+            and a release-set SPDX SBOM. Do not assume older releases have these new attestations. A configured workflow is not published verification evidence.
+          </p>
+          <p>
+            The workflow keeps the GitHub release draft until download verification succeeds. A failed gate must remain visible and must not be described as a
+            verified release. Homebrew and Scoop manifests are generated without upload, then published in a separate step only after verification and GitHub
             release publication. Container blobs are pushed earlier to obtain the digest; availability alone is not verification.
           </p>
         </section>
@@ -142,13 +148,13 @@ sha256sum --check checksums.txt
         <section class="docs-section docs-searchable" id="sbom-access-and-scope">
           <h2>SBOM access and scope</h2>
           <p>
-            Container inventories are published separately as
-            <code>repyy-container-linux-amd64.spdx.json</code> and <code>repyy-container-linux-arm64.spdx.json</code>. Each is attested against its platform
-            image digest, recorded in the corresponding <code>.txt</code> asset. These platform digests are selected from the signed multi-platform image index;
-            an inventory for one architecture does not claim coverage of the other. Per-archive <code>*.sbom.json</code> assets identify archive contents.
-            <code>repyy-release.spdx.json</code> describes the release build directory as a set, including platform binaries and packages. It is not a separate
-            per-platform dependency assertion. The workflow binds that set inventory to each binary/archive/package digest using an SPDX attestation. Read its
-            package inventory and relationships rather than interpreting an SBOM as a vulnerability scan.
+            Container inventories are published separately as <code>repyy-container-linux-amd64.spdx.json</code> and
+            <code>repyy-container-linux-arm64.spdx.json</code>. Each is attested against its platform image digest, recorded in the corresponding
+            <code>.txt</code> asset. These platform digests are selected from the signed multi-platform image index; an inventory for one architecture does not
+            claim coverage of the other. Per-archive <code>*.sbom.json</code> assets identify archive contents. <code>repyy-release.spdx.json</code> describes
+            the release build directory as a set, including platform binaries and packages. It is not a separate per-platform dependency assertion. The workflow
+            binds that set inventory to each binary/archive/package digest using an SPDX attestation. Read its package inventory and relationships rather than
+            interpreting an SBOM as a vulnerability scan.
           </p>
           <pre
             class="docs-example"
@@ -157,10 +163,7 @@ sha256sum --check checksums.txt
         </section>
         <section class="docs-section docs-searchable" id="container-verification">
           <h2>Container verification</h2>
-          <p>
-            Read the exact image digest from the verified
-            <code>repyy-sandbox-image.txt</code> asset. Replace <code>DIGEST</code> and the version below:
-          </p>
+          <p>Read the exact image digest from the verified <code>repyy-sandbox-image.txt</code> asset. Replace <code>DIGEST</code> and the version below:</p>
           <pre
             class="docs-example"
           ><code>gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z
@@ -178,8 +181,8 @@ cosign verify ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --certificate-iden
           <p>
             This needs GitHub CLI with attestation support, Cosign and SHA-256 tooling; GitHub Actions supplies the tools for maintainers who do not want local
             installations. It downloads release assets into the fresh directory and checks checksum signatures, hashes, artifact provenance, SBOM attestations
-            and container signatures/provenance. A nonzero result blocks publication. Public verification of the next release remains a launch gate until that
-            workflow actually runs successfully.
+            and container signatures/provenance. A nonzero result blocks publication. The v0.5.1 workflow passed this gate before publication. Every subsequent
+            release must pass it again.
           </p>
         </section>
         <section class="docs-section docs-searchable" id="repository-security-signals">
@@ -188,19 +191,30 @@ cosign verify ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --certificate-iden
             CodeQL is configured for Go and
             <a href="https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries"
               >GitHub Actions workflow security analysis</a
-            >. The added workflow analysis still needs its first CI run.
+            >. Go and Actions analysis passed on the v0.5.1 source commit.
           </p>
           <p>
-            Inspect
-            <a href="https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml">CodeQL runs</a>,
+            Inspect <a href="https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml">CodeQL runs</a>,
             <a href="https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml">Scorecard workflow</a>, the
             <a href="https://scorecard.dev/viewer/?uri=github.com/Kevin-Umali/repyy">Scorecard breakdown</a>, and
-            <a href="https://github.com/Kevin-Umali/repyy/attestations">artifact attestations</a>. Scorecard results may be unavailable before its first
-            default-branch run. A passing check is limited evidence, not certification.
+            <a href="https://github.com/Kevin-Umali/repyy/attestations">artifact attestations</a>. The
+            <a href="https://github.com/Kevin-Umali/repyy/actions/runs/34873941392">first Scorecard run</a> completed successfully; its downloadable SARIF
+            artifact contains the findings. The public viewer may lag behind the workflow. A passing workflow does not mean every security check scored well.
           </p>
           <p>
             Review high-risk Scorecard checks individually. Protected tags, branch protection, review requirements and repository security settings need
             verification in GitHub; a workflow file alone cannot enforce them. No extra paid service or separate badging account is required for this pipeline.
+          </p>
+          <p>
+            The first assessment flagged broad release-workflow token permissions, unpinned Docker base images, and the missing private-reporting link.
+            Follow-up changes scope write permissions to the release jobs, pin the base images by verified digest, and link the reporting form. These changes
+            are after the v0.5.1 tag and will apply to subsequent releases.
+          </p>
+          <p>
+            Main requires CI checks and disallows bypass by administrators. Release tags matching <code>v*</code> are protected against updates and deletion.
+            Main does not require independent approval or CODEOWNERS review; those Scorecard findings remain open. Repository age and the absence of an OpenSSF
+            best-practices badge are also visible limitations. Independent security review was deferred for this release; no independent audit or certification
+            is claimed.
           </p>
         </section>
       </main>

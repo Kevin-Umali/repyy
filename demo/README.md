@@ -19,8 +19,10 @@ image on a reserved `.invalid` registry. Credential references are fake path str
 or credential collection exists. Network/evaluation examples are quoted text, with no callable
 downloader or execution chain. Fixtures are created without executable permissions.
 
-The public source is designed to be copied into a standalone demo repository after review. This
-branch does not claim that separate repository has already been published.
+The standalone [repyy-demo repository](https://github.com/Kevin-Umali/repyy-demo) publishes this
+inert corpus as benchmark [v1.1.0](https://github.com/Kevin-Umali/repyy-demo/tree/v1.1.0).
+Its checked-in reports were generated with the verified official Repyy v0.5.1 Linux binary from
+commit `261cc64bde67b9c73ba23021e052c330f64bbd05`. The same samples are available on this site.
 
 ## Reproduce
 
@@ -39,16 +41,16 @@ use local fixture identities, not a fabricated remote commit.
 
 ## Expected outcomes and controls
 
-| Fixture                                                                                                                                 | Rule evidence                                                                              | Regression check                                                                        | Paired control                           |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------- |
-| [Install lifecycle script](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L5)                                           | [PKG-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/catalog.go#L158)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Ordinary test script                     |
-| [Startup configuration dynamically imports a harmless local module](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L20) | [IMPORT-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L44)  | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Static harmless PostCSS configuration    |
-| [Executable-looking text in an image filename](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L36)                      | [EXEC-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L14)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | SVG with only image markup               |
-| [IDE folder-open task](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L51)                                              | [IDE-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L47)     | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Manual task without automatic run option |
-| [Git commit hook](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L66)                                                   | [GITHOOK-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L60) | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Inactive sample hook                     |
-| [Encoded download-and-execute indicators](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L81)                           | [CHAIN-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L27)   | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Normal display string                    |
-| [Credential path reference](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L96)                                         | [CRED-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L30)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Specific benign environment variable     |
-| [Docker socket mount](https://github.com/Kevin-Umali/repyy/blob/main/demo/cases.json#L111)                                              | [DOCKER-001](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/builtin.go#L57)  | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/main/scripts/benchmark.py) | Ordinary read-only data volume           |
+| Fixture                                                                                                                                   | Rule evidence                                                                                | Regression check                                                                          | Paired control                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------- |
+| [Install lifecycle script](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L5)                                           | [PKG-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/catalog.go#L158)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Ordinary test script                     |
+| [Startup configuration dynamically imports a harmless local module](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L18) | [IMPORT-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L44)  | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Static harmless PostCSS configuration    |
+| [Executable-looking text in an image filename](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L32)                      | [EXEC-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L14)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | SVG with only image markup               |
+| [IDE folder-open task](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L45)                                              | [IDE-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L47)     | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Manual task without automatic run option |
+| [Git commit hook](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L58)                                                   | [GITHOOK-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L60) | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Inactive sample hook                     |
+| [Encoded download-and-execute indicators](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L71)                           | [CHAIN-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L27)   | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Normal display string                    |
+| [Credential path reference](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L84)                                         | [CRED-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L30)    | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Specific benign environment variable     |
+| [Docker socket mount](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L97)                                               | [DOCKER-001](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L57)  | [Benchmark runner](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py) | Ordinary read-only data volume           |
 
 Benchmark 1.1.0 detects all eight expected indicators. This is a small synthetic regression result,
 not proof of malware detection accuracy or safe repositories. The runner fails on changes to the
@@ -76,7 +78,7 @@ uses a real dynamic import of this harmless local file in the startup configurat
 measures the observable import indicator; complete startup call-graph analysis remains unsupported.
 
 The folder-open fixture is unchanged. Repyy v0.5.1 corrects IDE-001 to recognize the quoted JSON
-`"runOn"` key. Its [paired scanner regression](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/ide_test.go)
+`"runOn"` key. Its [paired scanner regression](https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/ide_test.go)
 checks that automatic execution is flagged and the manual-task control is not. No difficult fixture
 was removed to improve the result. Prior 1.0.0 fixtures and results remain in Git history.
 

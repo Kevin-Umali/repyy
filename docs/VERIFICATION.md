@@ -1,7 +1,7 @@
 # Releases and Verification
 
-Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified
-explicitly.
+Reviewed: 2026-09-15. Release evidence is checked against the published version; subsequent changes are
+identified explicitly.
 
 Download only from [official GitHub Releases](https://github.com/Kevin-Umali/repyy/releases). The
 sandbox image is `ghcr.io/kevin-umali/repyy-sandbox`. Verify downloaded artifacts before executing
@@ -12,14 +12,21 @@ the maintainer account was uncompromised, or that a scan will detect every risk.
 
 ## Current evidence status
 
-v0.5.1 is prepared on the development branch; it is not yet a published, verified release.
+[v0.5.1 is published](https://github.com/Kevin-Umali/repyy/releases/tag/v0.5.1) from commit
+`261cc64bde67b9c73ba23021e052c330f64bbd05`. Its
+[release workflow](https://github.com/Kevin-Umali/repyy/actions/runs/34874376636) passed the
+fresh-download gate before publication, including checksum signatures, hashes, build provenance,
+SPDX attestations, and container signatures/provenance. Homebrew and Scoop manifests were updated
+after that gate passed. A separate local download verification also passed using GitHub CLI 2.100.0
+and Cosign 3.1.3. The extracted Linux binary's provenance was verified before reproducing benchmark
+1.1.0: eight expected indicators, no high/critical control findings, no skipped or incomplete scans.
 
 Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and
-per-archive SBOMs. The next release workflow adds GitHub attestations and a release-set SPDX SBOM.
+per-archive SBOMs. v0.5.1 adds GitHub attestations and a release-set SPDX SBOM.
 Do not assume older releases have these new attestations. A configured workflow is not published
 verification evidence.
 
-The new workflow keeps the GitHub release draft until download verification succeeds. A failed gate
+The workflow keeps the GitHub release draft until download verification succeeds. A failed gate
 must remain visible and must not be described as a verified release. Homebrew and Scoop manifests
 are generated without upload, then published in a separate step only after verification and GitHub
 release publication. Container blobs are pushed earlier to obtain the digest; availability alone is
@@ -108,22 +115,32 @@ bash scripts/verify-release.sh vX.Y.Z /tmp/repyy-verification-vX.Y.Z
 This needs GitHub CLI with attestation support, Cosign and SHA-256 tooling; GitHub Actions supplies
 the tools for maintainers who do not want local installations. It downloads release assets into the
 fresh directory and checks checksum signatures, hashes, artifact provenance, SBOM attestations and
-container signatures/provenance. A nonzero result blocks publication. Public verification of the
-next release remains a launch gate until that workflow actually runs successfully.
+container signatures/provenance. A nonzero result blocks publication. The v0.5.1 workflow passed this gate before publication. Every subsequent release must pass it again.
 
 ## Repository security signals
 
 CodeQL is configured for Go and [GitHub Actions workflow security analysis](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries).
-The added workflow analysis still needs its first CI run.
+Go and Actions analysis passed on the v0.5.1 source commit.
 
 Inspect [CodeQL runs](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml),
 [Scorecard workflow](https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml), the
 [Scorecard breakdown](https://scorecard.dev/viewer/?uri=github.com/Kevin-Umali/repyy), and
-[artifact attestations](https://github.com/Kevin-Umali/repyy/attestations). Scorecard results may be
-unavailable before its first default-branch run. A passing check is limited evidence, not
-certification.
+[artifact attestations](https://github.com/Kevin-Umali/repyy/attestations). The [first Scorecard run](https://github.com/Kevin-Umali/repyy/actions/runs/34873941392)
+completed successfully; its downloadable SARIF artifact contains the findings. The public viewer
+may lag behind the workflow. A passing workflow does not mean every security check scored well.
 
 Review high-risk Scorecard checks individually. Protected tags, branch protection, review
 requirements and repository security settings need verification in GitHub; a workflow file alone
 cannot enforce them. No extra paid service or separate badging account is required for this
 pipeline.
+
+The first assessment flagged broad release-workflow token permissions, unpinned Docker base images,
+and the missing private-reporting link. Follow-up changes scope write permissions to the release
+jobs, pin the base images by verified digest, and link the reporting form. These changes are after
+the v0.5.1 tag and will apply to subsequent releases.
+
+Main requires CI checks and disallows bypass by administrators. Release tags matching `v*` are
+protected against updates and deletion. Main does not require independent approval or CODEOWNERS
+review; those Scorecard findings remain open. Repository age and the absence of an OpenSSF
+best-practices badge are also visible limitations. Independent security review was deferred for
+this release; no independent audit or certification is claimed.

@@ -8,6 +8,8 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 - Scope release workflow write permissions to the publishing jobs and pin sandbox base images by digest, following the first OpenSSF Scorecard assessment.
 - Link directly to private vulnerability reporting from the security policy.
+- Publish v0.5.1 verification evidence and standalone demo links; refresh public samples with the verified release binary and pin fixture evidence links to the release tag.
+- Make benchmark subprocess exit-code handling explicit and organize its imports.
 
 ### Fixed
 
