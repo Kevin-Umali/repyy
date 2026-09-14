@@ -216,7 +216,7 @@ jobs:
           bash scripts/verify-release.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/release-verification"
           gh release view "$GITHUB_REF_NAME" --json body --jq .body > "$RUNNER_TEMP/release-notes.md"
           {
-            printf '\nSource commit: `%s`\n\n' "$GITHUB_SHA"
+            printf '\nSource commit: %s\n\n' "$GITHUB_SHA"
             printf 'Build provenance: https://github.com/Kevin-Umali/repyy/attestations\n\n'
             printf 'Verification guide: https://github.com/Kevin-Umali/repyy/blob/%s/docs/VERIFICATION.md\n' "$GITHUB_SHA"
           } >> "$RUNNER_TEMP/release-notes.md"
