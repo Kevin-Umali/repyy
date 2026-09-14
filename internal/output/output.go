@@ -62,6 +62,7 @@ func sanitizedReport(report model.Report) model.Report {
 	report.Results = append([]model.RepoResult(nil), report.Results...)
 	for resultIndex := range report.Results {
 		result := &report.Results[resultIndex]
+		result.ScanMode = model.ScanMode(sanitizeSourceText(string(result.ScanMode)))
 		result.Target = sanitizeSourceText(result.Target)
 		result.Resolved = sanitizeSourceText(result.Resolved)
 		result.Verdict = sanitizeSourceText(result.Verdict)

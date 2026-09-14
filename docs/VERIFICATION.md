@@ -12,6 +12,8 @@ the maintainer account was uncompromised, or that a scan will detect every risk.
 
 ## Current evidence status
 
+v0.5.1 is prepared on the development branch; it is not yet a published, verified release.
+
 Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and
 per-archive SBOMs. The next release workflow adds GitHub attestations and a release-set SPDX SBOM.
 Do not assume older releases have these new attestations. A configured workflow is not published
@@ -110,6 +112,9 @@ container signatures/provenance. A nonzero result blocks publication. Public ver
 next release remains a launch gate until that workflow actually runs successfully.
 
 ## Repository security signals
+
+CodeQL is configured for Go and [GitHub Actions workflow security analysis](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries).
+The added workflow analysis still needs its first CI run.
 
 Inspect [CodeQL runs](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml),
 [Scorecard workflow](https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml), the

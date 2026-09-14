@@ -300,3 +300,25 @@ func TestUnknownFormat(t *testing.T) {
 		t.Fatal("expected an error")
 	}
 }
+
+func TestHTMLReportsRecordedScanModeWithoutGuessingLegacyMode(t *testing.T) {
+	for _, tc := range []struct{ mode, want string }{
+		{"host", "Scan mode: host"},
+		{"docker", "Scan mode: docker"},
+		{"", "Scan mode: unknown (not recorded)"},
+		{`<script>`, "Scan mode: &lt;script&gt;"},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			report := sampleReport()
+			report.Results[0].ScanMode = model.ScanMode(tc.mode)
+			report.Results[0].Source = nil
+			var out bytes.Buffer
+			if err := Write(&out, "html", report); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), tc.want) || !strings.Contains(out.String(), "Scanned commit: unavailable (not recorded)") {
+				t.Fatalf("missing or guessed scan identity: %s", out.String())
+			}
+		})
+	}
+}

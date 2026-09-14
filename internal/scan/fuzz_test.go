@@ -1,7 +1,12 @@
 package scan
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,8 +18,8 @@ import (
 )
 
 func FuzzArchiveInspection(f *testing.F) {
-	f.Add([]byte("PK\x03\x04"), uint8(0))
-	f.Add([]byte("not a tar"), uint8(1))
+	addArchiveSeeds(f)
+
 	scanner := New(Options{Limits: Limits{MaxFiles: 100, MaxFileBytes: 16384, MaxArchiveFiles: 32, MaxArchiveBytes: 65536, MaxArchiveDepth: 2}})
 	f.Fuzz(func(t *testing.T, data []byte, format uint8) {
 		if len(data) > 65536 {
@@ -95,4 +100,60 @@ func FuzzSymlinkConfinement(f *testing.F) {
 			t.Fatalf("symlink content was read: %+v", coverage)
 		}
 	})
+}
+
+// addArchiveSeeds reaches parsing and expansion before mutation begins.
+func addArchiveSeeds(f *testing.F) {
+	f.Add([]byte("PK\x03\x04"), uint8(0))
+	f.Add([]byte("not a tar"), uint8(1))
+	zipSeed := func(names []string, body []byte) []byte {
+		var buffer bytes.Buffer
+		writer := zip.NewWriter(&buffer)
+		for _, name := range names {
+			entry, err := writer.Create(name)
+			if err != nil {
+				f.Fatal(err)
+			}
+			if _, err := entry.Write(body); err != nil {
+				f.Fatal(err)
+			}
+		}
+		if err := writer.Close(); err != nil {
+			f.Fatal(err)
+		}
+		return buffer.Bytes()
+	}
+	inert := []byte("inert archive seed")
+	validZIP := zipSeed([]string{"marker.txt"}, inert)
+	f.Add(validZIP, uint8(0))
+	f.Add(zipSeed([]string{"../outside.txt"}, inert), uint8(0))
+	f.Add(zipSeed([]string{"nested.zip"}, zipSeed([]string{"inner.zip"}, validZIP)), uint8(0))
+	f.Add(zipSeed([]string{"expanded.txt"}, bytes.Repeat([]byte("a"), 65537)), uint8(0))
+	names := make([]string, 33)
+	for i := range names {
+		names[i] = fmt.Sprintf("entry-%d.txt", i)
+	}
+	f.Add(zipSeed(names, inert), uint8(0))
+	var tarBuffer bytes.Buffer
+	tarWriter := tar.NewWriter(&tarBuffer)
+	if err := tarWriter.WriteHeader(&tar.Header{Name: "marker.txt", Mode: 0600, Size: int64(len(inert))}); err != nil {
+		f.Fatal(err)
+	}
+	if _, err := tarWriter.Write(inert); err != nil {
+		f.Fatal(err)
+	}
+	if err := tarWriter.Close(); err != nil {
+		f.Fatal(err)
+	}
+	f.Add(tarBuffer.Bytes(), uint8(1))
+	var gzipBuffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&gzipBuffer)
+	if _, err := gzipWriter.Write(tarBuffer.Bytes()); err != nil {
+		f.Fatal(err)
+	}
+	if err := gzipWriter.Close(); err != nil {
+		f.Fatal(err)
+	}
+	f.Add(gzipBuffer.Bytes(), uint8(2))
+
 }

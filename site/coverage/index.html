@@ -3,10 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Detailed detection coverage, precision controls, exclusions, and rule reference for repyy."
-    />
+    <meta name="description" content="Detailed detection coverage, precision controls, exclusions, and rule reference for repyy." />
     <meta name="theme-color" content="#f5f5f7" />
     <title>Detection coverage · repyy documentation</title>
     <link rel="stylesheet" href="../docs.css" />
@@ -15,23 +12,13 @@
   <body class="docs-page">
     <a class="skip-link" href="#docs-main">Skip to coverage guide</a>
     <header class="docs-header">
-      <a class="brand" href="../" aria-label="repyy home"
-        >repyy<span aria-hidden="true">/</span><small>Docs</small></a
-      >
+      <a class="brand" href="../" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
       <div class="docs-search">
         <label for="docs-search"
-          ><span>Search documentation</span
-          ><input
-            id="docs-search"
-            type="search"
-            placeholder="Search documentation"
-            autocomplete="off"
+          ><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off"
         /></label>
       </div>
-      <div class="docs-header-links">
-        <a href="../">Website</a><a href="../docs/">Docs</a
-        ><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a>
-      </div>
+      <div class="docs-header-links"><a href="../">Website</a><a href="../docs/">Docs</a><a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
     </header>
 
     <div class="docs-shell">
@@ -40,69 +27,51 @@
         <details class="docs-mobile-menu">
           <summary>Browse documentation</summary>
           <div class="docs-mobile-menu-links">
-            <a href="../docs/">All docs</a><a href="../installation/">Installation</a
-            ><a href="../cli/">CLI reference</a><a href="../configuration/">Configuration</a
-            ><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a
-            ><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a
-            ><a href="../trust/">Trust and Limitations</a
-            ><a href="../demo/">Demo and Sample Report</a
-            ><a href="../verification/">Release verification</a
-            ><a href="../security-testing/">Security testing</a><a href="../about/">About</a
-            ><span>On this page</span><a href="#overview">Overview</a><a href="#map">Coverage map</a
-            ><a href="#supply-chain">Supply-chain files</a
-            ><a href="#precision">Precision controls</a><a href="#limits">Coverage limits</a
-            ><a href="#exclusions">Deliberate exclusions</a><a href="#explain">Explain a rule</a
-            ><a href="#list">List intelligence</a><a href="#workflow">Review workflow</a>
+            <a href="../docs/">All docs</a><a href="../installation/">Installation</a><a href="../cli/">CLI reference</a
+            ><a href="../configuration/">Configuration</a><a href="../isolation/">Isolation</a><a href="../coverage/">Detection coverage</a
+            ><a href="../intelligence/">Intelligence</a><a href="../agent-skill/">Agent skill</a><a href="../trust/">Trust and Limitations</a
+            ><a href="../demo/">Demo and Sample Report</a><a href="../verification/">Release verification</a><a href="../security-testing/">Security testing</a
+            ><a href="../about/">About</a><span>On this page</span><a href="#overview">Overview</a><a href="#map">Coverage map</a
+            ><a href="#supply-chain">Supply-chain files</a><a href="#precision">Precision controls</a><a href="#limits">Coverage limits</a
+            ><a href="#exclusions">Deliberate exclusions</a><a href="#explain">Explain a rule</a><a href="#list">List intelligence</a
+            ><a href="#workflow">Review workflow</a>
           </div>
         </details>
         <nav aria-label="Coverage navigation" tabindex="0">
           <strong>Coverage guide</strong>
-          <a href="#overview">Overview</a><a href="#map">Coverage map</a
-          ><a href="#supply-chain">Supply-chain files</a><a href="#precision">Precision controls</a
-          ><a href="#limits">Coverage limits</a><a href="#exclusions">Deliberate exclusions</a>
+          <a href="#overview">Overview</a><a href="#map">Coverage map</a><a href="#supply-chain">Supply-chain files</a
+          ><a href="#precision">Precision controls</a><a href="#limits">Coverage limits</a><a href="#exclusions">Deliberate exclusions</a>
           <strong>Investigate</strong>
-          <a href="#explain">Explain a rule</a><a href="#list">List intelligence</a
-          ><a href="#workflow">Review workflow</a>
+          <a href="#explain">Explain a rule</a><a href="#list">List intelligence</a><a href="#workflow">Review workflow</a>
           <strong>More documentation</strong>
-          <a href="../docs/#verdicts-docs">Read verdicts</a
-          ><a href="../docs/#reports-docs">Reports</a><a href="../configuration/">Configuration</a
-          ><a href="../cli/">CLI reference</a><a href="../intelligence/">Intelligence guide</a
-          ><a href="../agent-skill/">Agent skill</a><a href="../trust/">Trust and Limitations</a
-          ><a href="../demo/">Demo and Sample Report</a
-          ><a href="../verification/">Release verification</a
+          <a href="../docs/#verdicts-docs">Read verdicts</a><a href="../docs/#reports-docs">Reports</a><a href="../configuration/">Configuration</a
+          ><a href="../cli/">CLI reference</a><a href="../intelligence/">Intelligence guide</a><a href="../agent-skill/">Agent skill</a
+          ><a href="../trust/">Trust and Limitations</a><a href="../demo/">Demo and Sample Report</a><a href="../verification/">Release verification</a
           ><a href="../security-testing/">Security testing</a><a href="../about/">About</a>
         </nav>
       </aside>
 
       <main class="docs-main" id="docs-main">
         <p class="docs-breadcrumb">
-          <a href="../">repyy</a><span aria-hidden="true">/</span
-          ><a href="../docs/">Documentation</a><span aria-hidden="true">/</span
+          <a href="../">repyy</a><span aria-hidden="true">/</span><a href="../docs/">Documentation</a><span aria-hidden="true">/</span
           ><span>Detection coverage</span>
         </p>
-        <section
-          class="docs-hero docs-searchable"
-          id="overview"
-          data-search="coverage detection map built in static checks acceptance map limitations"
-        >
+        <section class="docs-hero docs-searchable" id="overview" data-search="coverage detection map built in static checks acceptance map limitations">
           <p class="docs-kicker">Detection coverage</p>
           <h1>Know what the scan can see.<span>Know where review still matters.</span></h1>
           <p>
-            This guide maps repyy’s built-in static checks to their rule IDs, explains the controls
-            that reduce false positives, and names the boundaries that a scan deliberately leaves
-            outside its scope.
+            This guide maps repyy’s built-in static checks to their rule IDs, explains the controls that reduce false positives, and names the boundaries that a
+            scan deliberately leaves outside its scope.
           </p>
           <div class="docs-summary" aria-label="Coverage summary">
-            <span><b>Static</b> Source is read as data</span
-            ><span><b>Contextual</b> Findings retain file roles</span
+            <span><b>Static</b> Source is read as data</span><span><b>Contextual</b> Findings retain file roles</span
             ><span><b>Honest</b> Limits become incomplete results</span>
           </div>
           <div class="docs-callout">
             <strong>An acceptance map, not a guarantee</strong>
             <p>
               Exact indicators age. Heuristics can produce false positives and false negatives.
-              <code>NO FINDINGS</code> means no enabled rule matched within completed coverage; it
-              does not prove safety.
+              <code>NO FINDINGS</code> means no enabled rule matched within completed coverage; it does not prove safety.
             </p>
           </div>
         </section>
@@ -114,170 +83,116 @@
         >
           <h2>Coverage map</h2>
           <p>
-            The scanner combines individual indicators with correlated behavior. The IDs below are
-            the families you will see in terminal, JSON, SARIF, and HTML reports.
+            The scanner combines individual indicators with correlated behavior. The IDs below are the families you will see in terminal, JSON, SARIF, and HTML
+            reports.
           </p>
-          <div
-            class="docs-table coverage-table"
-            role="table"
-            aria-label="Detection coverage and rule IDs"
-          >
-            <div role="row">
-              <b role="cell">Detection area</b><b role="cell">Representative checks</b
-              ><b role="cell">Rule IDs</b>
-            </div>
+          <div class="docs-table coverage-table" role="table" aria-label="Detection coverage and rule IDs">
+            <div role="row"><b role="cell">Detection area</b><b role="cell">Representative checks</b><b role="cell">Rule IDs</b></div>
             <div role="row">
               <b role="cell">Dynamic execution</b
-              ><span role="cell"
-                ><code>eval</code>, Function constructors, VM execution, string timers, browser
-                execution APIs, OS process spawning</span
+              ><span role="cell"><code>eval</code>, Function constructors, VM execution, string timers, browser execution APIs, OS process spawning</span
               ><code role="cell">EXEC-*, COMBO-002</code>
             </div>
             <div role="row">
               <b role="cell">Obfuscation</b
-              ><span role="cell"
-                >Base64, hex and Unicode decoding; dense escapes; string reversal; computed globals;
-                shufflers; long or high-entropy lines</span
+              ><span role="cell">Base64, hex and Unicode decoding; dense escapes; string reversal; computed globals; shufflers; long or high-entropy lines</span
               ><code role="cell">OBFS-*, UNICODE-001</code>
             </div>
             <div role="row">
-              <b role="cell">Package lifecycle</b
-              ><span role="cell"
-                >npm and Composer hooks; Python, Cargo, Go, JVM, and MSBuild build-time
-                execution</span
-              ><code role="cell"
-                >PKG-001, PY-001, PHP-001, RUST-001, RUST-002, GO-001, JVM-001, DOTNET-001</code
-              >
+              <b role="cell">Package lifecycle</b><span role="cell">npm and Composer hooks; Python, Cargo, Go, JVM, and MSBuild build-time execution</span
+              ><code role="cell">PKG-001, PY-001, PHP-001, RUST-001, RUST-002, GO-001, JVM-001, DOTNET-001</code>
             </div>
             <div role="row">
               <b role="cell">Malicious dependencies</b
-              ><span role="cell"
-                >Sourced package/version indicators across eight ecosystems, typosquats, unusual
-                versions, URL/VCS dependencies</span
+              ><span role="cell">Sourced package/version indicators across eight ecosystems, typosquats, unusual versions, URL/VCS dependencies</span
               ><code role="cell">IOC-PKG-*, TYPOSQUAT-001, PKG-002, PKG-003, PKG-005</code>
             </div>
             <div role="row">
               <b role="cell">Package-manager integrity</b
               ><span role="cell"
-                >Registry credentials, alternate sources, overrides and aliases, nonstandard
-                lockfile URLs, local package-manager executables/plugins, wrapper URLs and
-                checksums, unsafe package binaries</span
+                >Registry credentials, alternate sources, overrides and aliases, nonstandard lockfile URLs, local package-manager executables/plugins, wrapper
+                URLs and checksums, unsafe package binaries</span
               ><code role="cell"
-                >NPMRC-*, LOCK-001, PKG-004, PKG-006, PKG-008, PKG-009, PY-003, RUBY-002, RUST-003,
-                RUST-004, RUST-005, PHP-002, PHP-003, NUGET-001, YARN-*, JVMWRAP-*</code
+                >NPMRC-*, LOCK-001, PKG-004, PKG-006, PKG-008, PKG-009, PY-003, RUBY-002, RUST-003, RUST-004, RUST-005, PHP-002, PHP-003, NUGET-001, YARN-*,
+                JVMWRAP-*</code
               >
             </div>
             <div role="row">
-              <b role="cell">Download and execution</b
-              ><span role="cell"
-                >Pipe-to-shell, decode-to-execute, downloaded executable launch, remote
-                imports</span
+              <b role="cell">Download and execution</b><span role="cell">Pipe-to-shell, decode-to-execute, downloaded executable launch, remote imports</span
               ><code role="cell">CHAIN-*, IMPORT-002, DOCKER-002</code>
             </div>
             <div role="row">
               <b role="cell">Backdoors</b
-              ><span role="cell"
-                >Request-controlled commands, runtime-computed imports, Node require bypasses,
-                hardcoded authentication bypasses</span
+              ><span role="cell">Request-controlled commands, runtime-computed imports, Node require bypasses, hardcoded authentication bypasses</span
               ><code role="cell">BACKDOOR-*, IMPORT-001, IMPORT-003</code>
             </div>
             <div role="row">
               <b role="cell">Credential and wallet access</b
-              ><span role="cell"
-                >SSH, cloud and container credentials; browser databases; wallets; clipboard,
-                cookies, keylogging, forms, sensitive reads</span
+              ><span role="cell">SSH, cloud and container credentials; browser databases; wallets; clipboard, cookies, keylogging, forms, sensitive reads</span
               ><code role="cell">CRED-*, EXFIL-002, ENV-001</code>
             </div>
             <div role="row">
-              <b role="cell">Secrets</b
-              ><span role="cell"
-                >Private keys and AWS, GitHub, Stripe, Slack-style tokens; evidence is
-                redacted</span
+              <b role="cell">Secrets</b><span role="cell">Private keys and AWS, GitHub, Stripe, Slack-style tokens; evidence is redacted</span
               ><code role="cell">SECRET-*</code>
             </div>
             <div role="row">
               <b role="cell">Suspicious network</b
-              ><span role="cell"
-                >Discord, Telegram, Pastebin, ngrok, public raw-IP URLs, WebSockets, DNS transfer
-                primitives</span
+              ><span role="cell">Discord, Telegram, Pastebin, ngrok, public raw-IP URLs, WebSockets, DNS transfer primitives</span
               ><code role="cell">NET-*, IPURL-001, EXFIL-001</code>
             </div>
             <div role="row">
               <b role="cell">Collection and exfiltration</b
-              ><span role="cell"
-                >Host fingerprinting or environment collection correlated with outbound
-                transfer</span
+              ><span role="cell">Host fingerprinting or environment collection correlated with outbound transfer</span
               ><code role="cell">FINGERPRINT-001, COMBO-001</code>
             </div>
             <div role="row">
-              <b role="cell">Reverse and bind shells</b
-              ><span role="cell"
-                >Shell, netcat/ncat, socat, FIFO, scripting-language and socket/dup patterns</span
+              <b role="cell">Reverse and bind shells</b><span role="cell">Shell, netcat/ncat, socat, FIFO, scripting-language and socket/dup patterns</span
               ><code role="cell">REVSHELL-*</code>
             </div>
             <div role="row">
-              <b role="cell">Cryptomining</b
-              ><span role="cell"
-                >XMRig, CoinHive, CryptoNight, Stratum, pool names, corroborated mining ports</span
+              <b role="cell">Cryptomining</b><span role="cell">XMRig, CoinHive, CryptoNight, Stratum, pool names, corroborated mining ports</span
               ><code role="cell">MINER-001</code>
             </div>
             <div role="row">
-              <b role="cell">Sandbox and CI evasion</b
-              ><span role="cell"
-                >VM, container, and CI probes with elevated correlated execution</span
+              <b role="cell">Sandbox and CI evasion</b><span role="cell">VM, container, and CI probes with elevated correlated execution</span
               ><code role="cell">EVADE-001, COMBO-003</code>
             </div>
             <div role="row">
               <b role="cell">CI/CD integrity</b
               ><span role="cell"
-                >Untrusted GitHub event interpolation, privileged checkout, mutable actions, secret
-                egress, low-trust cache writes, artifact use in privileged
-                <code>workflow_run</code> jobs, pull requests on self-hosted runners, CI variable
-                injection</span
+                >Untrusted GitHub event interpolation, privileged checkout, mutable actions, secret egress, low-trust cache writes, artifact use in privileged
+                <code>workflow_run</code> jobs, pull requests on self-hosted runners, CI variable injection</span
               ><code role="cell">CICD-*</code>
             </div>
             <div role="row">
               <b role="cell">Editor and agent execution</b
               ><span role="cell"
-                >VS Code tasks/settings/extensions, devcontainers, JetBrains, Vim/Neovim project
-                config, AI-agent hooks and prompt injection in common instruction-file names and
-                formats</span
+                >VS Code tasks/settings/extensions, devcontainers, JetBrains, Vim/Neovim project config, AI-agent hooks and prompt injection in common
+                instruction-file names and formats</span
               ><code role="cell">IDE-*, AGENT-*</code>
             </div>
             <div role="row">
-              <b role="cell">Image active content</b
-              ><span role="cell"
-                >Executable SVG script elements, event handlers, and JavaScript links</span
+              <b role="cell">Image active content</b><span role="cell">Executable SVG script elements, event handlers, and JavaScript links</span
               ><code role="cell">IMAGE-001</code>
             </div>
             <div role="row">
               <b role="cell">Containers</b
-              ><span role="cell"
-                >Remote <code>ADD</code>, privileged/host namespaces, Docker socket, capabilities,
-                sensitive mounts</span
+              ><span role="cell">Remote <code>ADD</code>, privileged/host namespaces, Docker socket, capabilities, sensitive mounts</span
               ><code role="cell">DOCKER-*</code>
             </div>
             <div role="row">
-              <b role="cell">Git metadata</b
-              ><span role="cell"
-                >Active hooks, hooks-path changes, executable filters/helpers, unsafe protocol
-                configuration</span
+              <b role="cell">Git metadata</b><span role="cell">Active hooks, hooks-path changes, executable filters/helpers, unsafe protocol configuration</span
               ><code role="cell">GITHOOK-*, GITMETA-001</code>
             </div>
             <div role="row">
               <b role="cell">File and repository integrity</b
               ><span role="cell"
-                >Known SHA-256 indicators, binaries, executable bits, escaping symlinks, archive
-                traversal/resource bounds, missing README/license</span
-              ><code role="cell"
-                >IOC-HASH-SHA256, BINARY-001, EXECBIT-001, SYMLINK-*, ARCHIVE-001, REPO-*</code
-              >
+                >Known SHA-256 indicators, binaries, executable bits, escaping symlinks, archive traversal/resource bounds, missing README/license</span
+              ><code role="cell">IOC-HASH-SHA256, BINARY-001, EXECBIT-001, SYMLINK-*, ARCHIVE-001, REPO-*</code>
             </div>
             <div role="row">
               <b role="cell">Social engineering</b
-              ><span role="cell"
-                >Urgency plus interview pressure, instructions to disable security or elevate
-                privileges</span
+              ><span role="cell">Urgency plus interview pressure, instructions to disable security or elevate privileges</span
               ><code role="cell">SOCIAL-*, APT-001</code>
             </div>
           </div>
@@ -290,81 +205,57 @@
         >
           <h2>Supply-chain files by ecosystem</h2>
           <p>
-            These are static review signals in repository files. An alternate source or build hook
-            can be intentional; repyy does not install, resolve, or execute it.
+            These are static review signals in repository files. An alternate source or build hook can be intentional; repyy does not install, resolve, or
+            execute it.
           </p>
-          <div
-            class="docs-table compact"
-            role="table"
-            aria-label="Supply-chain file coverage by ecosystem"
-          >
+          <div class="docs-table compact" role="table" aria-label="Supply-chain file coverage by ecosystem">
             <div role="row">
               <b role="cell">Node/npm, Yarn, pnpm</b
               ><span role="cell"
-                ><code>package.json</code> lifecycle scripts, non-registry dependencies across all
-                four scopes, aliases checked by actual package name, nested overrides and
-                resolutions; registry settings, Yarn executable/plugins, and suspicious lockfile
-                URLs.
-                <a href="https://docs.npmjs.com/cli/v11/using-npm/package-spec/"
-                  >npm package spec</a
-                >
+                ><code>package.json</code> lifecycle scripts, non-registry dependencies across all four scopes, aliases checked by actual package name, nested
+                overrides and resolutions; registry settings, Yarn executable/plugins, and suspicious lockfile URLs.
+                <a href="https://docs.npmjs.com/cli/v11/using-npm/package-spec/">npm package spec</a>
                 · <a href="https://yarnpkg.com/configuration/yarnrc">Yarn settings</a></span
               >
             </div>
             <div role="row">
               <b role="cell">Python</b
               ><span role="cell"
-                ><code>requirements*.txt</code>, pip config, <code>Pipfile</code>,
-                <code>pyproject.toml</code>, and <code>uv.toml</code> alternate indexes or unsafe uv
-                strategy; setup hooks and direct URL/VCS dependencies.
-                <a href="https://pip.pypa.io/en/stable/reference/requirements-file-format/"
-                  >pip format</a
-                >
+                ><code>requirements*.txt</code>, pip config, <code>Pipfile</code>, <code>pyproject.toml</code>, and <code>uv.toml</code> alternate indexes or
+                unsafe uv strategy; setup hooks and direct URL/VCS dependencies.
+                <a href="https://pip.pypa.io/en/stable/reference/requirements-file-format/">pip format</a>
                 · <a href="https://docs.astral.sh/uv/concepts/indexes/">uv indexes</a></span
               >
             </div>
             <div role="row">
               <b role="cell">Ruby</b
               ><span role="cell"
-                ><code>Gemfile</code> and <code>.bundle/config</code> alternate sources or mirrors
-                and inline Git/path gems. <code>Gemfile.lock</code> has generic text checks, not a
-                resolved-source audit.
-                <a href="https://bundler.io/guides/gemfile.html">Bundler Gemfile</a></span
+                ><code>Gemfile</code> and <code>.bundle/config</code> alternate sources or mirrors and inline Git/path gems. <code>Gemfile.lock</code> has
+                generic text checks, not a resolved-source audit. <a href="https://bundler.io/guides/gemfile.html">Bundler Gemfile</a></span
               >
             </div>
             <div role="row">
               <b role="cell">Go</b
               ><span role="cell"
-                ><code>go.mod</code>/<code>go.work</code> replacements, including block form, and
-                <code>//go:generate</code>. <code>go.sum</code> hashes are not independently
-                audited.
-                <a href="https://go.dev/doc/modules/gomod-ref">Go module reference</a></span
+                ><code>go.mod</code>/<code>go.work</code> replacements, including block form, and <code>//go:generate</code>. <code>go.sum</code> hashes are not
+                independently audited. <a href="https://go.dev/doc/modules/gomod-ref">Go module reference</a></span
               >
             </div>
             <div role="row">
               <b role="cell">Rust</b
               ><span role="cell"
-                ><code>Cargo.toml</code> declared or sibling <code>build.rs</code> execution,
-                Git/path/registry dependencies, and overrides;
-                <code>.cargo/config.toml</code> source replacement. <code>Cargo.lock</code> is not
-                resolved.
-                <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html"
-                  >Cargo build scripts</a
-                >
+                ><code>Cargo.toml</code> declared or sibling <code>build.rs</code> execution, Git/path/registry dependencies, and overrides;
+                <code>.cargo/config.toml</code> source replacement. <code>Cargo.lock</code> is not resolved.
+                <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">Cargo build scripts</a>
                 ·
-                <a href="https://doc.rust-lang.org/cargo/reference/source-replacement.html"
-                  >source replacement</a
-                ></span
+                <a href="https://doc.rust-lang.org/cargo/reference/source-replacement.html">source replacement</a></span
               >
             </div>
             <div role="row">
               <b role="cell">Java/JVM</b
               ><span role="cell"
-                >Maven and Gradle build/repository rules; Gradle/Maven wrapper distribution URLs and
-                SHA-256 settings.
-                <a href="https://docs.gradle.org/current/userguide/wrapper_plugin.html"
-                  >Gradle Wrapper</a
-                >
+                >Maven and Gradle build/repository rules; Gradle/Maven wrapper distribution URLs and SHA-256 settings.
+                <a href="https://docs.gradle.org/current/userguide/wrapper_plugin.html">Gradle Wrapper</a>
                 ·
                 <a href="https://maven.apache.org/tools/wrapper/index.html">Maven Wrapper</a></span
               >
@@ -372,31 +263,21 @@
             <div role="row">
               <b role="cell">PHP</b
               ><span role="cell"
-                ><code>composer.json</code> scripts, alternate repositories, and unrestricted plugin
-                permission. <code>composer.lock</code> has generic text checks, not a
-                resolved-source audit.
-                <a href="https://getcomposer.org/doc/04-schema.md#repositories"
-                  >Composer repositories</a
-                >
+                ><code>composer.json</code> scripts, alternate repositories, and unrestricted plugin permission. <code>composer.lock</code> has generic text
+                checks, not a resolved-source audit.
+                <a href="https://getcomposer.org/doc/04-schema.md#repositories">Composer repositories</a>
                 ·
-                <a href="https://getcomposer.org/doc/06-config.md#allow-plugins"
-                  >plugin permissions</a
-                ></span
+                <a href="https://getcomposer.org/doc/06-config.md#allow-plugins">plugin permissions</a></span
               >
             </div>
             <div role="row">
               <b role="cell">.NET</b
               ><span role="cell"
-                ><code>NuGet.Config</code> feeds and wildcard mappings; project and centrally
-                managed <code>Directory.Packages.props</code> dependencies; MSBuild
-                <code>Exec</code> in project, <code>.props</code>, and <code>.targets</code> files.
-                <a href="https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file"
-                  >NuGet configuration</a
-                >
+                ><code>NuGet.Config</code> feeds and wildcard mappings; project and centrally managed <code>Directory.Packages.props</code> dependencies;
+                MSBuild <code>Exec</code> in project, <code>.props</code>, and <code>.targets</code> files.
+                <a href="https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file">NuGet configuration</a>
                 ·
-                <a href="https://learn.microsoft.com/en-us/visualstudio/msbuild/exec-task"
-                  >MSBuild Exec</a
-                ></span
+                <a href="https://learn.microsoft.com/en-us/visualstudio/msbuild/exec-task">MSBuild Exec</a></span
               >
             </div>
           </div>
@@ -409,102 +290,77 @@
         >
           <h2>How repyy improves precision</h2>
           <p>
-            Rules are interpreted with context so a suspicious token in a test fixture is not
-            treated exactly like the same token in an install hook. Precision changes the review
-            signal; it never turns a scan into proof of safety.
+            Rules are interpreted with context so a suspicious token in a test fixture is not treated exactly like the same token in an install hook. Precision
+            changes the review signal; it never turns a scan into proof of safety.
           </p>
           <div class="docs-table compact" role="table" aria-label="Precision controls">
             <div role="row">
               <b role="cell">Match scope</b
               ><span role="cell"
-                ><code>raw</code> checks content, <code>code</code> separates executable tokens from
-                common comments and literals, and structured checks parse supported formats.</span
+                ><code>raw</code> checks content, <code>code</code> separates executable tokens from common comments and literals, and structured checks parse
+                supported formats.</span
               >
             </div>
             <div role="row">
               <b role="cell">File roles</b
               ><span role="cell"
-                >Executable code, CI/install hooks, manifests, docs, examples, tests, evidence,
-                generated output, dependencies, rule definitions, metadata, and archive entries are
-                distinguished.</span
+                >Executable code, CI/install hooks, manifests, docs, examples, tests, evidence, generated output, dependencies, rule definitions, metadata, and
+                archive entries are distinguished.</span
               >
             </div>
             <div role="row">
               <b role="cell">Correlations</b
               ><span role="cell"
-                >Behavior chains require distinct actionable signals from executable code. Imports,
-                generated examples, and low-confidence matches cannot create a high-confidence chain
-                alone.</span
+                >Behavior chains require distinct actionable signals from executable code. Imports, generated examples, and low-confidence matches cannot create
+                a high-confidence chain alone.</span
               >
             </div>
             <div role="row">
               <b role="cell">Context downgrade</b
               ><span role="cell"
-                >Documentation, tests, fixtures, and signature corpora may be downgraded. Confirmed
-                IOCs are never silenced by contextual downgrades.</span
+                >Documentation, tests, fixtures, and signature corpora may be downgraded. Confirmed IOCs are never silenced by contextual downgrades.</span
               >
             </div>
             <div role="row">
               <b role="cell">Noise exclusions</b
               ><span role="cell"
-                >Long-line and entropy checks skip lockfiles, source maps, and known generated
-                output; entropy must be near an execution primitive.</span
+                >Long-line and entropy checks skip lockfiles, source maps, and known generated output; entropy must be near an execution primitive.</span
               >
             </div>
             <div role="row">
               <b role="cell">Indicator parsing</b
               ><span role="cell"
-                >Package names are matched only in parsed manifests. A sourced affected version can
-                become a confirmed IOC; an uncertain range remains a review signal.</span
+                >Package names are matched only in parsed manifests. A sourced affected version can become a confirmed IOC; an uncertain range remains a review
+                signal.</span
               >
             </div>
             <div role="row">
               <b role="cell">Path matching</b
               ><span role="cell"
-                >Rule globs compare case-insensitively. Common agent instruction files receive
-                instruction context; ordinary documentation and test fixtures retain contextual
-                downgrades.</span
+                >Rule globs compare case-insensitively. Common agent instruction files receive instruction context; ordinary documentation and test fixtures
+                retain contextual downgrades.</span
               >
             </div>
           </div>
           <p>
-            Artifact findings require a download of an upstream run’s artifact followed by a command
-            in the same <code>workflow_run</code> job. Cache-write findings require
-            <code>pull_request_target</code>, <code>issue_comment</code>, or
-            <code>workflow_run</code> with effective <code>write</code> or
-            <code>write-only</code> cache mode. They prompt review of upstream trust and job
-            behavior; see GitHub’s
-            <a href="https://docs.github.com/en/actions/reference/security/secure-use"
-              >secure-use guidance</a
-            >
+            Artifact findings require a download of an upstream run’s artifact followed by a command in the same <code>workflow_run</code> job. Cache-write
+            findings require <code>pull_request_target</code>, <code>issue_comment</code>, or <code>workflow_run</code> with effective <code>write</code> or
+            <code>write-only</code> cache mode. They prompt review of upstream trust and job behavior; see GitHub’s
+            <a href="https://docs.github.com/en/actions/reference/security/secure-use">secure-use guidance</a>
             and
-            <a
-              href="https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching"
-              >cache access guidance</a
-            >. CI interpolation and secret-egress checks also inspect decoded multiline
-            <code>run</code> blocks one step at a time. A <code>pull_request</code> job on a
-            self-hosted runner is a review signal because the scanner cannot infer repository
-            visibility or fork-approval settings; see GitHub’s
-            <a
-              href="https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners"
-              >runner warning</a
-            >.
+            <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching">cache access guidance</a>. CI interpolation and
+            secret-egress checks also inspect decoded multiline <code>run</code> blocks one step at a time. A <code>pull_request</code> job on a self-hosted
+            runner is a review signal because the scanner cannot infer repository visibility or fork-approval settings; see GitHub’s
+            <a href="https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners">runner warning</a>.
           </p>
           <p>
-            Every finding keeps matched locations, occurrence totals, confidence, disposition, and a
-            stable fingerprint. Display controls such as <code>--min-severity</code>,
-            <code>--min-confidence</code>, and <code>--detail</code> change what you see, not the
-            verdict or exit code.
+            Every finding keeps matched locations, occurrence totals, confidence, disposition, and a stable fingerprint. Display controls such as
+            <code>--min-severity</code>, <code>--min-confidence</code>, and <code>--detail</code> change what you see, not the verdict or exit code.
           </p>
           <div class="docs-command">
             <div>
               <span>Focus a review</span
-              ><button
-                type="button"
-                data-copy="repyy scan ./repo --min-severity high --min-confidence high --detail review"
-              >
-                Copy
-              </button>
+              ><button type="button" data-copy="repyy scan ./repo --min-severity high --min-confidence high --detail review">Copy</button>
             </div>
             <code>repyy scan ./repo --min-severity high --min-confidence high --detail review</code>
           </div>
@@ -517,57 +373,34 @@
         >
           <h2>Coverage has a boundary</h2>
           <p>
-            Default resource limits prevent hostile repositories and archives from exhausting the
-            scanner. When a timeout, limit, permission, clone, archive, or read error reduces
-            coverage, the result is <code>SCAN INCOMPLETE</code>.
+            Default resource limits prevent hostile repositories and archives from exhausting the scanner. When a timeout, limit, permission, clone, archive, or
+            read error reduces coverage, the result is <code>SCAN INCOMPLETE</code>.
           </p>
           <div class="docs-table compact" role="table" aria-label="Default coverage limits">
+            <div role="row"><b role="cell">Per repository</b><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span></div>
+            <div role="row"><b role="cell">Per archive</b><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span></div>
             <div role="row">
-              <b role="cell">Per repository</b
-              ><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span>
-            </div>
-            <div role="row">
-              <b role="cell">Per archive</b
-              ><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span>
-            </div>
-            <div role="row">
-              <b role="cell">Dependency trees</b
-              ><span role="cell"
-                >Skipped by default; opt in with <code>--include-dependencies</code></span
-              >
+              <b role="cell">Dependency trees</b><span role="cell">Skipped by default; opt in with <code>--include-dependencies</code></span>
             </div>
           </div>
           <div class="docs-command">
             <div>
               <span>Adjust deliberately</span
-              ><button
-                type="button"
-                data-copy="repyy scan ./repo --timeout 20m --max-files 150000 --max-file-size 104857600"
-              >
-                Copy
-              </button>
+              ><button type="button" data-copy="repyy scan ./repo --timeout 20m --max-files 150000 --max-file-size 104857600">Copy</button>
             </div>
-            <code
-              >repyy scan ./repo --timeout 20m --max-files 150000 --max-file-size 104857600</code
-            >
+            <code>repyy scan ./repo --timeout 20m --max-files 150000 --max-file-size 104857600</code>
           </div>
           <p>
             Review the coverage warnings before relying on a result. Exit code
-            <code>2</code> indicates an incomplete target, even if another target completed
-            successfully. See <a href="../cli/#exit-codes">the exit-code reference</a> for
-            automation behavior.
+            <code>2</code> indicates an incomplete target, even if another target completed successfully. See
+            <a href="../cli/#exit-codes">the exit-code reference</a> for automation behavior.
           </p>
           <p>
-            Package-manager options such as pip <code>-r</code>/<code>-c</code> are not followed,
-            build configuration is not evaluated, and declared dependencies are not compared with
-            resolved lockfile content. Wrapper archive hashes are checked for presence and format,
-            not verified against downloaded bytes. Sibling <code>build.rs</code> detection applies
-            to unpacked repository files.
+            Package-manager options such as pip <code>-r</code>/<code>-c</code> are not followed, build configuration is not evaluated, and declared
+            dependencies are not compared with resolved lockfile content. Wrapper archive hashes are checked for presence and format, not verified against
+            downloaded bytes. Sibling <code>build.rs</code> detection applies to unpacked repository files.
           </p>
-          <p>
-            Raster-image metadata and pixels are not parsed for embedded instructions or scripts.
-            Valid text SVG files are inspected for active content.
-          </p>
+          <p>Raster-image metadata and pixels are not parsed for embedded instructions or scripts. Valid text SVG files are inspected for active content.</p>
         </section>
 
         <section
@@ -576,10 +409,7 @@
           data-search="exclusions non english comments github account age followers activity online api private offline raw ip private loopback generated lockfiles sha pinned actions"
         >
           <h2>Deliberate exclusions</h2>
-          <p>
-            Some signals are outside the scanner’s private, offline boundary or would create
-            misleading accusations.
-          </p>
+          <p>Some signals are outside the scanner’s private, offline boundary or would create misleading accusations.</p>
           <div class="docs-verdict-grid">
             <article>
               <b>Language</b>
@@ -587,68 +417,44 @@
             </article>
             <article>
               <b>Online identity</b>
-              <p>
-                GitHub account age, followers, and activity are not collected. They would require
-                sending identifiers to an online API.
-              </p>
+              <p>GitHub account age, followers, and activity are not collected. They would require sending identifiers to an online API.</p>
             </article>
             <article>
               <b>Network ranges</b>
-              <p>
-                Loopback, private, unspecified, link-local, and multicast addresses are excluded
-                from raw-IP alerts.
-              </p>
+              <p>Loopback, private, unspecified, link-local, and multicast addresses are excluded from raw-IP alerts.</p>
             </article>
             <article>
               <b>Known generated content</b>
-              <p>
-                Lockfiles, source maps, generated output, and full-SHA-pinned GitHub Actions receive
-                targeted exclusions where appropriate.
-              </p>
+              <p>Lockfiles, source maps, generated output, and full-SHA-pinned GitHub Actions receive targeted exclusions where appropriate.</p>
             </article>
           </div>
           <div class="docs-note">
             <strong>Offline intelligence is explicit</strong>
             <p>
               Scans never contact the update service or upload repository data. Use
-              <code>repyy intel status</code> to inspect snapshot age; use
-              <code>repyy intel update</code> only when you choose to download a signed public
+              <code>repyy intel status</code> to inspect snapshot age; use <code>repyy intel update</code> only when you choose to download a signed public
               snapshot.
             </p>
           </div>
         </section>
 
-        <section
-          class="docs-section docs-searchable"
-          id="explain"
-          data-search="rules explain rationale legitimate use matching scope review guidance command"
-        >
+        <section class="docs-section docs-searchable" id="explain" data-search="rules explain rationale legitimate use matching scope review guidance command">
           <h2>Explain a rule before acting</h2>
           <p>
-            Rule explanations are available offline and show the rule’s severity, confidence,
-            disposition, category, matching scope, applicable paths, rationale, legitimate-use
-            context, and recommended action.
+            Rule explanations are available offline and show the rule’s severity, confidence, disposition, category, matching scope, applicable paths,
+            rationale, legitimate-use context, and recommended action.
           </p>
           <div class="docs-command">
-            <div>
-              <span>Terminal explanation</span
-              ><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button>
-            </div>
+            <div><span>Terminal explanation</span><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button></div>
             <code>repyy rules explain EXEC-001</code>
           </div>
           <div class="docs-command">
-            <div>
-              <span>Machine-readable explanation</span
-              ><button type="button" data-copy="repyy rules explain EXEC-001 --format json">
-                Copy
-              </button>
-            </div>
+            <div><span>Machine-readable explanation</span><button type="button" data-copy="repyy rules explain EXEC-001 --format json">Copy</button></div>
             <code>repyy rules explain EXEC-001 --format json</code>
           </div>
           <p>
-            For package indicators, explanation includes the active snapshot’s advisory source and
-            affected-version context. A package name alone is a review signal; verify the resolved
-            version and artifact before deciding.
+            For package indicators, explanation includes the active snapshot’s advisory source and affected-version context. A package name alone is a review
+            signal; verify the resolved version and artifact before deciding.
           </p>
         </section>
 
@@ -659,35 +465,24 @@
         >
           <h2>Inspect the active intelligence</h2>
           <p>
-            Built-in behavioral rules and the dated offline intelligence snapshot are separate
-            inputs. The snapshot adds sourced package/version advisories and exact published file
-            hashes.
+            Built-in behavioral rules and the dated offline intelligence snapshot are separate inputs. The snapshot adds sourced package/version advisories and
+            exact published file hashes.
           </p>
           <div class="docs-command">
-            <div>
-              <span>Snapshot status</span
-              ><button type="button" data-copy="repyy intel status">Copy</button>
-            </div>
+            <div><span>Snapshot status</span><button type="button" data-copy="repyy intel status">Copy</button></div>
             <code>repyy intel status</code>
           </div>
           <div class="docs-command">
-            <div>
-              <span>Rules and sources</span
-              ><button type="button" data-copy="repyy rules list">Copy</button>
-            </div>
+            <div><span>Rules and sources</span><button type="button" data-copy="repyy rules list">Copy</button></div>
             <code>repyy rules list</code>
           </div>
           <div class="docs-command">
-            <div>
-              <span>JSON for tooling</span
-              ><button type="button" data-copy="repyy rules list --format json">Copy</button>
-            </div>
+            <div><span>JSON for tooling</span><button type="button" data-copy="repyy rules list --format json">Copy</button></div>
             <code>repyy rules list --format json</code>
           </div>
           <p>
-            Every report records the ruleset and intelligence snapshot used, so a finding can be
-            audited later. Read <a href="../intelligence/">the intelligence guide</a> for update and
-            rollback behavior.
+            Every report records the ruleset and intelligence snapshot used, so a finding can be audited later. Read
+            <a href="../intelligence/">the intelligence guide</a> for update and rollback behavior.
           </p>
         </section>
 
@@ -702,30 +497,21 @@
               <b>1</b>
               <div>
                 <strong>Check coverage first</strong>
-                <p>
-                  Look for <code>SCAN INCOMPLETE</code>, skipped dependency trees, archive warnings,
-                  and the snapshot date.
-                </p>
+                <p>Look for <code>SCAN INCOMPLETE</code>, skipped dependency trees, archive warnings, and the snapshot date.</p>
               </div>
             </article>
             <article>
               <b>2</b>
               <div>
                 <strong>Start with blocking signals</strong>
-                <p>
-                  Open high-confidence critical findings in executable, install-time, or CI code.
-                  Then review hardening and informational findings.
-                </p>
+                <p>Open high-confidence critical findings in executable, install-time, or CI code. Then review hardening and informational findings.</p>
               </div>
             </article>
             <article>
               <b>3</b>
               <div>
                 <strong>Read the surrounding evidence</strong>
-                <p>
-                  Use the location, file role, match scope, rationale, and legitimate-use context. A
-                  rule hit is a prompt for inspection.
-                </p>
+                <p>Use the location, file role, match scope, rationale, and legitimate-use context. A rule hit is a prompt for inspection.</p>
               </div>
             </article>
             <article>
@@ -733,8 +519,8 @@
               <div>
                 <strong>Choose a controlled next step</strong>
                 <p>
-                  Ask the owner for context, continue in an isolated environment, or stop. Keep
-                  dependencies and target code unexecuted until review is complete.
+                  Ask the owner for context, continue in an isolated environment, or stop. Keep dependencies and target code unexecuted until review is
+                  complete.
                 </p>
               </div>
             </article>
@@ -742,8 +528,7 @@
           <div class="docs-callout">
             <strong>Need the command-level details?</strong>
             <p>
-              Return to the <a href="../docs/">main documentation</a>, or open the dedicated
-              <a href="../cli/">CLI reference</a> and
+              Return to the <a href="../docs/">main documentation</a>, or open the dedicated <a href="../cli/">CLI reference</a> and
               <a href="../configuration/">configuration guide</a>.
             </p>
           </div>

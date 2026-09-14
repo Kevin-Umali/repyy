@@ -93,7 +93,8 @@ described in `SECURITY.md`.
 
 Run `make format` before submitting changes and `make format-check` to verify formatting. These
 commands need Go, Node.js/npm, and [uv](https://docs.astral.sh/uv/); formatter versions are pinned
-in the Makefile. Go uses gofmt, web/docs/configuration files use Prettier, Python uses Ruff, and
+in the Makefile. Prettier matches the maintainer’s VS Code setup: version 3.7.4, a 160-character
+print width, and default Markdown wrapping (preserve). Go uses gofmt, web/docs/configuration files use Prettier, Python uses Ruff, and
 shell scripts use shfmt. Generated HTML reports are deliberately excluded: their inline CSS and
 JavaScript are protected by hashes in the report's Content Security Policy. Regenerate sample
 reports with the [benchmark runner](demo/README.md), then run `python3 site/check_docs.py` to check

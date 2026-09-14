@@ -390,6 +390,11 @@ func normalizeAndValidateReport(report *model.Report) error {
 	}
 	for resultIndex := range report.Results {
 		result := &report.Results[resultIndex]
+		switch result.ScanMode {
+		case "", model.ScanModeHost, model.ScanModeDocker:
+		default:
+			return fmt.Errorf("result %d has invalid scan mode %q", resultIndex, result.ScanMode)
+		}
 		locationsStored := 0
 		locationsTruncated := false
 		switch result.Verdict {
@@ -871,10 +876,11 @@ func exitCodeForResults(results []model.RepoResult, threshold model.Severity) in
 
 func scanOne(target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) (result model.RepoResult) {
 	started := time.Now()
-	result = model.RepoResult{Target: displayTarget(target), Findings: []model.Finding{}}
+	result = model.RepoResult{Target: displayTarget(target), ScanMode: model.ScanModeHost, Findings: []model.Finding{}}
 	ctx, cancel := context.WithTimeout(context.Background(), opts.timeout)
 	defer cancel()
 	if opts.sandbox == "docker" {
+		result.ScanMode = model.ScanModeDocker
 		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
 		if err != nil {
 			result.Error = err.Error()

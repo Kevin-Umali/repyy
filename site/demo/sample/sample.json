@@ -2,17 +2,18 @@
   "schema_version": "1",
   "tool_commit": "unknown",
   "limitation": "Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.",
-  "tool_version": "0.5.0-dev",
-  "rules_version": "2026.09.9",
+  "tool_version": "0.5.1-dev",
+  "rules_version": "2026.09.15",
   "intelligence": {
     "version": "2026-09-12.1",
     "date": "2026-09-12",
     "source": "embedded"
   },
-  "generated_at": "2026-09-14T16:45:12.380283776Z",
+  "generated_at": "2026-09-14T17:06:34.981246092Z",
   "results": [
     {
       "target": "demo/lifecycle/risky",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -47,6 +48,7 @@
     },
     {
       "target": "demo/lifecycle/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -58,17 +60,42 @@
     },
     {
       "target": "demo/startup/risky",
-      "verdict": "NO FINDINGS",
-      "findings": [],
+      "scan_mode": "host",
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "IMPORT-001",
+          "category": "dynamic-import",
+          "severity": "high",
+          "confidence": "medium",
+          "context": "executable",
+          "path": "postcss.config.cjs",
+          "line": 2,
+          "occurrences": 1,
+          "message": "Dynamic import or require assembled at runtime",
+          "evidence": "require(markerPath);",
+          "remediation": "Inspect the surrounding code and remove the behavior if it is not essential.",
+          "fingerprint": "sha256:1e43572df2f541fc88928df57f17e02fc25be6e336ec820532087efa653c7edc",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "postcss.config.cjs",
+              "start_line": 2,
+              "evidence": "require(markerPath);"
+            }
+          ]
+        }
+      ],
       "coverage": {
         "complete": true,
         "files_scanned": 4,
-        "bytes_scanned": 142
+        "bytes_scanned": 173
       },
       "duration_ns": 0
     },
     {
       "target": "demo/startup/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -80,6 +107,7 @@
     },
     {
       "target": "demo/disguised-asset/risky",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -136,6 +164,7 @@
     },
     {
       "target": "demo/disguised-asset/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -147,8 +176,32 @@
     },
     {
       "target": "demo/folder-open/risky",
-      "verdict": "NO FINDINGS",
-      "findings": [],
+      "scan_mode": "host",
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "IDE-001",
+          "category": "editor-auto-execution",
+          "severity": "high",
+          "confidence": "high",
+          "context": "executable",
+          "path": ".vscode/tasks.json",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Editor configuration can execute a command automatically",
+          "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}\u2026",
+          "remediation": "Do not run the repository. Verify the source and intent in an isolated environment.",
+          "fingerprint": "sha256:1b1bc1a84e37bc930b666e3e6b6ef9a2033d8d47204423451b97126ef917ae03",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": ".vscode/tasks.json",
+              "start_line": 1,
+              "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}\u2026"
+            }
+          ]
+        }
+      ],
       "coverage": {
         "complete": true,
         "files_scanned": 3,
@@ -158,6 +211,7 @@
     },
     {
       "target": "demo/folder-open/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -169,6 +223,7 @@
     },
     {
       "target": "demo/git-hook/risky",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -223,6 +278,7 @@
     },
     {
       "target": "demo/git-hook/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -234,6 +290,7 @@
     },
     {
       "target": "demo/obfuscated-download/risky",
+      "scan_mode": "host",
       "verdict": "DO NOT RUN",
       "findings": [
         {
@@ -312,6 +369,7 @@
     },
     {
       "target": "demo/obfuscated-download/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {
@@ -323,6 +381,7 @@
     },
     {
       "target": "demo/credential-path/risky",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -357,6 +416,7 @@
     },
     {
       "target": "demo/credential-path/control",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -391,6 +451,7 @@
     },
     {
       "target": "demo/docker-socket/risky",
+      "scan_mode": "host",
       "verdict": "REVIEW REQUIRED",
       "findings": [
         {
@@ -425,6 +486,7 @@
     },
     {
       "target": "demo/docker-socket/control",
+      "scan_mode": "host",
       "verdict": "NO FINDINGS",
       "findings": [],
       "coverage": {

@@ -54,8 +54,7 @@ jobs:
           FUZZ_PACKAGE: ${{ matrix.package }}
           FUZZ_TARGET: ${{ matrix.target }}
           FUZZ_TIME: ${{ github.event_name == 'schedule' && '120s' || '10s' }}
-        run:
-          go test "./internal/$FUZZ_PACKAGE" -run '^$' -fuzz "^${FUZZ_TARGET}$" -fuzztime
+        run: go test "./internal/$FUZZ_PACKAGE" -run '^$' -fuzz "^${FUZZ_TARGET}$" -fuzztime
           "$FUZZ_TIME" -parallel 2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()

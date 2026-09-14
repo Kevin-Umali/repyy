@@ -19,11 +19,7 @@
       tab.id = `${id}-tab-${index}`;
       tab.setAttribute("aria-controls", id);
     });
-    const label = () =>
-      panel.setAttribute(
-        "aria-labelledby",
-        tabs.find((tab) => tab.getAttribute("aria-selected") === "true").id,
-      );
+    const label = () => panel.setAttribute("aria-labelledby", tabs.find((tab) => tab.getAttribute("aria-selected") === "true").id);
     new MutationObserver(label).observe(group, {
       attributes: true,
       subtree: true,

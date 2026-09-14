@@ -1,8 +1,8 @@
 {
-  "benchmark_version": "1.0.0",
-  "tool_version": "0.5.0-dev",
-  "build_identity": "repyy 0.5.0-dev\ncommit: unknown\nbuilt-by: development\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: unknown\nrules: 2026.09.9",
-  "risky_detected": 6,
+  "benchmark_version": "1.1.0",
+  "tool_version": "0.5.1-dev",
+  "build_identity": "repyy 0.5.1-dev\ncommit: unknown\nbuilt-by: development\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: unknown\nrules: 2026.09.15",
+  "risky_detected": 8,
   "risky_total": 8,
   "controls_high_flagged": 0,
   "controls_total": 8,
@@ -40,14 +40,16 @@
       "expected_rules": [
         "IMPORT-001"
       ],
-      "known_missing": [
-        "IMPORT-001"
-      ],
+      "known_missing": [],
       "risky": {
-        "rules": [],
+        "rules": [
+          "IMPORT-001"
+        ],
         "complete": true,
-        "exit_code": 0,
-        "high_findings": [],
+        "exit_code": 1,
+        "high_findings": [
+          "IMPORT-001"
+        ],
         "skipped": [],
         "warnings": []
       },
@@ -59,9 +61,7 @@
         "skipped": [],
         "warnings": []
       },
-      "missing": [
-        "IMPORT-001"
-      ]
+      "missing": []
     },
     {
       "id": "disguised-asset",
@@ -97,14 +97,16 @@
       "expected_rules": [
         "IDE-001"
       ],
-      "known_missing": [
-        "IDE-001"
-      ],
+      "known_missing": [],
       "risky": {
-        "rules": [],
+        "rules": [
+          "IDE-001"
+        ],
         "complete": true,
-        "exit_code": 0,
-        "high_findings": [],
+        "exit_code": 1,
+        "high_findings": [
+          "IDE-001"
+        ],
         "skipped": [],
         "warnings": []
       },
@@ -116,9 +118,7 @@
         "skipped": [],
         "warnings": []
       },
-      "missing": [
-        "IDE-001"
-      ]
+      "missing": []
     },
     {
       "id": "git-hook",

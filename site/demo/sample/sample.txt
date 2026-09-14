@@ -1,5 +1,5 @@
-repyy 0.5.0-dev — read-only repository preflight
-rules 2026.09.9 · intelligence 2026-09-12.1 (2026-09-12, embedded)
+repyy 0.5.1-dev — read-only repository preflight
+rules 2026.09.15 · intelligence 2026-09-12.1 (2026-09-12, embedded)
 
 REVIEW REQUIRED · demo/lifecycle/risky
   critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
@@ -15,9 +15,15 @@ NO RELEVANT FINDINGS DETECTED · demo/lifecycle/control
   critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
   why: no enabled rule matched within the completed scan
 
-NO RELEVANT FINDINGS DETECTED · demo/startup/risky
-  critical 0 · high 0 · medium 0 · low 0 · files 4 · complete
-  why: no enabled rule matched within the completed scan
+REVIEW REQUIRED · demo/startup/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 4 · complete
+  why: IMPORT-001 at postcss.config.cjs:2
+
+  REVIEW
+  HIGH · MEDIUM  IMPORT-001 · Dynamic import or require assembled at runtime
+      postcss.config.cjs:2
+        require(markerPath);
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
 
 NO RELEVANT FINDINGS DETECTED · demo/startup/control
   critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
@@ -41,9 +47,15 @@ NO RELEVANT FINDINGS DETECTED · demo/disguised-asset/control
   critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
   why: no enabled rule matched within the completed scan
 
-NO RELEVANT FINDINGS DETECTED · demo/folder-open/risky
-  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
-  why: no enabled rule matched within the completed scan
+REVIEW REQUIRED · demo/folder-open/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: IDE-001 at .vscode/tasks.json:1
+
+  REVIEW
+  HIGH · HIGH  IDE-001 · Editor configuration can execute a command automatically
+      .vscode/tasks.json:1
+        {"version": "2.0.0", "tasks": [{"label": "Inert fixture", "type": "process", "command": "REPYY_NONEXISTENT_INERT_MARKER", "runOptions": {"runOn": "folderOpen"}}…
+      fix: Do not run the repository. Verify the source and intent in an isolated environment.
 
 NO RELEVANT FINDINGS DETECTED · demo/folder-open/control
   critical 0 · high 0 · medium 0 · low 0 · files 3 · complete

@@ -155,3 +155,10 @@ not invent one.
 Temporary checkout deletion failures preserve findings, add a warning and select incomplete
 status/exit 2. Authentication-file cleanup failures and failed forced container removal also return
 errors. Abrupt termination can still leave data behind before cleanup runs.
+
+### Recorded scan context
+
+Reports from v0.5.1 include `scan_mode` (`host` or `docker`) per repository. HTML displays this
+alongside repository identity. Legacy reports with no recorded mode show unknown; an existing Docker
+isolation record can identify its mode. A local scan does not run Git to discover a commit, so HTML
+explicitly marks its commit as unavailable. Remote scans retain the fetched commit for source links.

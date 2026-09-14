@@ -1,8 +1,8 @@
 # Detection coverage
 
-This map documents repyy's built-in static checks. It is an acceptance map, not a claim that every
-malicious program can be detected. Exact indicators age; heuristics can produce both false positives
-and false negatives.
+This map documents repyy's built-in static checks. It is an acceptance map, not
+a claim that every malicious program can be detected. Exact indicators age;
+heuristics can produce both false positives and false negatives.
 
 | Detection area               | Representative coverage                                                                                                                                                                                                                                        | Rule IDs or scanner checks                                                                                                                                                            |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,8 +30,9 @@ and false negatives.
 
 ## Supply-chain files by ecosystem
 
-These are static review signals in repository files. An alternate source or build hook may be
-legitimate; the scanner does not install, resolve, or execute it.
+These are static review signals in repository files. An alternate source or
+build hook may be legitimate; the scanner does not install, resolve, or execute
+it.
 
 | Ecosystem            | Files and review signals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -46,72 +47,86 @@ legitimate; the scanner does not install, resolve, or execute it.
 
 ## Precision controls
 
-- Every finding retains its matched locations, while bounded report-detail limits prevent hostile
-  input from exhausting memory.
-- Rules declare whether they inspect raw content, executable code, or a structured format.
-  Code-scoped matching distinguishes definite comments and literals from executable tokens across
-  common language families.
-- File roles distinguish executable code, CI and install hooks, manifests, documentation, examples,
-  tests, evidence, generated output, dependencies, detection definitions, metadata, and archive
-  entries. Confirmed IOCs are never silenced by contextual downgrades.
-- Correlated findings require distinct actionable signals from executable code; imports, generated
-  examples, and low-confidence matches cannot form a high-confidence behavior chain.
-- Documentation, tests, fixtures, and signature corpora are contextualized and downgraded instead of
-  treated as executable malware.
-- Long-line and entropy checks skip lockfiles, source maps, and known generated output. Entropy must
-  occur near an execution primitive rather than merely in the same file.
-- Raw-IP checks exclude loopback, private, unspecified, link-local, and multicast addresses.
-- GitHub Actions pinned to a full 40-character commit SHA are not reported as mutable.
-- `workflow_run` artifact findings require a download of an upstream run's artifact followed by a
-  command in the same job. Cache-write findings require `pull_request_target`, `issue_comment`, or
-  `workflow_run` and an effective `write` or `write-only` cache mode. These are review signals, not
-  proof that an artifact or cache is attacker-controlled. See GitHub's
-  [secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use) and
-  [cache access guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
-- CI interpolation and secret-egress checks inspect decoded multiline `run` blocks as individual
-  steps, so expressions split across YAML lines are not silently missed or correlated across
-  unrelated steps.
-- A `pull_request` job using a self-hosted runner is a review signal because repository visibility
-  and fork-approval settings are unavailable offline. See GitHub's
-  [self-hosted runner warning](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners).
-- Rule path globs compare case-insensitively, so mixed-case file extensions do not bypass a
-  detector. Agent instruction files are reviewed as instructions, while ordinary documentation and
-  test fixtures retain their lower-risk context.
-- Package names are matched only in parsed manifests. A sourced affected version can become a
-  confirmed IOC; an uncertain name/range remains a review signal.
-- Alternate feeds, mirrors, local build scripts, and build wrappers are review signals because many
-  projects use them intentionally. An official wrapper URL with a well-formed SHA-256 is left alone;
-  a missing checksum is a hardening finding, not proof of tampering.
+- Every finding retains its matched locations, while bounded report-detail
+  limits prevent hostile input from exhausting memory.
+- Rules declare whether they inspect raw content, executable code, or a
+  structured format. Code-scoped matching distinguishes definite comments and
+  literals from executable tokens across common language families.
+- File roles distinguish executable code, CI and install hooks, manifests,
+  documentation, examples, tests, evidence, generated output, dependencies,
+  detection definitions, metadata, and archive entries. Confirmed IOCs are
+  never silenced by contextual downgrades.
+- Correlated findings require distinct actionable signals from executable code;
+  imports, generated examples, and low-confidence matches cannot form a
+  high-confidence behavior chain.
+- Documentation, tests, fixtures, and signature corpora are contextualized and
+  downgraded instead of treated as executable malware.
+- Long-line and entropy checks skip lockfiles, source maps, and known generated
+  output. Entropy must occur near an execution primitive rather than merely in
+  the same file.
+- Raw-IP checks exclude loopback, private, unspecified, link-local, and
+  multicast addresses.
+- GitHub Actions pinned to a full 40-character commit SHA are not reported as
+  mutable.
+- `workflow_run` artifact findings require a download of an upstream run's
+  artifact followed by a command in the same job. Cache-write findings require
+  `pull_request_target`, `issue_comment`, or `workflow_run` and an effective
+  `write` or `write-only` cache mode. These
+  are review signals, not proof that an artifact or cache is attacker-controlled.
+  See GitHub's
+  [secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use)
+  and [cache access guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
+- CI interpolation and secret-egress checks inspect decoded multiline `run`
+  blocks as individual steps, so expressions split across YAML lines are not
+  silently missed or correlated across unrelated steps.
+- A `pull_request` job using a self-hosted runner is a review signal because
+  repository visibility and fork-approval settings are unavailable offline. See
+  GitHub's [self-hosted runner warning](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners).
+- Rule path globs compare case-insensitively, so mixed-case file extensions do
+  not bypass a detector. Agent instruction files are reviewed as instructions,
+  while ordinary documentation and test fixtures retain their lower-risk context.
+- Package names are matched only in parsed manifests. A sourced affected
+  version can become a confirmed IOC; an uncertain name/range remains a review
+  signal.
+- Alternate feeds, mirrors, local build scripts, and build wrappers are review
+  signals because many projects use them intentionally. An official wrapper
+  URL with a well-formed SHA-256 is left alone; a missing checksum is a
+  hardening finding, not proof of tampering.
 - `NO FINDINGS` never means safe, and incomplete coverage is reported.
 
 ## What this is not
 
-repyy is a source and repository review tool, not a replacement for `npm audit`, `pip-audit`,
-`cargo audit`, or another lockfile vulnerability database. It does not resolve packages, contact
-registries during a scan, or install dependencies. It can inspect supported manifests for declared
-package indicators and lockfiles for suspicious sources and integrity clues; confirm a dependency
-finding against the ecosystem's current advisory and the exact resolved version.
+repyy is a source and repository review tool, not a replacement for
+`npm audit`, `pip-audit`, `cargo audit`, or another lockfile vulnerability
+database. It does not resolve packages, contact registries during a scan, or
+install dependencies. It can inspect supported manifests for declared package
+indicators and lockfiles for suspicious sources and integrity clues; confirm a
+dependency finding against the ecosystem's current advisory and the exact
+resolved version.
 
-The scanner does not follow pip `-r`/`-c` references, evaluate Ruby or build configuration, compare
-dependency declarations to lockfile resolutions, or verify downloaded wrapper archives against their
-declared hashes. Those checks need a resolver or trusted artifact fetch; this scanner reads
-repository bytes only. Sibling `build.rs` detection applies to unpacked repository files.
+The scanner does not follow pip `-r`/`-c` references, evaluate Ruby or build
+configuration, compare dependency declarations to lockfile resolutions, or
+verify downloaded wrapper archives against their declared hashes. Those checks
+need a resolver or trusted artifact fetch; this scanner reads repository bytes
+only. Sibling `build.rs` detection applies to unpacked repository files.
 
-Raster-image metadata and image pixels are not parsed for embedded instructions or scripts. Valid
-text SVG files are inspected for active content.
+Raster-image metadata and image pixels are not parsed for embedded instructions
+or scripts. Valid text SVG files are inspected for active content.
 
-Unreadable or non-regular files, undecodable source and configuration, linked Git metadata, resource
-limits, unsafe archive entries, and timeouts reduce coverage. Intentionally excluded
-dependency/cache trees are listed as skipped but do not make the default scan incomplete.
+Unreadable or non-regular files, undecodable source and configuration, linked
+Git metadata, resource limits, unsafe archive entries, and timeouts reduce
+coverage. Intentionally excluded dependency/cache trees are listed as skipped
+but do not make the default scan incomplete.
 
-Run `repyy rules explain RULE-ID` for offline rationale, legitimate-use context, matching scope, and
-review guidance. Finding dispositions organize reports but do not change verdict or exit-code
-policy.
+Run `repyy rules explain RULE-ID` for offline rationale, legitimate-use context,
+matching scope, and review guidance. Finding dispositions organize reports but
+do not change verdict or exit-code policy.
 
 ## Deliberate exclusions
 
-Non-English comments are not evidence of malware and are not scored. GitHub account age, follower
-count, and activity require online collection and remain outside the private offline scanner. Run
-`repyy intel status` to see the active offline snapshot's age, or `repyy rules list` to inspect its
-sources and entries. `repyy intel update` is an explicit download of a signed public snapshot; scans
+Non-English comments are not evidence of malware and are not scored. GitHub
+account age, follower count, and activity require online collection and remain
+outside the private offline scanner. Run `repyy intel status` to see the active
+offline snapshot's age, or `repyy rules list` to inspect its sources and entries.
+`repyy intel update` is an explicit download of a signed public snapshot; scans
 never contact the update service or upload repository data.

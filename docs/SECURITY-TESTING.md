@@ -34,7 +34,9 @@ HTML escaping, source-link validation, redaction and report integrity.
 | FuzzHumanOutput        | Repository-controlled filenames/messages | Terminal controls neutralized and injected script markup escaped in HTML; 4 KiB string                                |
 | FuzzJSONReports        | Serialized report objects                | Accepted input re-renders as valid JSON; 16 KiB input                                                                 |
 
-These are bounded starting targets, not exhaustive coverage. Context cancellation is cooperative,
+Archive seeds include valid ZIP, TAR and TAR.GZ files, nested ZIPs, traversal paths, expansion
+limits and entry-count limits, alongside malformed inputs. These are bounded starting targets, not
+exhaustive coverage. Context cancellation is cooperative,
 not a hard CPU/memory guarantee. CI supplies a 10-minute job timeout and two workers. Concurrent
 symlink replacement, full Git transport/SSH behavior, live Docker isolation and every report field
 still need broader testing and independent review.

@@ -1,5 +1,5 @@
 {
-  "benchmark_version": "1.0.0",
+  "benchmark_version": "1.1.0",
   "cases": [
     {
       "id": "lifecycle",
@@ -16,18 +16,17 @@
     },
     {
       "id": "startup",
-      "title": "Startup configuration imports an inert marker file",
+      "title": "Startup configuration dynamically imports a harmless local module",
       "expected_rules": ["IMPORT-001"],
-      "known_missing": ["IMPORT-001"],
+      "known_missing": [],
       "risky": {
-        "postcss.config.cjs": "require('./marker.cjs'); module.exports = {};\n",
+        "postcss.config.cjs": "const markerPath = './marker.cjs';\nrequire(markerPath);\nmodule.exports = {};\n",
         "marker.cjs": "const marker = 'require(computedModule)';\n"
       },
       "control": {
         "postcss.config.cjs": "module.exports = { plugins: {} };\n"
       },
-      "safety": "The imported file only assigns a string. The finding demonstrates a textual dynamic-import indicator, not a resolved startup call graph.",
-      "known_missing_reason": "Expected indicator did not match the inert fixture in benchmark 1.0.0. Preserved as a visible coverage gap; no detection change in the trust roadmap."
+      "safety": "The dynamic import resolves only to the paired local marker file, which assigns a string. Reproduction never runs Node or the configuration. This tests a dynamic-import indicator, not full startup call-graph tracing."
     },
     {
       "id": "disguised-asset",
@@ -46,15 +45,14 @@
       "id": "folder-open",
       "title": "IDE folder-open task",
       "expected_rules": ["IDE-001"],
-      "known_missing": ["IDE-001"],
+      "known_missing": [],
       "risky": {
         ".vscode/tasks.json": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}]}"
       },
       "control": {
         ".vscode/tasks.json": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Manual marker\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\"}]}"
       },
-      "safety": "Nonexistent marker command. Do not open materialized fixtures in a task-enabled IDE.",
-      "known_missing_reason": "Expected indicator did not match the inert fixture in benchmark 1.0.0. Preserved as a visible coverage gap; no detection change in the trust roadmap."
+      "safety": "Nonexistent marker command. Do not open materialized fixtures in a task-enabled IDE."
     },
     {
       "id": "git-hook",

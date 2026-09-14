@@ -319,6 +319,7 @@ func runContainer(ctx context.Context, image, path string, remote bool, opts Opt
 	result.Coverage.Warnings = scrubList(result.Coverage.Warnings)
 	result.Resolved = ""
 	result.Source = nil
+	result.ScanMode = model.ScanModeDocker
 	result.Isolation = &model.IsolationInfo{Backend: "docker", ImageDigest: digest(image), FetchNetwork: "none", ScanNetwork: "none"}
 	if remote {
 		result.Isolation.FetchNetwork = "bridge"

@@ -137,7 +137,7 @@ interpret an empty result or exit 0 as proof of safety.
 Static analysis can miss malicious behavior and flag legitimate code. Dynamic imports, generated
 code, encrypted content and runtime state may be unresolved. A filename, signature or suspicious
 string alone does not establish malicious intent. Inspect the evidence and ask the sender for
-context. The demo benchmark explicitly preserves known misses.
+context. The demo benchmark versions its expectations and keeps misses and expectation corrections visible.
 
 ## Claim-to-evidence map
 

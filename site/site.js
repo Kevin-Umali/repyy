@@ -67,11 +67,7 @@ const attachTabs = (tabs, select) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       const nextIndex =
-        event.key === "Home"
-          ? 0
-          : event.key === "End"
-            ? tabs.length - 1
-            : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+        event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
       tabs[nextIndex].focus();
       select(tabs[nextIndex], false);
     });
@@ -103,8 +99,7 @@ const reportFormats = {
     use: "Human review",
     description: "Prioritized findings with context and a clear verdict.",
     command: "repyy scan ./assignment",
-    preview:
-      "$ repyy scan ./assignment\n\nREVIEW REQUIRED\n2 findings need context\n\nHIGH  PKG-001   package.json:12\nMED   OBFS-003   src/setup.js:48",
+    preview: "$ repyy scan ./assignment\n\nREVIEW REQUIRED\n2 findings need context\n\nHIGH  PKG-001   package.json:12\nMED   OBFS-003   src/setup.js:48",
   },
   json: {
     title: "Structured JSON",
@@ -193,13 +188,7 @@ if (docsSearch) {
   const links = [...document.querySelectorAll('.docs-sidebar a[href^="#"]')];
   const sidebarNav = document.querySelector(".docs-sidebar nav");
   sidebarNav?.addEventListener("keydown", (event) => {
-    if (
-      sidebarNav.scrollHeight <= sidebarNav.clientHeight ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey
-    )
-      return;
+    if (sidebarNav.scrollHeight <= sidebarNav.clientHeight || event.altKey || event.ctrlKey || event.metaKey) return;
     const distance = {
       ArrowUp: -40,
       ArrowDown: 40,
@@ -212,240 +201,96 @@ if (docsSearch) {
     event.preventDefault();
     sidebarNav.scrollBy({ top: distance, behavior: "instant" });
   });
-  const linkById = new Map(links.map((link) => [link.hash.slice(1), link]));
-  const markCurrent = (current) => {
+  // Use heading positions, not intersection ratios: long sections can remain
+  // below an observer threshold throughout most of the reader's scroll.
+  let currentId;
+  let scrollFrame;
+  const updateCurrent = () => {
+    scrollFrame = undefined;
+    const visibleSections = sections.filter((section) => section.getClientRects().length);
+    if (!visibleSections.length) return;
+    const headerBottom = document.querySelector(".docs-header").getBoundingClientRect().bottom;
+    const anchorOffset = parseFloat(getComputedStyle(visibleSections[0]).scrollMarginTop) || 0;
+    const readingLine = Math.max(headerBottom + 16, anchorOffset) + 1;
+    let current = visibleSections[0];
+    for (const section of visibleSections) {
+      if (section.getBoundingClientRect().top > readingLine) break;
+      current = section;
+    }
+    // A short final section may never reach the reading line.
+    if (scrollY > 0 && Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight) {
+      current = visibleSections.at(-1);
+    }
+    if (current.id === currentId) return;
+    currentId = current.id;
     links.forEach((link) => {
-      link.classList.toggle("is-current", link === current);
-      if (link === current) link.setAttribute("aria-current", "location");
+      const active = link.hash.slice(1) === currentId;
+      link.classList.toggle("is-current", active);
+      if (active) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     });
+    // Keep the active desktop link visible without scrolling the document.
+    const activeLink = sidebarNav?.querySelector('[aria-current="location"]');
+    if (activeLink && sidebarNav.getClientRects().length) {
+      const item = activeLink.getBoundingClientRect();
+      const container = sidebarNav.getBoundingClientRect();
+      if (item.top < container.top) sidebarNav.scrollTop += item.top - container.top;
+      else if (item.bottom > container.bottom) sidebarNav.scrollTop += item.bottom - container.bottom;
+    }
   };
-  links.forEach((link) => {
-    link.addEventListener("click", () => markCurrent(link));
-  });
-  const sectionObserver = new IntersectionObserver(
-    (entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (!visible) return;
-      markCurrent(linkById.get(visible.target.id));
-    },
-    { rootMargin: "-18% 0px -68%", threshold: [0, 0.2, 0.5] },
-  );
-  sections.forEach((section) => sectionObserver.observe(section));
+  const scheduleCurrent = () => {
+    if (scrollFrame === undefined) scrollFrame = requestAnimationFrame(updateCurrent);
+  };
+  window.addEventListener("scroll", scheduleCurrent, { passive: true });
+  window.addEventListener("resize", scheduleCurrent);
+  window.addEventListener("hashchange", scheduleCurrent);
+  window.addEventListener("pageshow", scheduleCurrent);
+  new ResizeObserver(scheduleCurrent).observe(document.querySelector(".docs-main"));
+  updateCurrent();
 }
 
 const docsGlobalIndex = [
   ["/docs/", "Documentation", "overview", "Overview", "overview scanner read only guides"],
-  [
-    "/docs/",
-    "Documentation",
-    "getting-started",
-    "Run your first scan",
-    "getting started install first scan local folder html git",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "recipes",
-    "Copyable starting points",
-    "examples local remote powershell docker json sarif targets",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "verdicts-docs",
-    "Read the result",
-    "verdict findings no findings review required do not run incomplete exit code",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "reports-docs",
-    "Choose a report",
-    "terminal json sarif html report output offline file",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "privacy",
-    "Know the boundary",
-    "privacy network credentials telemetry upload",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "intelligence",
-    "What \u201cintel\u201d means",
-    "intel intelligence indicators packages hashes snapshot status update rollback",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "agent-skill-docs",
-    "Give your coding agent a safe first step",
-    "agent skill codex instructions workflow",
-  ],
-  [
-    "/docs/",
-    "Documentation",
-    "limits-docs",
-    "When coverage is incomplete",
-    "limits timeout files archive incomplete coverage",
-  ],
+  ["/docs/", "Documentation", "getting-started", "Run your first scan", "getting started install first scan local folder html git"],
+  ["/docs/", "Documentation", "recipes", "Copyable starting points", "examples local remote powershell docker json sarif targets"],
+  ["/docs/", "Documentation", "verdicts-docs", "Read the result", "verdict findings no findings review required do not run incomplete exit code"],
+  ["/docs/", "Documentation", "reports-docs", "Choose a report", "terminal json sarif html report output offline file"],
+  ["/docs/", "Documentation", "privacy", "Know the boundary", "privacy network credentials telemetry upload"],
+  ["/docs/", "Documentation", "intelligence", "What \u201cintel\u201d means", "intel intelligence indicators packages hashes snapshot status update rollback"],
+  ["/docs/", "Documentation", "agent-skill-docs", "Give your coding agent a safe first step", "agent skill codex instructions workflow"],
+  ["/docs/", "Documentation", "limits-docs", "When coverage is incomplete", "limits timeout files archive incomplete coverage"],
   ["/installation/", "Installation", "overview", "Installation", "install first scan binary"],
-  [
-    "/installation/",
-    "Installation",
-    "prerequisites",
-    "Prerequisites",
-    "git docker browser macos linux windows",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "macos-linux",
-    "Install on macOS and Linux",
-    "homebrew archive deb rpm apk go path",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "windows",
-    "Install on Windows PowerShell",
-    "windows powershell scoop zip path",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "checksums",
-    "Verify the release",
-    "checksum sha256 signed binary",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "first-scan",
-    "Run a first local scan",
-    "local html report intel status",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "remote",
-    "Scan a remote repository",
-    "remote github gitlab bitbucket https ssh token",
-  ],
-  [
-    "/installation/",
-    "Installation",
-    "troubleshooting",
-    "Troubleshoot the first run",
-    "command not found permission timeout html",
-  ],
-  [
-    "/cli/",
-    "CLI reference",
-    "overview",
-    "CLI reference",
-    "commands flags scan report rules intelligence",
-  ],
+  ["/installation/", "Installation", "prerequisites", "Prerequisites", "git docker browser macos linux windows"],
+  ["/installation/", "Installation", "macos-linux", "Install on macOS and Linux", "homebrew archive deb rpm apk go path"],
+  ["/installation/", "Installation", "windows", "Install on Windows PowerShell", "windows powershell scoop zip path"],
+  ["/installation/", "Installation", "checksums", "Verify the release", "checksum sha256 signed binary"],
+  ["/installation/", "Installation", "first-scan", "Run a first local scan", "local html report intel status"],
+  ["/installation/", "Installation", "remote", "Scan a remote repository", "remote github gitlab bitbucket https ssh token"],
+  ["/installation/", "Installation", "troubleshooting", "Troubleshoot the first run", "command not found permission timeout html"],
+  ["/cli/", "CLI reference", "overview", "CLI reference", "commands flags scan report rules intelligence"],
   ["/cli/", "CLI reference", "shape", "Command shape", "syntax subcommands targets path url"],
   ["/cli/", "CLI reference", "first-scan", "Run a first scan", "local remote folder git"],
-  [
-    "/cli/",
-    "CLI reference",
-    "targets",
-    "Targets and target files",
-    "multiple file jobs history clone",
-  ],
-  [
-    "/cli/",
-    "CLI reference",
-    "scan-flags",
-    "All scan flags",
-    "format output config dependencies sandbox fail timeout detail progress severity confidence",
-  ],
+  ["/cli/", "CLI reference", "targets", "Targets and target files", "multiple file jobs history clone"],
+  ["/cli/", "CLI reference", "scan-flags", "All scan flags", "format output config dependencies sandbox fail timeout detail progress severity confidence"],
   ["/cli/", "CLI reference", "recipes", "Copyable scan recipes", "html json sarif ci docker"],
   ["/cli/", "CLI reference", "reports", "Choose a report format", "terminal json sarif html"],
-  [
-    "/cli/",
-    "CLI reference",
-    "report-command",
-    "Render a saved JSON report",
-    "report stdin filters",
-  ],
+  ["/cli/", "CLI reference", "report-command", "Render a saved JSON report", "report stdin filters"],
   ["/cli/", "CLI reference", "rules", "Rules commands", "validate check list explain"],
-  [
-    "/cli/",
-    "CLI reference",
-    "intel",
-    "Intelligence commands",
-    "intel status update rollback snapshot",
-  ],
-  [
-    "/cli/",
-    "CLI reference",
-    "exit-codes",
-    "Exit codes and verdicts",
-    "zero one two three incomplete threshold",
-  ],
+  ["/cli/", "CLI reference", "intel", "Intelligence commands", "intel status update rollback snapshot"],
+  ["/cli/", "CLI reference", "exit-codes", "Exit codes and verdicts", "zero one two three incomplete threshold"],
   ["/cli/", "CLI reference", "troubleshooting", "Troubleshooting", "git docker incomplete"],
-  [
-    "/configuration/",
-    "Configuration",
-    "overview",
-    "Configuration",
-    "trusted yaml custom rules suppressions",
-  ],
-  [
-    "/configuration/",
-    "Configuration",
-    "boundary",
-    "Understand the trust boundary",
-    "repository config trust",
-  ],
+  ["/configuration/", "Configuration", "overview", "Configuration", "trusted yaml custom rules suppressions"],
+  ["/configuration/", "Configuration", "boundary", "Understand the trust boundary", "repository config trust"],
   ["/configuration/", "Configuration", "minimal", "Start with valid YAML", "version rules yaml"],
   ["/configuration/", "Configuration", "workflow", "Use the safe workflow", "validate scan config"],
-  [
-    "/configuration/",
-    "Configuration",
-    "rule-fields",
-    "Custom rule fields",
-    "severity confidence pattern globs rationale",
-  ],
-  [
-    "/configuration/",
-    "Configuration",
-    "rule-walkthrough",
-    "Walk through a custom rule",
-    "regex example",
-  ],
+  ["/configuration/", "Configuration", "rule-fields", "Custom rule fields", "severity confidence pattern globs rationale"],
+  ["/configuration/", "Configuration", "rule-walkthrough", "Walk through a custom rule", "regex example"],
   ["/configuration/", "Configuration", "scope", "Choose the matching scope", "raw code structured"],
-  [
-    "/configuration/",
-    "Configuration",
-    "suppressions",
-    "Suppress one reviewed finding",
-    "fingerprint reason expires",
-  ],
+  ["/configuration/", "Configuration", "suppressions", "Suppress one reviewed finding", "fingerprint reason expires"],
   ["/configuration/", "Configuration", "review-example", "Review example", "finding exception"],
-  [
-    "/configuration/",
-    "Configuration",
-    "limits",
-    "Limits and validation errors",
-    "invalid regex exit code 3",
-  ],
+  ["/configuration/", "Configuration", "limits", "Limits and validation errors", "invalid regex exit code 3"],
   ["/coverage/", "Detection coverage", "overview", "Detection coverage", "rules detection limits"],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "map",
-    "Coverage map",
-    "execution obfuscation dependencies secrets network shells mining ci containers git",
-  ],
+  ["/coverage/", "Detection coverage", "map", "Coverage map", "execution obfuscation dependencies secrets network shells mining ci containers git"],
   [
     "/coverage/",
     "Detection coverage",
@@ -453,159 +298,33 @@ const docsGlobalIndex = [
     "Supply-chain files by ecosystem",
     "npm yarn pnpm pip uv bundler go cargo gradle maven composer nuget package sources build scripts wrappers",
   ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "precision",
-    "How repyy improves precision",
-    "context scope correlation confidence",
-  ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "limits",
-    "Coverage has a boundary",
-    "timeout max files archive incomplete",
-  ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "exclusions",
-    "Deliberate exclusions",
-    "generated lockfiles offline privacy",
-  ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "explain",
-    "Explain a rule before acting",
-    "rules explain rationale",
-  ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "list",
-    "Inspect the active intelligence",
-    "rules list snapshot packages hashes",
-  ],
-  [
-    "/coverage/",
-    "Detection coverage",
-    "workflow",
-    "A practical review workflow",
-    "evidence verdict report",
-  ],
+  ["/coverage/", "Detection coverage", "precision", "How repyy improves precision", "context scope correlation confidence"],
+  ["/coverage/", "Detection coverage", "limits", "Coverage has a boundary", "timeout max files archive incomplete"],
+  ["/coverage/", "Detection coverage", "exclusions", "Deliberate exclusions", "generated lockfiles offline privacy"],
+  ["/coverage/", "Detection coverage", "explain", "Explain a rule before acting", "rules explain rationale"],
+  ["/coverage/", "Detection coverage", "list", "Inspect the active intelligence", "rules list snapshot packages hashes"],
+  ["/coverage/", "Detection coverage", "workflow", "A practical review workflow", "evidence verdict report"],
   ["/isolation/", "Isolation", "overview", "Isolation", "docker vm sandbox network read only"],
   ["/isolation/", "Isolation", "docker", "Docker release image", "sandbox digest signed image"],
-  [
-    "/isolation/",
-    "Isolation",
-    "docker-image",
-    "Verify the image signature",
-    "cosign sigstore checksum",
-  ],
-  [
-    "/isolation/",
-    "Isolation",
-    "local",
-    "Docker with a local folder",
-    "mount networking disabled json",
-  ],
+  ["/isolation/", "Isolation", "docker-image", "Verify the image signature", "cosign sigstore checksum"],
+  ["/isolation/", "Isolation", "local", "Docker with a local folder", "mount networking disabled json"],
   ["/isolation/", "Isolation", "https", "Docker with an HTTPS remote", "fetch credentials git"],
-  [
-    "/isolation/",
-    "Isolation",
-    "edge-cases",
-    "Know the edge cases",
-    "incomplete timeout ssh keep workdir",
-  ],
+  ["/isolation/", "Isolation", "edge-cases", "Know the edge cases", "incomplete timeout ssh keep workdir"],
   ["/isolation/", "Isolation", "vm", "Manual VM workflows", "windows macos linux guest"],
-  [
-    "/isolation/",
-    "Isolation",
-    "windows-sandbox",
-    "Windows Sandbox",
-    "wsb powershell mapped folders",
-  ],
+  ["/isolation/", "Isolation", "windows-sandbox", "Windows Sandbox", "wsb powershell mapped folders"],
   ["/isolation/", "Isolation", "utm", "macOS with UTM", "macos vm read only"],
   ["/isolation/", "Isolation", "qemu", "Linux with QEMU/KVM", "linux qemu kvm"],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "overview",
-    "Intelligence",
-    "intel threat offline snapshot packages hashes",
-  ],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "difference",
-    "Rules and intelligence work together",
-    "built in rules indicators versions",
-  ],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "status",
-    "Check before you scan",
-    "status freshness verification cache",
-  ],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "update",
-    "Update only when you choose to",
-    "update download ed25519 signature",
-  ],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "rollback",
-    "Roll back a cached update",
-    "rollback previous cache",
-  ],
-  [
-    "/intelligence/",
-    "Intelligence",
-    "investigate",
-    "Investigate an indicator",
-    "rules explain list check advisory hash",
-  ],
-  [
-    "/agent-skill/",
-    "Agent skill",
-    "overview",
-    "Optional agent skill",
-    "instructions codex scan read only",
-  ],
-  [
-    "/agent-skill/",
-    "Agent skill",
-    "install",
-    "Install the skill",
-    "npx skills add global interactive",
-  ],
-  [
-    "/agent-skill/",
-    "Agent skill",
-    "workflow",
-    "What the skill tells an agent to do",
-    "workflow json html verdict incomplete",
-  ],
-  [
-    "/agent-skill/",
-    "Agent skill",
-    "docker",
-    "Use Docker when you need a process boundary",
-    "docker sandbox digest ssh",
-  ],
-  [
-    "/agent-skill/",
-    "Agent skill",
-    "limits",
-    "Understand the limits",
-    "privacy target execute build test upload intel",
-  ],
+  ["/intelligence/", "Intelligence", "overview", "Intelligence", "intel threat offline snapshot packages hashes"],
+  ["/intelligence/", "Intelligence", "difference", "Rules and intelligence work together", "built in rules indicators versions"],
+  ["/intelligence/", "Intelligence", "status", "Check before you scan", "status freshness verification cache"],
+  ["/intelligence/", "Intelligence", "update", "Update only when you choose to", "update download ed25519 signature"],
+  ["/intelligence/", "Intelligence", "rollback", "Roll back a cached update", "rollback previous cache"],
+  ["/intelligence/", "Intelligence", "investigate", "Investigate an indicator", "rules explain list check advisory hash"],
+  ["/agent-skill/", "Agent skill", "overview", "Optional agent skill", "instructions codex scan read only"],
+  ["/agent-skill/", "Agent skill", "install", "Install the skill", "npx skills add global interactive"],
+  ["/agent-skill/", "Agent skill", "workflow", "What the skill tells an agent to do", "workflow json html verdict incomplete"],
+  ["/agent-skill/", "Agent skill", "docker", "Use Docker when you need a process boundary", "docker sandbox digest ssh"],
+  ["/agent-skill/", "Agent skill", "limits", "Understand the limits", "privacy target execute build test upload intel"],
   [
     "/trust/",
     "Trust and Limitations",
@@ -674,7 +393,7 @@ const docsGlobalIndex = [
     "Trust and Limitations",
     "static-analysis-limitations",
     "Static-analysis limitations",
-    " Static analysis can miss malicious behavior and flag legitimate code Dynamic imports generated code encrypted content and runtime state may be unresolved A filename signature or suspicious string alone does not establish malicious intent Inspect the evidence and ask the sender for context The demo benchmark explicitly preserves known misses ",
+    " Static analysis can miss malicious behavior and flag legitimate code Dynamic imports generated code encrypted content and runtime state may be unresolved A filename signature or suspicious string alone does not establish malicious intent Inspect the evidence and ask the sender for context The demo benchmark versions its expectations and keeps misses and expectation corrections visible ",
   ],
   [
     "/trust/",
@@ -690,19 +409,13 @@ const docsGlobalIndex = [
     "Releases, security testing and reviews",
     " Read release verification VERIFICATION md security testing SECURITY TESTING md and the external review brief EXTERNAL REVIEW md See the verification guide for current CodeQL Scorecard and attestation evidence status No independent audit badge is claimed Report vulnerabilities privately using GitHub vulnerability reporting https github com Kevin Umali repyy security advisories new Include version OS impact and the smallest inert reproduction Do not send working credentials or private assignment ",
   ],
-  [
-    "/trust/",
-    "Trust and Limitations",
-    "overview",
-    "Trust and Limitations",
-    "Trust and Limitations Understand the boundary. Inspect the evidence.",
-  ],
+  ["/trust/", "Trust and Limitations", "overview", "Trust and Limitations", "Trust and Limitations Understand the boundary. Inspect the evidence."],
   [
     "/verification/",
     "Releases and Verification",
     "current-evidence-status",
     "Current evidence status",
-    " Release v0 5 0 publishes checksums and signing certificates a signed sandbox image digest and per archive SBOMs The next release workflow adds GitHub attestations and a release set SPDX SBOM Do not assume older releases have these new attestations A configured workflow is not published verification evidence The new workflow keeps the GitHub release draft until download verification succeeds A failed gate must remain visible and must not be described as a verified release Homebrew and Scoop mani",
+    " v0 5 1 is prepared on the development branch it is not yet a published verified release Release v0 5 0 publishes checksums and signing certificates a signed sandbox image digest and per archive SBOMs The next release workflow adds GitHub attestations and a release set SPDX SBOM Do not assume older releases have these new attestations A configured workflow is not published verification evidence The new workflow keeps the GitHub release draft until download verification succeeds A failed gate mus",
   ],
   [
     "/verification/",
@@ -730,7 +443,7 @@ const docsGlobalIndex = [
     "Releases and Verification",
     "sbom-access-and-scope",
     "SBOM access and scope",
-    " The container inventory is published as repyy container spdx json and attested against the image digest Per archive sbom json assets identify archive contents repyy release spdx json describes the release build directory as a set including platform binaries and packages It is not a separate per platform dependency assertion The workflow binds that set inventory to each binary archive package digest using an SPDX attestation Read its package inventory and relationships rather than interpreting a",
+    " Container inventories are published separately as repyy container linux amd64 spdx json and repyy container linux arm64 spdx json Each is attested against its platform image digest recorded in the corresponding txt asset These platform digests are selected from the signed multi platform image index an inventory for one architecture does not claim coverage of the other Per archive sbom json assets identify archive contents repyy release spdx json describes the release build directory as a set in",
   ],
   [
     "/verification/",
@@ -751,7 +464,7 @@ const docsGlobalIndex = [
     "Releases and Verification",
     "repository-security-signals",
     "Repository security signals",
-    " Inspect CodeQL runs https github com Kevin Umali repyy actions workflows codeql yml Scorecard workflow https github com Kevin Umali repyy actions workflows scorecard yml the Scorecard breakdown https scorecard dev viewer uri github com Kevin Umali repyy and artifact attestations https github com Kevin Umali repyy attestations Scorecard results may be unavailable before its first default branch run A passing check is limited evidence not certification Review high risk Scorecard checks individual",
+    " CodeQL is configured for Go and GitHub Actions workflow security analysis https docs github com en code security reference code scanning codeql codeql queries actions built in queries The added workflow analysis still needs its first CI run Inspect CodeQL runs https github com Kevin Umali repyy actions workflows codeql yml Scorecard workflow https github com Kevin Umali repyy actions workflows scorecard yml the Scorecard breakdown https scorecard dev viewer uri github com Kevin Umali repyy and ",
   ],
   [
     "/verification/",
@@ -795,13 +508,7 @@ const docsGlobalIndex = [
     "Known gaps and independent review",
     " Short fuzz runs cannot exhaust the input space Tests using fake host tools cannot prove the behavior of every installed Git Docker version OS specific permission and symlink behavior requires platform CI Resource limits do not provide dedicated VM isolation Best effort cleanup can leave temporary data after failures The external review brief EXTERNAL REVIEW md identifies the required independent scope Until a reviewer publishes their identity exact reviewed commit findings and retest outcome th",
   ],
-  [
-    "/security-testing/",
-    "Security Testing",
-    "overview",
-    "Security Testing",
-    "Security Testing Test the scanner. Keep the gaps visible.",
-  ],
+  ["/security-testing/", "Security Testing", "overview", "Security Testing", "Security Testing Test the scanner. Keep the gaps visible."],
   [
     "/about/",
     "About Repyy",
@@ -814,21 +521,15 @@ const docsGlobalIndex = [
     "About Repyy",
     "security-reporting",
     "Security reporting",
-    " Please use private vulnerability reporting https github com Kevin Umali repyy security advisories new for defects in Repyy Include the version and smallest inert reproduction The project maintains a security policy SECURITY md it does not promise an invented response time SLA Ordinary feedback and false positives can use the public issue templates after checking for sensitive content Read Trust and Limitations TRUST md and Security Testing SECURITY TESTING md before relying on the scanner s res",
+    " Please use private vulnerability reporting https github com Kevin Umali repyy security advisories new for defects in Repyy Include the version and smallest inert reproduction The security policy SECURITY md explains the reporting process Ordinary feedback and false positives can use the public issue templates after checking for sensitive content Read Trust and Limitations TRUST md and Security Testing SECURITY TESTING md before relying on the scanner s results ",
   ],
-  [
-    "/about/",
-    "About Repyy",
-    "overview",
-    "About Repyy",
-    "About Repyy Built for the review before you run.",
-  ],
+  ["/about/", "About Repyy", "overview", "About Repyy", "About Repyy Built for the review before you run."],
   [
     "/demo/",
     "Demo and Sample Report",
     "safety-design",
     "Safety design",
-    " All JavaScript indicators are strings or harmless configuration The lifecycle and hook examples only print markers The IDE command names a nonexistent marker The Docker image uses a nonexistent image on a reserved invalid registry Credential references are fake path strings no file read or credential collection exists Network evaluation examples are quoted text with no callable downloader or execution chain Fixtures are created without executable permissions ",
+    " JavaScript examples use inert strings or harmless local configuration The startup example imports only its local marker module reproduction never executes it The lifecycle and hook examples only print markers The IDE command names a nonexistent marker The Docker image uses a nonexistent image on a reserved invalid registry Credential references are fake path strings no file read or credential collection exists Network evaluation examples are quoted text with no callable downloader or execution ",
   ],
   [
     "/demo/",
@@ -842,7 +543,7 @@ const docsGlobalIndex = [
     "Demo and Sample Report",
     "expected-outcomes-and-controls",
     "Expected outcomes and controls",
-    " Case Expected rule Paired control Lifecycle PKG 001 Ordinary test script Startup configuration IMPORT 001 Normal PostCSS configuration Disguised image EXEC 001 SVG with only image markup Folder open task IDE 001 Manual task without automatic run option Git hook GITHOOK 001 Inactive sample hook Obfuscated download CHAIN 001 Normal display string Credential reference CRED 001 Specific benign environment variable Docker socket DOCKER 001 Ordinary read only data volume Benchmark 1 0 0 detects six o",
+    " Fixture Rule evidence Regression check Paired control Install lifecycle script https github com Kevin Umali repyy blob main demo cases json L5 PKG 001 https github com Kevin Umali repyy blob main internal scan catalog go L158 Benchmark runner https github com Kevin Umali repyy blob main scripts benchmark py Ordinary test script Startup configuration dynamically imports a harmless local module https github com Kevin Umali repyy blob main demo cases json L20 IMPORT 001 https github com Kevin Umal",
   ],
   [
     "/demo/",
@@ -854,10 +555,11 @@ const docsGlobalIndex = [
   [
     "/demo/",
     "Demo and Sample Report",
-    "overview",
-    "Demo and Sample Report",
-    "Demo and Sample Report Inspect a real report. No installation needed.",
+    "changes-from-benchmark-1-0-0",
+    "Changes from benchmark 1.0.0",
+    " The original startup fixture placed require computedModule inside a string Its absence from the findings did not demonstrate missed startup behavior Version 1 1 0 preserves that marker file and uses a real dynamic import of this harmless local file in the startup configuration IMPORT 001 now measures the observable import indicator complete startup call graph analysis remains unsupported The folder open fixture is unchanged Repyy v0 5 1 corrects IDE 001 to recognize the quoted JSON runOn key It",
   ],
+  ["/demo/", "Demo and Sample Report", "overview", "Demo and Sample Report", "Demo and Sample Report Inspect a real report. No installation needed."],
 ];
 const docsSearchInput = document.querySelector("#docs-search");
 if (docsSearchInput) {
@@ -879,9 +581,7 @@ if (docsSearchInput) {
       docsSearchInput.setAttribute("aria-expanded", "false");
       return;
     }
-    const matches = docsGlobalIndex.filter((item) =>
-      query.split(/\s+/).every((word) => item.slice(1).join(" ").toLowerCase().includes(word)),
-    );
+    const matches = docsGlobalIndex.filter((item) => query.split(/\s+/).every((word) => item.slice(1).join(" ").toLowerCase().includes(word)));
     if (!matches.length) {
       const message = document.createElement("p");
       message.className = "docs-search-empty";
@@ -902,9 +602,7 @@ if (docsSearchInput) {
       const count = document.createElement("p");
       count.className = "docs-search-count";
       count.textContent =
-        matches.length > 30
-          ? "Showing 30 of " + matches.length + " matches"
-          : matches.length + (matches.length === 1 ? " match" : " matches");
+        matches.length > 30 ? "Showing 30 of " + matches.length + " matches" : matches.length + (matches.length === 1 ? " match" : " matches");
       results.appendChild(count);
     }
     results.hidden = false;
@@ -985,8 +683,7 @@ document.querySelectorAll("[data-drag-rail]").forEach((viewport) => {
     if (!lastFrame) lastFrame = time;
     const dt = Math.min((time - lastFrame) / 1000, 0.032);
     lastFrame = time;
-    const acceleration =
-      (-spring.stiffness * (position - target) - spring.damping * velocity) / spring.mass;
+    const acceleration = (-spring.stiffness * (position - target) - spring.damping * velocity) / spring.mass;
     velocity += acceleration * dt;
     position += velocity * dt;
     render();
@@ -1014,8 +711,7 @@ document.querySelectorAll("[data-drag-rail]").forEach((viewport) => {
     lastFrame = 0;
     render();
   };
-  const project = (initialVelocity, decelerationRate = 0.99) =>
-    ((initialVelocity / 1000) * decelerationRate) / (1 - decelerationRate);
+  const project = (initialVelocity, decelerationRate = 0.99) => ((initialVelocity / 1000) * decelerationRate) / (1 - decelerationRate);
 
   viewport.addEventListener("pointerdown", (event) => {
     if (pointerId !== undefined) return;

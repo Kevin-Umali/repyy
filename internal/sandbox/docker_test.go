@@ -106,7 +106,7 @@ func TestRunContainerAcceptsValidWorkerJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("runContainer() error = %v", err)
 	}
-	if result.Target != "/input" || result.Verdict != model.VerdictNoFindings {
+	if result.Target != "/input" || result.Verdict != model.VerdictNoFindings || result.ScanMode != model.ScanModeDocker {
 		t.Fatalf("unexpected result: %#v", result)
 	}
 	if result.Isolation == nil || result.Isolation.ImageDigest != "sha256:"+strings.Repeat("a", 64) {

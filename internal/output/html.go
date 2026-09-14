@@ -37,6 +37,7 @@ type htmlReportView struct {
 
 type htmlRepoView struct {
 	Target, Verdict, VerdictClass, Reason string
+	ScanMode                              string
 	FilesScanned, FindingCount            int
 	ActionableCount                       int
 	BytesScanned                          string
@@ -87,16 +88,34 @@ func htmlOut(w io.Writer, report model.Report) error {
 		ScriptHash:   base64.StdEncoding.EncodeToString(scriptHash[:]),
 		StyleHash:    base64.StdEncoding.EncodeToString(styleHash[:]),
 	}
+	if view.ToolCommit == "" {
+		view.ToolCommit = "unknown"
+	}
 	view.Intelligence.Version = displayText(view.Intelligence.Version)
 	view.Intelligence.Date = displayText(view.Intelligence.Date)
 	view.Intelligence.Source = displayText(view.Intelligence.Source)
 	categories, rules, files := map[string]bool{}, map[string]bool{}, map[string]bool{}
 	for _, repo := range report.Results {
 		repoView := htmlRepoView{
-			Target: displayText(repo.Target), Verdict: displayText(repo.DecisionStatus()), VerdictClass: strings.ToLower(strings.ReplaceAll(repo.Verdict, " ", "-")),
-			Reason: htmlVerdictReason(repo), FilesScanned: repo.Coverage.FilesScanned,
-			BytesScanned: formatHTMLBytes(repo.Coverage.BytesScanned), Duration: formatHTMLDuration(repo.Duration),
-			Coverage: repo.Coverage, Counts: map[string]int{}, ActionableCounts: map[string]int{}, DispositionCounts: map[string]int{}, FindingCount: len(repo.Findings),
+			ScanMode:          "unknown (not recorded)",
+			Target:            displayText(repo.Target),
+			Verdict:           displayText(repo.DecisionStatus()),
+			VerdictClass:      strings.ToLower(strings.ReplaceAll(repo.Verdict, " ", "-")),
+			Reason:            htmlVerdictReason(repo),
+			FilesScanned:      repo.Coverage.FilesScanned,
+			BytesScanned:      formatHTMLBytes(repo.Coverage.BytesScanned),
+			Duration:          formatHTMLDuration(repo.Duration),
+			Coverage:          repo.Coverage,
+			Counts:            map[string]int{},
+			ActionableCounts:  map[string]int{},
+			DispositionCounts: map[string]int{},
+			FindingCount:      len(repo.Findings),
+		}
+		if repo.ScanMode != "" {
+			repoView.ScanMode = displayText(string(repo.ScanMode))
+		} else if repo.Isolation != nil && repo.Isolation.Backend != "" {
+			// Older Docker reports already record their backend explicitly.
+			repoView.ScanMode = displayText(repo.Isolation.Backend)
 		}
 		if repo.Isolation != nil {
 			repoView.Isolation = &model.IsolationInfo{
@@ -518,25 +537,157 @@ pre { margin: .4rem 0 0; padding: .7rem .8rem; overflow-wrap: anywhere; border-r
 }`
 
 const htmlTemplate = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-{{.StyleHash}}'; script-src 'sha256-{{.ScriptHash}}'; img-src data:; base-uri 'none'; form-action 'none'; connect-src 'none'; object-src 'none'">
-<title>repyy security review</title><style>` + htmlStyle + `</style></head><body><a class="skip-link" href="#report-content">Skip to report</a><main id="report-content">
-<header class="masthead" aria-labelledby="report-title"><div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span><small>Report</small></div><p class="eyebrow">Read-only repository preflight</p><h1 id="report-title">repyy security review</h1><div class="meta" aria-label="Report metadata"><span class="pill">repyy {{.ToolVersion}}</span><span class="pill">commit {{if .ToolCommit}}{{.ToolCommit}}{{else}}unknown{{end}}</span><span class="pill">rules {{.RulesVersion}}</span><span class="pill">intelligence {{.Intelligence.Version}}</span><span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time></span></div><p class="muted spaced">Report <code>{{.ReportID}}</code></p></header>
+<title>repyy security review</title>
+<style>` + htmlStyle + `</style>
+</head>
+<body>
+<a class="skip-link" href="#report-content">Skip to report</a>
+<main id="report-content">
+<header class="masthead" aria-labelledby="report-title">
+<div class="report-brand" aria-label="repyy report">repyy<span aria-hidden="true">/</span>
+<small>Report</small>
+</div>
+<p class="eyebrow">Read-only repository preflight</p>
+<h1 id="report-title">repyy security review</h1>
+<div class="meta" aria-label="Report metadata">
+<span class="pill">repyy {{.ToolVersion}}</span>
+<span class="pill">commit {{if .ToolCommit}}{{.ToolCommit}}{{else}}unknown{{end}}</span>
+<span class="pill">rules {{.RulesVersion}}</span>
+<span class="pill">intelligence {{.Intelligence.Version}}</span>
+<span class="pill">generated <time datetime="{{.GeneratedAt}}">{{.GeneratedAt}}</time>
+</span>
+</div>
+<p class="muted spaced">Report <code>{{.ReportID}}</code>
+</p>
+</header>
 <section class="review-controls" aria-label="Review controls">
-<div class="view-switch" role="group" aria-label="Report view"><button data-view="findings" aria-pressed="true" type="button">Findings</button><button data-view="files" aria-pressed="false" type="button">Files</button><span class="pill"><output data-visible-count aria-live="polite">0</output> results</span></div>
+<div class="view-switch" role="group" aria-label="Report view">
+<button data-view="findings" aria-pressed="true" type="button">Findings</button>
+<button data-view="files" aria-pressed="false" type="button">Files</button>
+<span class="pill">
+<output data-visible-count aria-live="polite">0</output> results</span>
+</div>
 <section class="filters" aria-label="Finding filters">
 <input data-filter="search" type="search" placeholder="Search findings" aria-label="Search findings">
-<select data-filter="severity" aria-label="Severity"><option value="">All severities</option>{{range .Severities}}<option>{{.}}</option>{{end}}</select>
-<select data-filter="disposition" aria-label="Disposition"><option value="actionable" selected>Review queue</option><option value="">All dispositions</option>{{range .Dispositions}}<option>{{.}}</option>{{end}}</select>
-<details class="more-filters"><summary>More filters</summary><div class="more-filters-grid">
-<select data-filter="confidence" aria-label="Confidence"><option value="">All confidence</option>{{range .Confidences}}<option>{{.}}</option>{{end}}</select>
-<select data-filter="category" aria-label="Category"><option value="">All categories</option>{{range .Categories}}<option>{{.}}</option>{{end}}</select>
-<select data-filter="rule" aria-label="Rule"><option value="">All rules</option>{{range .Rules}}<option>{{.}}</option>{{end}}</select>
-<select data-filter="file" aria-label="File"><option value="">All files</option>{{range .Files}}<option>{{.}}</option>{{end}}</select>
-</div><button class="reset" data-reset type="button">Reset filters</button></details></section></section>
+<select data-filter="severity" aria-label="Severity">
+<option value="">All severities</option>{{range .Severities}}<option>{{.}}</option>{{end}}</select>
+<select data-filter="disposition" aria-label="Disposition">
+<option value="actionable" selected>Review queue</option>
+<option value="">All dispositions</option>{{range .Dispositions}}<option>{{.}}</option>{{end}}</select>
+<details class="more-filters">
+<summary>More filters</summary>
+<div class="more-filters-grid">
+<select data-filter="confidence" aria-label="Confidence">
+<option value="">All confidence</option>{{range .Confidences}}<option>{{.}}</option>{{end}}</select>
+<select data-filter="category" aria-label="Category">
+<option value="">All categories</option>{{range .Categories}}<option>{{.}}</option>{{end}}</select>
+<select data-filter="rule" aria-label="Rule">
+<option value="">All rules</option>{{range .Rules}}<option>{{.}}</option>{{end}}</select>
+<select data-filter="file" aria-label="File">
+<option value="">All files</option>{{range .Files}}<option>{{.}}</option>{{end}}</select>
+</div>
+<button class="reset" data-reset type="button">Reset filters</button>
+</details>
+</section>
+</section>
 <p class="empty-state" data-empty role="status" aria-live="polite" hidden>No findings match the current filters.</p>
-{{range .Repositories}}<article class="repo" aria-label="Repository review for {{.Target}}"><header class="repo-heading"><div><p class="eyebrow">Repository</p><h2>{{.Target}}</h2><p class="muted"><output data-repo-visible-count aria-live="polite">{{.FindingCount}}</output> visible findings</p>{{if .RepositoryURL}}<p class="muted">Source <a href="{{.RepositoryURL}}" rel="noreferrer">{{.RepositoryURL}}</a> at <code>{{.Revision}}</code></p>{{end}}</div><strong class="verdict {{.VerdictClass}}" role="status">{{.Verdict}}</strong></header><p class="reason">{{.Reason}}</p><dl class="summary-grid" aria-label="Review summary"><div><dt>Needs attention</dt><dd>{{.ActionableCount}}</dd></div><div><dt>Critical priority</dt><dd>{{index .ActionableCounts "critical"}}</dd></div><div><dt>High priority</dt><dd>{{index .ActionableCounts "high"}}</dd></div><div><dt>Files scanned</dt><dd>{{.FilesScanned}}</dd></div></dl><p class="scan-meta"><span>{{.FindingCount}} total findings</span><span>{{index .Counts "high"}} high total</span><span>{{index .Counts "medium"}} medium</span><span>{{index .Counts "low"}} low</span><span>{{index .DispositionCounts "block"}} block</span><span>{{index .DispositionCounts "review"}} review</span><span>{{index .DispositionCounts "harden"}} harden</span><span>{{index .DispositionCounts "informational"}} informational</span><span>{{.BytesScanned}}</span><span>{{.Duration}}</span></p>
-<section data-view-panel="findings" aria-label="Findings for {{.Target}}"><h2 class="section-heading">Findings</h2>{{if not .Findings}}<p>No enabled rule matched. This is not a guarantee that the repository is safe.</p>{{end}}{{range .Findings}}<article class="finding" data-finding data-search="{{.SearchText}}" data-severity="{{.Severity}}" data-confidence="{{.Confidence}}" data-disposition="{{.Disposition}}" data-category="{{.Category}}" data-rule="{{.RuleID}}" data-file="{{.Path}}"><header class="finding-head"><div><h3>{{.RuleID}} · {{.Message}}</h3><p class="tags"><span>{{.Severity}}</span><span>{{.Confidence}} confidence</span><span>{{.Disposition}}</span><span>{{.Context}}</span><span>{{.Category}}</span></p></div><span aria-label="{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}">{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}</span></header>{{range .Locations}}<div class="location">{{if .Link}}<a href="{{.Link}}" rel="noreferrer">{{.Label}}</a>{{else}}<strong>{{.Label}}</strong>{{end}}{{if .Evidence}}<pre aria-label="Redacted evidence"><code>{{.Evidence}}</code></pre>{{end}}</div>{{end}}{{if .LocationsOmitted}}<p class="muted">{{.LocationsOmitted}} additional locations omitted by report limits.</p>{{end}}{{if .ContributingRuleIDs}}<p><strong>Contributing rules:</strong> {{join .ContributingRuleIDs ", "}}</p>{{end}}<details><summary>Why this was flagged and what to do</summary><div class="guidance"><div><strong>Why it matters</strong><p>{{.Rule.Rationale}}</p>{{if .Rule.ApplicablePaths}}<p><strong>Applies to:</strong> {{join .Rule.ApplicablePaths ", "}}</p>{{end}}</div><div><strong>Common legitimate use</strong><p>{{.Rule.LegitimateUse}}</p></div><div><strong>Recommended action</strong><p>{{.Remediation}}</p></div></div></details></article>{{end}}</section>
-<section data-view-panel="files" aria-label="Files with findings for {{.Target}}"><h2 class="section-heading">Files</h2><ul class="file-list">{{range .Files}}<li class="file-row" data-file-row data-file="{{.Path}}"><span>{{.Path}}</span><span>{{.Count}} findings · highest {{.Severity}}</span></li>{{end}}</ul></section>
-{{if .Isolation}}<p class="isolation muted">Isolation: {{.Isolation.Backend}} · scan network {{.Isolation.ScanNetwork}}{{if .Isolation.ImageDigest}} · image {{.Isolation.ImageDigest}}{{end}}</p>{{end}}<section class="coverage" aria-label="Scan coverage"><h3>Coverage</h3><p>{{if .Coverage.Complete}}Complete{{else}}Incomplete{{end}} · {{.Coverage.FilesScanned}} files · {{.BytesScanned}}</p>{{if .Coverage.Warnings}}<h4>Warnings</h4><ul>{{range .Coverage.Warnings}}<li>{{.}}</li>{{end}}</ul>{{end}}{{if .Coverage.Skipped}}<h4>Skipped areas</h4><ul>{{range .Coverage.Skipped}}<li>{{.}}</li>{{end}}</ul>{{end}}</section></article>{{end}}
-<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.</footer></main><script>` + htmlScript + `</script></body></html>`
+{{range .Repositories}}<article class="repo" aria-label="Repository review for {{.Target}}">
+<header class="repo-heading">
+<div>
+<p class="eyebrow">Repository</p>
+<h2>{{.Target}}</h2>
+<p class="muted">
+<output data-repo-visible-count aria-live="polite">{{.FindingCount}}</output> visible findings</p>{{if .RepositoryURL}}<p class="muted">Source <a href="{{.RepositoryURL}}" rel="noreferrer">{{.RepositoryURL}}</a> at <code>{{.Revision}}</code>
+</p>{{else}}<p class="muted">Scanned commit: unavailable (not recorded)</p>{{end}}<p class="muted">Scan mode: {{.ScanMode}}</p>
+</div>
+<strong class="verdict {{.VerdictClass}}" role="status">{{.Verdict}}</strong>
+</header>
+<p class="reason">{{.Reason}}</p>
+<dl class="summary-grid" aria-label="Review summary">
+<div>
+<dt>Needs attention</dt>
+<dd>{{.ActionableCount}}</dd>
+</div>
+<div>
+<dt>Critical priority</dt>
+<dd>{{index .ActionableCounts "critical"}}</dd>
+</div>
+<div>
+<dt>High priority</dt>
+<dd>{{index .ActionableCounts "high"}}</dd>
+</div>
+<div>
+<dt>Files scanned</dt>
+<dd>{{.FilesScanned}}</dd>
+</div>
+</dl>
+<p class="scan-meta">
+<span>{{.FindingCount}} total findings</span>
+<span>{{index .Counts "high"}} high total</span>
+<span>{{index .Counts "medium"}} medium</span>
+<span>{{index .Counts "low"}} low</span>
+<span>{{index .DispositionCounts "block"}} block</span>
+<span>{{index .DispositionCounts "review"}} review</span>
+<span>{{index .DispositionCounts "harden"}} harden</span>
+<span>{{index .DispositionCounts "informational"}} informational</span>
+<span>{{.BytesScanned}}</span>
+<span>{{.Duration}}</span>
+</p>
+<section data-view-panel="findings" aria-label="Findings for {{.Target}}">
+<h2 class="section-heading">Findings</h2>{{if not .Findings}}<p>No enabled rule matched. This is not a guarantee that the repository is safe.</p>{{end}}{{range .Findings}}<article class="finding" data-finding data-search="{{.SearchText}}" data-severity="{{.Severity}}" data-confidence="{{.Confidence}}" data-disposition="{{.Disposition}}" data-category="{{.Category}}" data-rule="{{.RuleID}}" data-file="{{.Path}}">
+<header class="finding-head">
+<div>
+<h3>{{.RuleID}} · {{.Message}}</h3>
+<p class="tags">
+<span>{{.Severity}}</span>
+<span>{{.Confidence}} confidence</span>
+<span>{{.Disposition}}</span>
+<span>{{.Context}}</span>
+<span>{{.Category}}</span>
+</p>
+</div>
+<span aria-label="{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}">{{.Occurrences}} occurrence{{if ne .Occurrences 1}}s{{end}}</span>
+</header>{{range .Locations}}<div class="location">{{if .Link}}<a href="{{.Link}}" rel="noreferrer">{{.Label}}</a>{{else}}<strong>{{.Label}}</strong>{{end}}{{if .Evidence}}<pre aria-label="Redacted evidence">
+<code>{{.Evidence}}</code>
+</pre>{{end}}</div>{{end}}{{if .LocationsOmitted}}<p class="muted">{{.LocationsOmitted}} additional locations omitted by report limits.</p>{{end}}{{if .ContributingRuleIDs}}<p>
+<strong>Contributing rules:</strong> {{join .ContributingRuleIDs ", "}}</p>{{end}}<details>
+<summary>Why this was flagged and what to do</summary>
+<div class="guidance">
+<div>
+<strong>Why it matters</strong>
+<p>{{.Rule.Rationale}}</p>{{if .Rule.ApplicablePaths}}<p>
+<strong>Applies to:</strong> {{join .Rule.ApplicablePaths ", "}}</p>{{end}}</div>
+<div>
+<strong>Common legitimate use</strong>
+<p>{{.Rule.LegitimateUse}}</p>
+</div>
+<div>
+<strong>Recommended action</strong>
+<p>{{.Remediation}}</p>
+</div>
+</div>
+</details>
+</article>{{end}}</section>
+<section data-view-panel="files" aria-label="Files with findings for {{.Target}}">
+<h2 class="section-heading">Files</h2>
+<ul class="file-list">{{range .Files}}<li class="file-row" data-file-row data-file="{{.Path}}">
+<span>{{.Path}}</span>
+<span>{{.Count}} findings · highest {{.Severity}}</span>
+</li>{{end}}</ul>
+</section>
+{{if .Isolation}}<p class="isolation muted">Isolation: {{.Isolation.Backend}} · scan network {{.Isolation.ScanNetwork}}{{if .Isolation.ImageDigest}} · image {{.Isolation.ImageDigest}}{{end}}</p>{{end}}<section class="coverage" aria-label="Scan coverage">
+<h3>Coverage</h3>
+<p>{{if .Coverage.Complete}}Complete{{else}}Incomplete{{end}} · {{.Coverage.FilesScanned}} files · {{.BytesScanned}}</p>{{if .Coverage.Warnings}}<h4>Warnings</h4>
+<ul>{{range .Coverage.Warnings}}<li>{{.}}</li>{{end}}</ul>{{end}}{{if .Coverage.Skipped}}<h4>Skipped areas</h4>
+<ul>{{range .Coverage.Skipped}}<li>{{.}}</li>{{end}}</ul>{{end}}</section>
+</article>{{end}}
+<footer class="muted report-footer">Findings are repository evidence, not proof that code executed or a host was compromised. Runtime behavior, host processes and credential stores, remote CI logs, and network traffic are not inspected. Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.</footer>
+</main>
+<script>` + htmlScript + `</script>
+</body>
+</html>`

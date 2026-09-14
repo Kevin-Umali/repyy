@@ -130,8 +130,7 @@ jobs:
       - name: Attach signed intelligence snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run:
-          gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json"
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/repyy-intelligence.json"
           "$RUNNER_TEMP/repyy-intelligence.json.sig" "$RUNNER_TEMP/repyy-sandbox-image.txt"
           --clobber
       - name: Generate release-set SBOM and benchmark
