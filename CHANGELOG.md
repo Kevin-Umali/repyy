@@ -9,6 +9,10 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Scope release workflow write permissions to the publishing jobs and pin sandbox base images by digest, following the first OpenSSF Scorecard assessment.
 - Link directly to private vulnerability reporting from the security policy.
 
+### Fixed
+
+- Run the required platform build checks for documentation-only pull requests so branch protection can resolve every required check.
+
 ## [0.5.1] - 2026-09-15
 
 ### Added
