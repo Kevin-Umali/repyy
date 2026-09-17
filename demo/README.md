@@ -35,7 +35,7 @@ python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/repyy-demo --chec
 
 The runner invokes only that binary. It writes `results.json`, `results.md`, `sample.json`,
 `sample.txt` and `sample.html`. Open the HTML report locally, or inspect the checked-in
-[sample report](../site/demo/sample/sample.html) without installing anything. Generated timestamps
+[sample report](https://repyy.dev/demo/sample/sample.html) without installing anything. Generated timestamps
 identify the run; scan durations and temporary root names are normalized for publication. Samples
 use local fixture identities, not a fabricated remote commit.
 
@@ -83,5 +83,5 @@ checks that automatic execution is flagged and the manual-task control is not. N
 was removed to improve the result. Prior 1.0.0 fixtures and results remain in Git history.
 
 Intentional exception to the usual contribution rule against generated reports: the reviewed public
-samples under `site/demo/sample/` are product artifacts. Never commit reports from private
+samples under `site/public/demo/sample/` are product artifacts. Never commit reports from private
 repositories.

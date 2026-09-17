@@ -6,4 +6,5 @@
 /.playwright-cli/
 **/testdata/**
 # Exact inline CSS/JS bytes are covered by report Content-Security-Policy hashes.
-/site/demo/sample/
+/site/public/demo/sample/
+/site/dist/

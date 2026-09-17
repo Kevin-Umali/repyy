@@ -10,7 +10,7 @@ repositories. It reads files as data and does not import, build, test, or execut
 
 **Repyy identifies risks. It cannot prove that a repository is safe.**
 
-[View a sample report](site/demo/sample/sample.html) · [Trust and Limitations](docs/TRUST.md) ·
+[View the website](https://repyy.dev/) · [View a sample report](https://repyy.dev/demo/sample/sample.html) · [Trust and Limitations](docs/TRUST.md) ·
 [Verify releases](docs/VERIFICATION.md) · [Security testing](docs/SECURITY-TESTING.md) ·
 [About the maintainer](docs/ABOUT.md)
 
@@ -48,21 +48,18 @@ the result.
 
 ## Documentation
 
-Open the checked-in [documentation site](site/docs/index.html) locally for the guided web experience
-([preview instructions](site/README.md)):
+Use [repyy.dev/docs](https://repyy.dev/docs/) for the rendered documentation. Inside GitHub, use the Markdown guides:
 
-- [Install and run a first scan](site/installation/index.html)
-- [CLI commands and flags](site/cli/index.html)
-- [Trusted configuration](site/configuration/index.html)
-- [Docker and manual VM isolation](site/isolation/index.html)
-- [Detection coverage and limits](site/coverage/index.html)
-- [Offline intelligence and updates](site/intelligence/index.html)
-- [AI agent skill workflow](site/agent-skill/index.html)
+- [Install and run a first scan](docs/INSTALLATION.md)
+- [CLI commands and flags](docs/CLI.md)
+- [Trusted configuration](docs/CONFIGURATION.md)
+- [Docker and manual VM isolation](docs/SANDBOX.md)
+- [Detection coverage and limits](docs/COVERAGE.md)
+- [Trust and limitations](docs/TRUST.md)
+- [Release verification](docs/VERIFICATION.md)
+- [Security testing](docs/SECURITY-TESTING.md)
 
-The same topics are available as detailed Markdown guides for repository readers:
-[installation](docs/INSTALLATION.md), [CLI](docs/CLI.md), [configuration](docs/CONFIGURATION.md),
-[Docker sandbox](docs/SANDBOX.md), [manual VM workflows](docs/VM-GUIDES.md), and
-[coverage](docs/COVERAGE.md).
+Development and deployment instructions for the Astro site are in [site/README.md](site/README.md).
 
 The optional [AI agent skill](skills/repyy/SKILL.md) teaches compatible agents to scan before
 execution and to report incomplete coverage. Install it with:
@@ -72,7 +69,7 @@ npx skills add Kevin-Umali/repyy --skill repyy
 ```
 
 This optional installer needs Node/npm, Git, and network access. The skill contains instructions;
-install the `repyy` CLI separately. See the [web skill guide](site/agent-skill/index.html) for the
+install the `repyy` CLI separately. See the [web skill guide](https://repyy.dev/agent-skill/) for the
 full workflow.
 
 ## Contributing

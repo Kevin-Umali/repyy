@@ -1,33 +1,29 @@
 # repyy website
 
-The canonical landing page and documentation site are:
+The product site and documentation are an Astro static site. The production build has no server runtime, framework integration, CMS, or client-side component runtime.
 
-- `index.html`: the product site for take-home and interview repository review.
-- `docs/index.html`: the documentation hub with a first scan, result overview, and links to the
-  detailed guides.
-- `installation/index.html`, `cli/index.html`, `configuration/index.html`, `isolation/index.html`,
-  `coverage/index.html`, `intelligence/index.html`, and `agent-skill/index.html`: complete web
-  guides for people using the site. This directory-index layout keeps public URLs clean, such as
-  `/docs/` and `/coverage/#map`, when deployed with Dokploy Static. The files in `docs/` are the
-  detailed offline counterparts for repository readers and should stay aligned with behavior.
+## Local development
 
-Preview them from the repository root:
+Use the Node version declared in `.nvmrc`, then install the locked dependencies:
 
 ```sh
-python3 -m http.server 4173 -d site
+nvm use
+npm ci
+npm run dev
 ```
 
-Then open `http://localhost:4173`, `http://localhost:4173/docs/`, or
-`http://localhost:4173/coverage/#map`.
+The usual checks are:
 
-The pages use no package manager or runtime dependency. Shared behavior lives in `site.js`;
-index-only interaction lives in `landing.js`. The landing page uses `landing.css`; all documentation
-pages share `docs.css`. Basic navigation and links work with JavaScript disabled; scripts add
-search, copy buttons, and scroll state.
+```sh
+npm run check
+npm run format:check
+npm run build
+python3 check_docs.py
+npm run preview
+```
 
-Trust and evidence pages use the same `docs.css` and `site.js` shell: `trust/`, `verification/`,
-`demo/`, `security-testing/`, and `about/`. Keep their Markdown counterparts under `docs/` (and
-`demo/README.md`) aligned. Public samples under `demo/sample/` are generated only from the reviewed
-inert fixture corpus using `scripts/benchmark.py`; never place private scan reports there.
+Run those commands from `site/`. Equivalent `site-*` targets are available in the repository Makefile.
 
-Run `python3 site/check_docs.py` after editing pages or the bundled search index.
+Page routes live in `src/pages/`. Reusable site chrome lives in `src/components/` and `src/layouts/`; typed guide metadata and navigation order live in `src/data/guides.ts`. Shared browser behavior is split by concern under `src/scripts/`. The build creates `dist/search-index.json` from rendered searchable sections.
+
+The files under `public/demo/sample/` are generated review artifacts. Their inline CSS and JavaScript are protected by Content Security Policy hashes. Do not format or hand-edit them; `check_docs.py` verifies the hashes in the built copy.

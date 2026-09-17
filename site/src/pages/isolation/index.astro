@@ -1,0 +1,231 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+
+const guide = getGuide("isolation");
+---
+
+<DocsLayout guide={guide}>
+<section class="docs-hero docs-searchable" id="overview" data-search="isolation docker vm sandbox untrusted repository network read only manual">
+          <p class="docs-kicker">Isolation</p>
+          <h1>Give the scan<br /><span>its own boundary.</span></h1>
+          <p>
+            Docker is repyy’s built-in isolation backend. Manual VM workflows are available when you need a guest boundary today; repyy does not create or
+            manage those guests.
+          </p>
+          <div class="docs-summary" aria-label="Isolation summary">
+            <span><b>Docker</b>Opt-in release image</span><span><b>Read only</b>Input stays unmodified</span><span><b>Manual VMs</b>Windows, macOS, Linux</span>
+          </div>
+          <div class="docs-callout">
+            <strong>Isolation changes where analysis runs</strong>
+            <p>
+              It does not make a repository safe. Keep credentials, package caches, home directories, IDE trust, dependency installs, builds, and tests outside
+              the review boundary.
+            </p>
+          </div>
+        </section>
+        <section class="docs-section docs-searchable" id="docker" data-search="docker sandbox ghcr digest release image">
+          <h2>Docker: use the signed release image</h2>
+          <p>
+            Docker mode is opt-in. Start Docker Desktop on macOS or Windows, or Docker Engine on Linux, and verify the daemon responds to
+            <code>docker version</code>. Releases with Docker support include <code>repyy-sandbox-image.txt</code> with the exact image reference and digest.
+            Run <code>repyy version</code>, open the matching release, and use its published digest. Do not substitute mutable <code>latest</code>.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>Pull and inspect</span
+              ><button
+                type="button"
+                data-copy="docker pull ghcr.io/kevin-umali/repyy-sandbox@sha256:<published-digest>; docker image inspect ghcr.io/kevin-umali/repyy-sandbox@sha256:<published-digest>"
+              >
+                Copy
+              </button>
+            </div>
+            <code
+              >docker pull ghcr.io/kevin-umali/repyy-sandbox@sha256:&lt;published-digest&gt;<br />docker image inspect
+              ghcr.io/kevin-umali/repyy-sandbox@sha256:&lt;published-digest&gt;</code
+            >
+          </div>
+        </section>
+        <section class="docs-section docs-searchable" id="docker-image" data-search="cosign sigstore verify signature certificate identity oidc checksum">
+          <h2>Verify the image signature</h2>
+          <p>
+            Follow
+            <a href="../verification/#container-verification">Releases and Verification</a> to authenticate the image and binary before use. Repyy checks that
+            the pinned image is present locally; it does not verify signatures during a scan.
+          </p>
+          <p>
+            A missing daemon or pinned image is a preflight error; repyy never silently falls back to host mode. Checkout deletion failures mark scans
+            incomplete while preserving findings. Credential-file and forced-container cleanup failures also surface as errors.
+          </p>
+        </section>
+        <section
+          class="docs-section docs-searchable"
+          id="local"
+          data-search="docker local path read only mount networking disabled analysis container json report"
+        >
+          <h2>Docker with a local folder</h2>
+          <p>
+            repyy mounts the input read-only into a temporary analysis container, disables networking, and writes bounded JSON back to the host. The host
+            validates the result and writes the final report.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>Local scan</span
+              ><button type="button" data-copy="repyy scan ./untrusted-repository --sandbox=docker --format html --output repyy-docker-report.html">
+                Copy
+              </button>
+            </div>
+            <code>repyy scan ./untrusted-repository --sandbox=docker --format html --output repyy-docker-report.html</code>
+          </div>
+          <p>Keep output in a narrow directory and treat it as sensitive local review data.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="https" data-search="docker https remote fetch stage shallow clone network credentials token git">
+          <h2>Docker with an HTTPS remote</h2>
+          <p>
+            An HTTPS remote uses a disposable networked fetch stage for a shallow clone. A separate analysis stage has no Git credentials and no network. The
+            host validates the bounded result before rendering the report.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>HTTPS remote</span
+              ><button type="button" data-copy="repyy scan https://github.com/org/repository --sandbox=docker --format html --output report.html">Copy</button>
+            </div>
+            <code>repyy scan https://github.com/org/repository --sandbox=docker --format html --output report.html</code>
+          </div>
+          <p>
+            Private HTTPS access uses <code>GITHUB_TOKEN</code>, <code>GITLAB_TOKEN</code>, or <code>BITBUCKET_TOKEN</code> from the scanner environment. Tokens
+            do not enter the clone URL or report. Docker rejects SSH URLs.
+          </p>
+          <div class="docs-note">
+            <strong>Git boundary</strong>
+            <p>
+              The fetch stage disables hooks, templates, submodule recursion, other protocols, and redirects, and ignores inherited Git configuration. For a
+              supplied local
+              <code>.git</code> directory, use a clean <code>git clone --no-local</code> inside a disposable VM if you need to operate on it. See Git’s
+              <a href="https://git-scm.com/docs/git#_security">untrusted repository guidance ↗</a>
+              and
+              <a href="https://git-scm.com/docs/git-upload-pack#_security">upload-pack guidance ↗</a>
+              for the user boundary behind this advice.
+            </p>
+          </div>
+        </section>
+        <section
+          class="docs-section docs-searchable"
+          id="edge-cases"
+          data-search="edge cases incomplete timeout denied mount malformed oversized json container exit ssh keep workdir vm auto multi target"
+        >
+          <h2>Know the edge cases</h2>
+          <div class="docs-table compact" role="table" aria-label="Docker edge cases">
+            <div role="row">
+              <b role="cell">Preflight</b><span role="cell">Missing Docker or pinned image stops before scanning; there is no host fallback.</span>
+            </div>
+            <div role="row">
+              <b role="cell">Incomplete target</b
+              ><span role="cell"
+                >Timeouts, denied mounts, failed fetches, malformed or oversized JSON, and container exits reduce coverage and are reported.</span
+              >
+            </div>
+            <div role="row"><b role="cell">SSH</b><span role="cell">SSH URLs are rejected in Docker mode.</span></div>
+            <div role="row">
+              <b role="cell">Keep workdir</b><span role="cell"><code>--keep-workdir</code> is rejected to preserve the checkout and credential boundary.</span>
+            </div>
+            <div role="row">
+              <b role="cell">Future backends</b
+              ><span role="cell"><code>--sandbox=vm</code> and <code>--sandbox=auto</code> are reserved for a later release.</span>
+            </div>
+          </div>
+          <p>
+            For multiple targets, one failed target remains visible as
+            <code>SCAN INCOMPLETE</code> while successful targets retain their findings.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="vm" data-search="manual vm workflows windows macos linux read only guest network cleanup">
+          <h2>Manual VM workflows</h2>
+          <p>
+            Install repyy in the guest before introducing the repository. Copy the repository into the guest or expose a narrow read-only share. Disable guest
+            networking for local analysis, write only the report to a separate writable output location, and destroy the guest or discard its snapshot
+            afterward. These workflows do not enable
+            <code>--sandbox=vm</code> or <code>--sandbox=auto</code>.
+          </p>
+        </section>
+        <section
+          class="docs-section docs-searchable"
+          id="windows-sandbox"
+          data-search="windows sandbox wsb powershell mapped folders readonly networking disable pro enterprise education home"
+        >
+          <h2>Windows Sandbox</h2>
+          <p>
+            Windows Sandbox is available on supported Pro, Enterprise, and Education editions; Windows Home does not include it. Enable it from “Turn Windows
+            features on or off”. See
+            <a href="https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/"
+              >Microsoft’s requirements ↗</a
+            >.
+          </p>
+          <ol class="docs-list">
+            <li>Create <code>C:\review\input\repo</code> and <code>C:\review\output</code> on the host.</li>
+            <li>Put the repository under <code>repo</code> and verified <code>repyy.exe</code> in <code>C:\review\input</code>.</li>
+            <li>Save the following as <code>repyy-review.wsb</code>, then double-click it to launch the sandbox.</li>
+          </ol>
+          <pre class="docs-example" aria-label="Windows Sandbox configuration">
+&lt;Configuration&gt;
+  &lt;MappedFolders&gt;
+    &lt;MappedFolder&gt;
+      &lt;HostFolder&gt;C:\review\input&lt;/HostFolder&gt;
+      &lt;SandboxFolder&gt;C:\review\input&lt;/SandboxFolder&gt;
+      &lt;ReadOnly&gt;true&lt;/ReadOnly&gt;
+    &lt;/MappedFolder&gt;
+    &lt;MappedFolder&gt;
+      &lt;HostFolder&gt;C:\review\output&lt;/HostFolder&gt;
+      &lt;SandboxFolder&gt;C:\review\output&lt;/SandboxFolder&gt;
+      &lt;ReadOnly&gt;false&lt;/ReadOnly&gt;
+    &lt;/MappedFolder&gt;
+  &lt;/MappedFolders&gt;
+  &lt;Networking&gt;Disable&lt;/Networking&gt;
+&lt;/Configuration&gt;</pre
+          >
+          <p>Inside the sandbox, run:</p>
+          <pre class="docs-example" aria-label="Windows Sandbox scan commands">
+&amp; C:\review\input\repyy.exe version
+&amp; C:\review\input\repyy.exe scan C:\review\input\repo --format html --output C:\review\output\report.html</pre
+          >
+          <ol class="docs-list" start="4">
+            <li>Copy <code>C:\review\output\report.html</code> out after the scan completes.</li>
+            <li>Close the sandbox; its writable state is discarded.</li>
+          </ol>
+          <p>Do not map credentials, SSH directories, package caches, or a broad home directory.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="utm" data-search="macos utm linux vm network device sharing read only mount disposable guest">
+          <h2>macOS with UTM</h2>
+          <p>Create a disposable Linux VM in <a href="https://docs.getutm.app/">UTM ↗</a> and install repyy in the guest first.</p>
+          <ol class="docs-list">
+            <li>Remove the Network device for local analysis; a host-only network still permits guest-to-host traffic.</li>
+            <li>Attach only a dedicated input directory or read-only disk image, then check the guest mount flags.</li>
+            <li>Run the scan with the report on the guest’s writable disk:</li>
+          </ol>
+          <pre class="docs-example" aria-label="UTM guest scan">repyy scan /mnt/review --format html --output "$HOME/report.html"</pre>
+          <ol class="docs-list" start="4">
+            <li>Copy out only the finished report through a separate temporary output disk or explicit copy step.</li>
+            <li>Shut down and delete the disposable VM after review.</li>
+          </ol>
+          <p>For a remote HTTPS URL, fetch in a separate networked VM and transfer only the checkout to the network-disabled analysis VM.</p>
+        </section>
+        <section class="docs-section docs-searchable" id="qemu" data-search="linux qemu kvm cloud image 9p virtiofs iso share readonly output snapshot">
+          <h2>Linux with QEMU/KVM</h2>
+          <p>Create a disposable QEMU/KVM guest with your distribution’s normal cloud image or VM tooling.</p>
+          <ol class="docs-list">
+            <li>Attach a dedicated repository directory as a read-only 9p, virtiofs, or ISO share.</li>
+            <li>Keep report output on a separate writable share and disable networking for local analysis.</li>
+            <li>Run the scan:</li>
+          </ol>
+          <pre class="docs-example" aria-label="QEMU guest scan">repyy scan /mnt/review --format html --output /mnt/output/report.html</pre>
+          <ol class="docs-list" start="4">
+            <li>Export only the finished report.</li>
+            <li>Remove the temporary disk or snapshot.</li>
+          </ol>
+          <p>
+            For an HTTPS remote, clone in a disposable networked guest, shut it down, and transfer only the checkout into the analysis guest. Do not attach the
+            host Docker socket, home directory, SSH agent, or package-manager cache.
+          </p>
+        </section>
+</DocsLayout>

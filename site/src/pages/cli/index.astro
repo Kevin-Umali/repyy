@@ -1,0 +1,370 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+
+const guide = getGuide("cli");
+---
+
+<DocsLayout guide={guide}>
+<section class="docs-hero docs-searchable" id="overview" data-search="cli command line reference scan report rules intelligence flags">
+          <p class="docs-kicker">CLI reference</p>
+          <h1>Every command.<span>A clear next move.</span></h1>
+          <p>
+            This is the practical reference for <code>repyy</code>. Start with a local scan, save JSON when you need to process results later, and use the exit
+            code to automate a review gate.
+          </p>
+          <div class="docs-summary" aria-label="CLI summary">
+            <span><b>Read-only</b> Targets are treated as data</span><span><b>Offline</b> Local scans need no network</span
+            ><span><b>Explicit</b> Remote fetch and intelligence updates are opt in</span>
+          </div>
+          <div class="docs-callout">
+            <strong>Check the installed interface</strong>
+            <p>
+              <code>repyy help</code> prints the top-level command summary. <code>repyy version</code> prints the scanner and ruleset versions, which you need
+              when selecting a matching Docker image.
+            </p>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="shape" data-search="command shape syntax subcommands targets path git url">
+          <h2>Command shape</h2>
+          <pre class="docs-example" aria-label="repyy command shape">
+repyy scan [options] &lt;path-or-git-url&gt;...
+repyy report [options] &lt;report.json|-&gt;
+repyy rules validate &lt;rules.yaml&gt;
+repyy rules check
+repyy rules list [--format terminal|json]
+repyy rules explain &lt;rule-id&gt; [--format terminal|json]
+repyy intel status [--format terminal|json]
+repyy intel update
+repyy intel rollback
+repyy version</pre
+          >
+          <p>
+            Flags can appear before or after targets. A value flag accepts either a space or an equals sign, for example <code>--format html</code> and
+            <code>--format=html</code>. Boolean flags such as <code>--include-dependencies</code> do not take a value.
+          </p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="first-scan" data-search="install first local scan folder path example">
+          <h2>Run a first scan</h2>
+          <p>
+            Run this from the directory that contains your checkout. Replace the path with a folder you are allowed to inspect. repyy does not import, build,
+            test, or execute target code.
+          </p>
+          <div class="docs-command">
+            <div><span>Local folder</span><button type="button" data-copy="repyy scan ./project">Copy</button></div>
+            <code>repyy scan ./project</code>
+          </div>
+          <p>The default report is terminal output. Use an absolute path when the target is elsewhere, and quote paths containing spaces:</p>
+          <div class="docs-command">
+            <div><span>Path with spaces</span><button type="button" data-copy="repyy scan '/Users/me/Code/Take home assignment'">Copy</button></div>
+            <code>repyy scan '/Users/me/Code/Take home assignment'</code>
+          </div>
+          <p>
+            Remote targets are Git URLs. Host mode needs Git; HTTPS private remotes use the matching provider token in the process environment. Keep credentials
+            out of URLs.
+          </p>
+          <div class="docs-command">
+            <div><span>Remote repository</span><button type="button" data-copy="repyy scan https://github.com/org/repo">Copy</button></div>
+            <code>repyy scan https://github.com/org/repo</code>
+          </div>
+        </section>
+
+        <section
+          class="docs-section docs-searchable"
+          id="targets"
+          data-search="targets multiple path url file target file comments blank lines jobs order history shallow clone"
+        >
+          <h2>Targets and target files</h2>
+          <p>
+            Pass one or more local directories and Git URLs. Command-line targets are processed first. Add <code>--file</code> to append a UTF-8 text list, one
+            path or URL per line; blank lines and lines whose first non-whitespace character is <code>#</code> are ignored.
+          </p>
+          <pre class="docs-example" aria-label="Example targets.txt">
+# Review queue
+./assignment-a
+https://github.com/org/assignment-b</pre
+          >
+          <div class="docs-command">
+            <div><span>Several targets</span><button type="button" data-copy="repyy scan ./repo-a ./repo-b --file targets.txt --jobs 4">Copy</button></div>
+            <code>repyy scan ./repo-a ./repo-b --file targets.txt --jobs 4</code>
+          </div>
+          <p>
+            <code>--jobs</code> controls concurrent repositories, from 1 through 128, with a default of 4. Docker uses no more than four effective workers.
+            Remote history is shallow by default: use <code>--history 20</code> or <code>--history all</code> when earlier commits matter.
+          </p>
+          <div class="docs-command">
+            <div><span>Inspect history</span><button type="button" data-copy="repyy scan https://github.com/org/repo --history 20">Copy</button></div>
+            <code>repyy scan https://github.com/org/repo --history 20</code>
+          </div>
+          <p>
+            Host-mode remote checkouts are temporary and removed after the scan. Add
+            <code>--keep-workdir</code> to retain one for follow-up review. This option is rejected with Docker.
+          </p>
+        </section>
+
+        <section
+          class="docs-section docs-searchable"
+          id="scan-flags"
+          data-search="scan flags options defaults file format output jobs config dependencies history keep workdir sandbox fail timeout max files bytes detail progress color severity confidence group"
+        >
+          <h2>All <code>scan</code> flags</h2>
+          <p>Defaults apply when a flag is omitted. A hit limit or read error produces incomplete coverage; do not treat an incomplete result as clean.</p>
+          <div class="flag-grid">
+            <code>--file PATH</code><span>Append targets from a text file. One path or URL per line; blank and <code>#</code> comment lines are skipped.</span>
+            <code>--format FORMAT</code><span><code>terminal</code> (default), <code>json</code>, <code>sarif</code>, or <code>html</code>.</span>
+            <code>--output PATH</code><span>Write the selected report to a file instead of stdout. Example: <code>--output review.html</code>.</span>
+            <code>--jobs N</code><span>Concurrent repositories, 1–128; default <code>4</code>. Docker caps effective concurrency at 4.</span>
+            <code>--config PATH</code
+            ><span>Load a reviewed version-1 YAML file with custom rules and suppressions. See <a href="../configuration/">configuration</a>.</span>
+            <code>--include-dependencies</code
+            ><span
+              >Include dependency and cache trees such as <code>node_modules</code>, <code>.venv</code>, <code>vendor</code>, <code>target</code>, and
+              <code>Pods</code>, which are skipped by default.</span
+            >
+            <code>--history N|all</code><span>Remote Git history depth; default <code>1</code>. <code>all</code> requests full history.</span>
+            <code>--keep-workdir</code><span>Keep a host-mode remote checkout. Unsupported with <code>--sandbox docker</code>.</span>
+            <code>--sandbox host|docker</code
+            ><span
+              ><code>host</code> is default. Docker requires a running daemon and the verified release-matched image. <code>vm</code> and <code>auto</code> are
+              unavailable.</span
+            >
+            <code>--fail-on LEVEL</code
+            ><span>Exit 1 at or above <code>low</code>, <code>medium</code>, <code>high</code>, or <code>critical</code>; default <code>high</code>.</span>
+            <code>--timeout DURATION</code
+            ><span>Per-repository limit; default <code>10m</code>. Use positive durations such as <code>30s</code>, <code>20m</code>, or <code>1h</code>.</span>
+            <code>--max-files N</code><span>Maximum files per repository; default <code>100000</code>.</span> <code>--max-file-size BYTES</code
+            ><span>Maximum bytes read from one file; default <code>52428800</code> (50 MiB).</span> <code>--detail MODE</code
+            ><span><code>summary</code>, <code>review</code> (default), or <code>all</code> controls displayed detail.</span> <code>--progress MODE</code
+            ><span><code>auto</code> (default), <code>plain</code>, or <code>quiet</code>. JSON and SARIF default to quiet progress.</span>
+            <code>--color MODE</code
+            ><span><code>auto</code> (default), <code>always</code>, or <code>never</code>. <code>NO_COLOR</code> is honored in auto mode.</span>
+            <code>--min-severity LEVEL</code
+            ><span
+              >Display <code>low</code>, <code>medium</code>, <code>high</code>, or <code>critical</code> and above; default <code>low</code>. Presentation
+              only.</span
+            >
+            <code>--min-confidence LEVEL</code
+            ><span>Display <code>low</code>, <code>medium</code>, or <code>high</code> confidence and above; default <code>low</code>. Presentation only.</span>
+            <code>--group-by FIELD</code><span>Group terminal output by <code>severity</code> (default), <code>file</code>, or <code>rule</code>.</span>
+          </div>
+          <p>
+            Display filters do not hide findings from the verdict or change the exit policy. Use
+            <code>--fail-on</code> for policy.
+          </p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="recipes" data-search="recipes html json sarif ci docker dependency detail">
+          <h2>Copyable scan recipes</h2>
+          <div class="recipe-grid">
+            <article>
+              <span>01 · HTML</span>
+              <h3>Save a private review</h3>
+              <p>Self-contained and easy to open locally.</p>
+              <code>repyy scan ./checkout --format html --output review.html</code
+              ><button type="button" data-copy="repyy scan ./checkout --format html --output review.html">Copy command</button>
+            </article>
+            <article>
+              <span>02 · JSON</span>
+              <h3>Archive structured evidence</h3>
+              <p>Keep stable identifiers and coverage for later rendering.</p>
+              <code>repyy scan ./checkout --format json --output scan.json</code
+              ><button type="button" data-copy="repyy scan ./checkout --format json --output scan.json">Copy command</button>
+            </article>
+            <article>
+              <span>03 · CI</span>
+              <h3>Write SARIF quietly</h3>
+              <p>Fail at medium and keep logs readable.</p>
+              <code>repyy scan . --format sarif --output repyy.sarif --fail-on medium --progress quiet --color never</code
+              ><button type="button" data-copy="repyy scan . --format sarif --output repyy.sarif --fail-on medium --progress quiet --color never">
+                Copy command
+              </button>
+            </article>
+            <article>
+              <span>04 · Docker</span>
+              <h3>Use the sandbox</h3>
+              <p>Pull and verify the matching release image first.</p>
+              <code>repyy scan ./repo --sandbox docker --format html --output report.html</code
+              ><button type="button" data-copy="repyy scan ./repo --sandbox docker --format html --output report.html">Copy command</button>
+            </article>
+            <article>
+              <span>05 · Broad review</span>
+              <h3>Include dependencies</h3>
+              <p>Show every finding grouped by file.</p>
+              <code>repyy scan . --include-dependencies --detail all --group-by file</code
+              ><button type="button" data-copy="repyy scan . --include-dependencies --detail all --group-by file">Copy command</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="reports" data-search="report formats terminal json sarif html output stdout offline code scanning">
+          <h2>Choose a report format</h2>
+          <div class="docs-table" role="table" aria-label="Scan report formats">
+            <div role="row"><b role="cell">terminal</b><span role="cell">Prioritized human review</span><code role="cell">--format terminal</code></div>
+            <div role="row"><b role="cell">json</b><span role="cell">Automation and archival input</span><code role="cell">--format json</code></div>
+            <div role="row"><b role="cell">sarif</b><span role="cell">Code-scanning integrations</span><code role="cell">--format sarif</code></div>
+            <div role="row"><b role="cell">html</b><span role="cell">Self-contained offline review</span><code role="cell">--format html</code></div>
+          </div>
+          <p>
+            Without <code>--output</code>, the selected report goes to stdout. HTML and JSON are most useful as saved files. SARIF is a portable interchange
+            format for code-scanning tools.
+          </p>
+          <p>
+            Reports from v0.5.1 record <code>scan_mode</code> (<code>host</code> or <code>docker</code>) per repository. HTML shows unknown for legacy reports
+            without recorded mode, or uses an existing Docker isolation record. Local scans do not invoke Git to discover a commit; their commit is marked
+            unavailable. Remote reports retain the fetched revision.
+          </p>
+          <div class="docs-note">
+            <strong>Report privacy</strong>
+            <p>
+              Reports redact matched source lines, but paths and behavior can still reveal repository structure. Keep report files private. HTML needs no server
+              and can be opened directly in a current browser.
+            </p>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="report-command" data-search="report command existing json stdin render html terminal sarif filters">
+          <h2>Render a saved JSON report</h2>
+          <p>
+            <code>repyy report</code> reads a repyy JSON scan without rescanning source. Its input is one JSON file or <code>-</code> for standard input. The
+            default output is HTML; it also accepts terminal and SARIF. It does not produce JSON because the input is already JSON.
+          </p>
+          <div class="docs-command">
+            <div><span>Render HTML</span><button type="button" data-copy="repyy report scan.json --format html --output review.html">Copy</button></div>
+            <code>repyy report scan.json --format html --output review.html</code>
+          </div>
+          <div class="docs-command">
+            <div>
+              <span>Render from stdin</span><button type="button" data-copy="cat scan.json | repyy report - --format sarif --output results.sarif">Copy</button>
+            </div>
+            <code>cat scan.json | repyy report - --format sarif --output results.sarif</code>
+          </div>
+          <p>
+            Report options are <code>--format terminal|html|sarif</code>, <code>--output PATH</code>, <code>--detail summary|review|all</code>,
+            <code>--color auto|always|never</code>, <code>--min-severity</code>, <code>--min-confidence</code>, and <code>--group-by severity|file|rule</code>.
+            Filters affect presentation only. Input must be valid repyy JSON no larger than 64 MiB; repyy rejects a verdict that conflicts with findings or
+            coverage. Rendering returns code <code>2</code> for incomplete coverage, <code>1</code> for a high or critical finding, and
+            <code>0</code> otherwise. Invalid input returns <code>3</code>.
+          </p>
+          <p>
+            Only render JSON from a scan you trust. Verdict validation catches contradictions inside a report, but JSON is not signed and cannot reveal findings
+            removed before someone shares it.
+          </p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="rules" data-search="rules validate check list explain format json rule id">
+          <h2>Rules commands</h2>
+          <div class="docs-table compact" role="table" aria-label="Rules commands">
+            <div role="row">
+              <b role="cell"><code>repyy rules validate FILE</code></b
+              ><span role="cell">Validate trusted YAML, custom rules, regexes, and suppressions without scanning.</span>
+            </div>
+            <div role="row">
+              <b role="cell"><code>repyy rules check</code></b
+              ><span role="cell">Show built-in ruleset and intelligence snapshot status offline.</span>
+            </div>
+            <div role="row">
+              <b role="cell"><code>repyy rules list</code></b
+              ><span role="cell">List active indicators; add <code>--format json</code> for machine-readable output.</span>
+            </div>
+            <div role="row">
+              <b role="cell"><code>repyy rules explain RULE-ID</code></b
+              ><span role="cell">Show rationale, scope, legitimate-use context, and review guidance; supports <code>--format json</code>.</span>
+            </div>
+          </div>
+          <div class="docs-command">
+            <div><span>Explain a finding rule</span><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button></div>
+            <code>repyy rules explain EXEC-001</code>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="intel" data-search="intel intelligence status update rollback signed snapshot cache">
+          <h2>Intelligence commands</h2>
+          <p>The scanner ships with an offline intelligence snapshot. Scans never update it automatically.</p>
+          <div class="docs-table compact" role="table" aria-label="Intelligence commands">
+            <div role="row">
+              <b role="cell"><code>repyy intel status</code></b
+              ><span role="cell">Show active snapshot version, age, and source; supports <code>--format json</code>.</span>
+            </div>
+            <div role="row">
+              <b role="cell"><code>repyy intel update</code></b
+              ><span role="cell">Explicitly download and verify a signed public snapshot.</span>
+            </div>
+            <div role="row">
+              <b role="cell"><code>repyy intel rollback</code></b
+              ><span role="cell">Restore the previous verified cached snapshot.</span>
+            </div>
+          </div>
+          <div class="docs-command">
+            <div><span>Inspect then update</span><button type="button" data-copy="repyy intel status; repyy intel update">Copy</button></div>
+            <code>repyy intel status repyy intel update</code>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="exit-codes" data-search="exit codes zero one two three verdict incomplete fail threshold invalid">
+          <h2>Exit codes and verdicts</h2>
+          <p>Use the process exit code in scripts, then inspect the report for evidence. A zero exit is not proof that a repository is safe.</p>
+          <div class="exit-grid">
+            <div>
+              <strong>0</strong
+              ><span>No finding reached <code>--fail-on</code> and no runtime scan error occurred. Lower-severity findings may still exist.</span>
+            </div>
+            <div>
+              <strong>1</strong><span>A finding reached the configured <code>--fail-on</code> threshold.</span>
+            </div>
+            <div>
+              <strong>2</strong><span>A target was not fully scanned or another runtime error occurred. In a mixed scan, this takes priority over code 1.</span>
+            </div>
+            <div>
+              <strong>3</strong><span>The command, flag, report input, or configuration was invalid; Docker preflight errors stop before scanning.</span>
+            </div>
+          </div>
+          <p>
+            In a multi-target run, successful targets remain visible when another target is incomplete. Treat <code>SCAN INCOMPLETE</code> as unresolved
+            coverage. <code>repyy report</code> uses the default high threshold when rendering saved scans.
+          </p>
+        </section>
+
+        <section
+          class="docs-section docs-searchable"
+          id="troubleshooting"
+          data-search="troubleshooting command not found remote git docker incomplete path html"
+        >
+          <h2>Troubleshooting</h2>
+          <div class="docs-table compact" role="table" aria-label="CLI troubleshooting">
+            <div role="row">
+              <b role="cell">Command not found</b
+              ><span role="cell">Open a new terminal after installation. Check <code>command -v repyy</code> or <code>where.exe repyy</code>.</span>
+            </div>
+            <div role="row">
+              <b role="cell">Remote URL fails</b
+              ><span role="cell">Check <code>git --version</code>, the URL, and the matching provider token. Never put credentials in the URL.</span>
+            </div>
+            <div role="row">
+              <b role="cell">Docker preflight fails</b
+              ><span role="cell"
+                >Start Docker, pull the digest from the matching release, and verify its signature. repyy does not fall back to host mode.</span
+              >
+            </div>
+            <div role="row">
+              <b role="cell">Incomplete scan</b
+              ><span role="cell">Read the target error and check permissions, timeout, file/archive limits, and sandbox mounts before rerunning.</span>
+            </div>
+          </div>
+          <p>
+            Need trusted rules or suppressions? Follow the
+            <a href="../configuration/">configuration walkthrough ↗</a>. For installation and sandbox setup, return to the
+            <a href="../docs/">documentation home ↗</a>.
+          </p>
+        </section>
+        <section class="docs-section">
+          <h2>Status and build identity</h2>
+          <p>
+            Human reports use conservative decision wording while schema-1 verdict values remain compatible. Version output now includes commit, builder,
+            source, Go version and build date. Checkout cleanup failures preserve findings and select incomplete status.
+            <a href="../trust/#incomplete-scans-and-exit-codes">Read the status mapping</a> and
+            <a href="../verification/#version-and-commit-identity">build identity guide</a>.
+          </p>
+        </section>
+</DocsLayout>

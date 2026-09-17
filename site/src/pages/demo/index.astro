@@ -1,0 +1,161 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+
+const guide = getGuide("demo");
+---
+
+<DocsLayout guide={guide}>
+<section class="docs-hero docs-searchable" id="overview">
+          <p class="docs-kicker">Demo and Sample Report</p>
+          <h1>Inspect a real report.<span>No installation needed.</span></h1>
+          <p>Inspect before you execute. Repyy identifies risks; it cannot prove that a repository is safe.</p>
+          <p>
+            <code>cases.json</code> stores eight risky fixture descriptions and eight paired controls as data. The benchmark materializes them in temporary
+            directories, invokes only Repyy, and removes them afterward. It never installs packages, starts the project, opens an IDE, runs hooks or starts
+            Compose. Do not run assignment-controlled commands or open materialized fixtures in a task-enabled IDE.
+          </p>
+          <p>Reviewed: 2026-09-15. Benchmark 1.1.0; see the generated results for the scanner build.</p>
+          <div class="docs-summary">
+            <span><b>8 / 8</b>Expected signals detected</span><span><b>0 / 8</b>Controls flagged high/critical</span><span><b>0</b>Incomplete scans</span>
+          </div>
+          <div class="docs-callout">
+            <strong>Eight inert indicators, with paired controls.</strong>
+            <p>This is a small inert benchmark, not a general accuracy score. <a href="./sample/results.json">Inspect every case and finding</a>.</p>
+          </div>
+          <p><a class="docs-inline-link" href="./sample/sample.html">Open the offline HTML report →</a></p>
+          <p>
+            <a href="./sample/sample.txt">Terminal output</a> · <a href="./sample/sample.json">JSON report</a> ·
+            <a href="./sample/results.md">Benchmark results</a> · <a href="https://github.com/Kevin-Umali/repyy/tree/main/demo">Fixture source</a>
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="safety-design">
+          <h2>Safety design</h2>
+          <p>
+            JavaScript examples use inert strings or harmless local configuration. The startup example imports only its local marker module; reproduction never
+            executes it. The lifecycle and hook examples only print markers. The IDE command names a nonexistent marker. The Docker image uses a nonexistent
+            image on a reserved <code>.invalid</code> registry. Credential references are fake path strings; no file read or credential collection exists.
+            Network/evaluation examples are quoted text, with no callable downloader or execution chain. Fixtures are created without executable permissions.
+          </p>
+          <p>
+            The standalone <a href="https://github.com/Kevin-Umali/repyy-demo">repyy-demo repository</a> publishes this inert corpus as benchmark
+            <a href="https://github.com/Kevin-Umali/repyy-demo/tree/v1.1.0">v1.1.0</a>. Its checked-in reports were generated with the verified official Repyy
+            v0.5.1 Linux binary from commit <code>261cc64bde67b9c73ba23021e052c330f64bbd05</code>. The same samples are available on this site.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="reproduce">
+          <h2>Reproduce</h2>
+          <p>From the Repyy source checkout, build Repyy itself and run its trusted benchmark runner:</p>
+          <pre class="docs-example"><code>go build -o /tmp/repyy ./cmd/repyy
+python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/repyy-demo --check
+</code></pre>
+          <p>
+            The runner invokes only that binary. It writes <code>results.json</code>, <code>results.md</code>, <code>sample.json</code>,
+            <code>sample.txt</code> and <code>sample.html</code>. Open the HTML report locally, or inspect the checked-in
+            <a href="./sample/sample.html">sample report</a> without installing anything. Generated timestamps identify the run; scan durations and temporary
+            root names are normalized for publication. Samples use local fixture identities, not a fabricated remote commit.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="expected-outcomes-and-controls">
+          <h2>Expected outcomes and controls</h2>
+          <div class="docs-table-scroll" role="region" aria-label="Evidence table" tabindex="0">
+            <table class="docs-data-table">
+              <thead>
+                <tr>
+                  <th>Fixture</th>
+                  <th>Rule evidence</th>
+                  <th>Regression check</th>
+                  <th>Paired control</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L5">Install lifecycle script</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/catalog.go#L158">PKG-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Ordinary test script</td>
+                </tr>
+                <tr>
+                  <td>
+                    <a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L18"
+                      >Startup configuration dynamically imports a harmless local module</a
+                    >
+                  </td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L44">IMPORT-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Static harmless PostCSS configuration</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L32">Executable-looking text in an image filename</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L14">EXEC-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>SVG with only image markup</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L45">IDE folder-open task</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L47">IDE-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Manual task without automatic run option</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L58">Git commit hook</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L60">GITHOOK-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Inactive sample hook</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L71">Encoded download-and-execute indicators</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L27">CHAIN-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Normal display string</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L84">Credential path reference</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L30">CRED-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Specific benign environment variable</td>
+                </tr>
+                <tr>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/demo/cases.json#L97">Docker socket mount</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/builtin.go#L57">DOCKER-001</a></td>
+                  <td><a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/scripts/benchmark.py">Benchmark runner</a></td>
+                  <td>Ordinary read-only data volume</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Benchmark 1.1.0 detects all eight expected indicators. This is a small synthetic regression result, not proof of malware detection accuracy or safe
+            repositories. The runner fails on changes to the declared baseline; future misses must remain visible.
+          </p>
+          <p>
+            Every observed rule, including lower-severity control findings, is retained in <code>results.json</code>. A control counts as incorrectly flagged in
+            the headline metric when it receives a high/critical finding. This narrow metric does not hide its other findings; read the case details.
+            Unsupported/skipped and incomplete scans are counted separately. All eight cases currently complete without skipped content.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="benchmark-versioning">
+          <h2>Benchmark versioning</h2>
+          <p>
+            Version this corpus separately from Repyy. Add a paired control with every new risky case. Preserve difficult cases and known misses. Change
+            expectations explicitly and explain why. This is a small synthetic regression corpus, not a representative malware dataset or a universal accuracy
+            score. The benchmark runner is the cross-package regression check; use <code>repyy rules explain RULE-ID</code> to inspect each linked rule's
+            evidence and guidance.
+          </p>
+        </section>
+        <section class="docs-section docs-searchable" id="changes-from-benchmark-1-0-0">
+          <h2>Changes from benchmark 1.0.0</h2>
+          <p>
+            The original startup fixture placed <code>require(computedModule)</code> inside a string. Its absence from the findings did not demonstrate missed
+            startup behavior. Version 1.1.0 preserves that marker file and uses a real dynamic import of this harmless local file in the startup configuration.
+            IMPORT-001 now measures the observable import indicator; complete startup call-graph analysis remains unsupported.
+          </p>
+          <p>
+            The folder-open fixture is unchanged. Repyy v0.5.1 corrects IDE-001 to recognize the quoted JSON <code>&quot;runOn&quot;</code> key. Its
+            <a href="https://github.com/Kevin-Umali/repyy/blob/v0.5.1/internal/scan/ide_test.go">paired scanner regression</a> checks that automatic execution
+            is flagged and the manual-task control is not. No difficult fixture was removed to improve the result. Prior 1.0.0 fixtures and results remain in
+            Git history.
+          </p>
+          <p>samples under <code>site/public/demo/sample/</code> are product artifacts. Never commit reports from private repositories.</p>
+        </section>
+</DocsLayout>

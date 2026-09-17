@@ -1,0 +1,213 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+
+const guide = getGuide("installation");
+---
+
+<DocsLayout guide={guide}>
+<section
+          class="docs-hero docs-searchable"
+          id="overview"
+          data-search="installation first scan native command line binary read only untrusted repository"
+        >
+          <p class="docs-kicker">Installation</p>
+          <h1>Start with a<br /><span>quiet first scan.</span></h1>
+          <p>
+            Install repyy on the computer where you will review code. The scanner reads target files as data; it does not install target packages, build the
+            target, run tests, or execute source.
+          </p>
+          <div class="docs-summary" aria-label="Installation summary">
+            <span><b>Release binary</b>No Go required</span><span><b>Local first</b>Reports stay with you</span><span><b>Verify</b>Check before review</span>
+          </div>
+          <div class="docs-callout">
+            <strong>Keep the target unexecuted</strong>
+            <p>
+              Install repyy before opening an unfamiliar repository in a trusted workspace. A local-folder scan needs repyy only; Git is needed for host-mode
+              remote scans.
+            </p>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="prerequisites" data-search="prerequisites macos linux windows git docker browser">
+          <h2>Prerequisites</h2>
+          <p>
+            You need macOS, Linux, or Windows with a supported repyy release binary and a browser for HTML reports. Install Git on the host only when scanning a
+            remote URL in the default host mode. Local folder scans do not invoke Git.
+          </p>
+          <div class="docs-table compact" role="table" aria-label="Installation prerequisites">
+            <div role="row"><b role="cell">Local folder</b><span role="cell">repyy only</span></div>
+            <div role="row">
+              <b role="cell">Host-mode remote</b><span role="cell">repyy plus Git on <code>PATH</code></span>
+            </div>
+            <div role="row"><b role="cell">Docker mode</b><span role="cell">Docker Desktop or Docker Engine, plus the release-matched image</span></div>
+            <div role="row"><b role="cell">HTML review</b><span role="cell">A current browser; the report opens as a local file</span></div>
+          </div>
+          <p>
+            Docker is an optional analysis backend. See the
+            <a href="../isolation/#docker">isolation guide</a> for digest and signature verification.
+          </p>
+        </section>
+
+        <section
+          class="docs-section docs-searchable"
+          id="macos-linux"
+          data-search="macos linux homebrew archive deb rpm apk go install path command v repyy version"
+        >
+          <h2>Install on macOS and Linux</h2>
+          <h3>Homebrew</h3>
+          <div class="docs-command">
+            <div><span>Homebrew</span><button type="button" data-copy="brew install --cask Kevin-Umali/tap/repyy">Copy</button></div>
+            <code>brew install --cask Kevin-Umali/tap/repyy</code>
+          </div>
+          <h3>Linux packages and archives</h3>
+          <p>
+            Linux releases include <code>.deb</code>, <code>.rpm</code>, and <code>.apk</code> packages. Archives for desktop platforms are published on
+            <a href="https://github.com/Kevin-Umali/repyy/releases">GitHub Releases ↗</a>. Download the matching archive, verify its published checksum, extract
+            it, and put <code>repyy</code> on your <code>PATH</code>.
+          </p>
+          <h3>Build with Go</h3>
+          <div class="docs-command">
+            <div><span>Go</span><button type="button" data-copy="go install github.com/Kevin-Umali/repyy/cmd/repyy@latest">Copy</button></div>
+            <code>go install github.com/Kevin-Umali/repyy/cmd/repyy@latest</code>
+          </div>
+          <p>
+            After a manual archive or Go install, check <code>command -v repyy</code>. If it returns nothing, add the executable directory to
+            <code>PATH</code> and open a new terminal.
+          </p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="windows" data-search="windows powershell scoop zip path localappdata repyy exe git">
+          <h2>Install on Windows PowerShell</h2>
+          <h3>Scoop</h3>
+          <div class="docs-command">
+            <div>
+              <span>Scoop</span
+              ><button type="button" data-copy="scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket; scoop install repyy/repyy">Copy</button>
+            </div>
+            <code>scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket scoop install repyy/repyy</code>
+          </div>
+          <p>
+            Adding the Scoop bucket uses Git. That requirement belongs to Scoop setup; it is separate from the Git needed to scan an HTTPS remote in host mode.
+          </p>
+          <h3>Manual ZIP install</h3>
+          <p>
+            Download the <code>amd64</code> or <code>arm64</code> Windows ZIP that matches your machine from
+            <a href="https://github.com/Kevin-Umali/repyy/releases">Releases ↗</a>. <a href="#checksums">Verify the checksum</a> before extracting it. Replace
+            the sample ZIP path below with the archive you downloaded.
+          </p>
+          <pre class="docs-example" aria-label="PowerShell manual installation">
+$zip = 'C:\path\to\the-downloaded-repyy-windows-archive.zip'
+$bin = "$env:LOCALAPPDATA\repyy\bin"
+$extract = Join-Path $env:TEMP ("repyy-extract-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Force $bin | Out-Null
+Expand-Archive -LiteralPath $zip -DestinationPath $extract
+$exe = Get-ChildItem -LiteralPath $extract -Filter repyy.exe -Recurse | Select-Object -First 1
+if (-not $exe) &#123; throw 'repyy.exe was not found in the ZIP' &#125;
+Copy-Item -LiteralPath $exe.FullName -Destination (Join-Path $bin 'repyy.exe')
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (($userPath -split ';') -notcontains $bin) &#123;
+  $newPath = if ($userPath) &#123; $userPath.TrimEnd(';') + ';' + $bin &#125; else &#123; $bin &#125;
+  [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
+&#125;</pre
+          >
+          <p>Open a new PowerShell window after changing <code>PATH</code>, then run <code>where.exe repyy</code>.</p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="checksums" data-search="checksum sha256 verify release signed binary provenance">
+          <h2>Verify the release</h2>
+          <p>
+            Before extracting or installing a manual archive or package, authenticate its signed checksum list and compare your download with that list. Follow
+            <a href="../verification/">Releases and Verification</a> for the exact commands, supported release evidence, and platform alternatives.
+          </p>
+          <p>
+            A checksum from an unauthenticated list only checks consistency; it does not establish who published the bytes. Choose the operating system and
+            architecture that match your machine, then record <code>repyy version</code> with your review.
+          </p>
+        </section>
+
+        <section class="docs-section docs-searchable" id="first-scan" data-search="first scan local folder html report version help intel status">
+          <h2>Run a first local scan</h2>
+          <p>
+            Use a local path when you already have a checkout or downloaded folder. Run this from its parent directory, or replace it with an absolute path.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>Verify and scan</span
+              ><button type="button" data-copy="repyy version; repyy intel status; repyy scan ./unfamiliar-repository --format html --output repyy-report.html">
+                Copy
+              </button>
+            </div>
+            <code>repyy version repyy intel status repyy scan ./unfamiliar-repository --format html --output repyy-report.html</code>
+          </div>
+          <p>
+            Open <code>repyy-report.html</code> directly from the file manager or browser. Its CSS and JavaScript are embedded, so viewing the report requires
+            no server and makes no network requests. A source link inside the report may open a provider website.
+          </p>
+          <div class="docs-callout">
+            <strong>Read before continuing</strong>
+            <p>
+              Check the verdict, coverage status, severity, confidence, matched location, and recommended action before installing dependencies or running
+              anything in the target.
+            </p>
+          </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="remote" data-search="remote repository github gitlab bitbucket https ssh token github token docker">
+          <h2>Scan a remote repository</h2>
+          <p>
+            Host mode makes a temporary shallow clone and removes it afterward. Git must be installed and available on <code>PATH</code>. HTTPS and SSH are
+            available in host mode.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>HTTPS remote</span
+              ><button type="button" data-copy="repyy scan https://github.com/org/repository --format html --output report.html">Copy</button>
+            </div>
+            <code>repyy scan https://github.com/org/repository --format html --output report.html</code>
+          </div>
+          <p>
+            For private HTTPS access, set <code>GITHUB_TOKEN</code>, <code>GITLAB_TOKEN</code>, or <code>BITBUCKET_TOKEN</code> in the scanner environment. Do
+            not put credentials in the URL. SSH uses the existing host SSH agent. Host mode passes tokens through Git's process environment. Docker retrieval
+            uses a temporary restricted-permission environment file; the analysis container receives no Git credentials. Deletion failures are reported.
+          </p>
+          <div class="docs-note">
+            <strong>Want a stronger boundary?</strong>
+            <p>
+              Docker accepts HTTPS remotes and separates fetching from network-disabled analysis. SSH remotes are rejected there. Continue with the
+              <a href="../isolation/#docker">Docker guide</a>.
+            </p>
+          </div>
+        </section>
+
+        <section
+          class="docs-section docs-searchable"
+          id="troubleshooting"
+          data-search="troubleshooting command not found scoop git remote html blank incomplete permission timeout archive"
+        >
+          <h2>Troubleshoot the first run</h2>
+          <div class="docs-table compact" role="table" aria-label="Installation troubleshooting">
+            <div role="row">
+              <b role="cell">Command not found</b
+              ><span role="cell">Open a new terminal after changing <code>PATH</code>; use <code>command -v repyy</code> or <code>where.exe repyy</code>.</span>
+            </div>
+            <div role="row"><b role="cell">Scoop bucket fails</b><span role="cell">Install Git and retry; local-folder scans do not need Git.</span></div>
+            <div role="row">
+              <b role="cell">Remote scan fails</b
+              ><span role="cell">Check Git, URL reachability, and the matching provider token or SSH agent. Docker accepts HTTPS only.</span>
+            </div>
+            <div role="row">
+              <b role="cell">HTML looks blank</b
+              ><span role="cell">Confirm the file finished writing, then open it in a current browser. A readable summary remains when JavaScript is off.</span>
+            </div>
+            <div role="row">
+              <b role="cell">Scan incomplete</b
+              ><span role="cell">Read the reported permission, timeout, file, archive, clone, or mount reason before relying on the result.</span>
+            </div>
+          </div>
+          <p>
+            For all command flags and report formats, see
+            <a href="../docs/">the full documentation</a>. For manual isolation, see <a href="../isolation/">the isolation guide</a>.
+          </p>
+        </section>
+</DocsLayout>
