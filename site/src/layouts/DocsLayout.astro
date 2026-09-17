@@ -1,0 +1,63 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { guides, type Guide } from "../data/guides";
+import "../styles/docs.css";
+
+interface Props {
+  guide: Guide;
+}
+
+const { guide } = Astro.props;
+const currentIndex = guides.findIndex((item) => item.slug === guide.slug);
+const previous = currentIndex > 0 ? guides[currentIndex - 1] : undefined;
+const next = currentIndex < guides.length - 1 ? guides[currentIndex + 1] : undefined;
+const bodyClass = guide.slug === "docs" ? "docs-page docs-home" : "docs-page";
+---
+
+<BaseLayout title={guide.title} description={guide.description} rootClass="docs-root" {bodyClass}>
+  <a class="skip-link" href="#docs-main">Skip to {guide.label}</a>
+  <header class="docs-header">
+    <a class="brand" href="/" aria-label="repyy home">repyy<span aria-hidden="true">/</span><small>Docs</small></a>
+    <div class="docs-search">
+      <label for="docs-search"><span>Search documentation</span><input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" /></label>
+    </div>
+    <div class="docs-header-links"><a href="/">Website</a>{guide.slug !== "docs" && <a href="/docs/">Docs</a>}<a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a></div>
+  </header>
+  <div class="docs-shell">
+    <aside class="docs-sidebar">
+      <a class="docs-back" href={guide.slug === "docs" ? "/" : "/docs/"}>← {guide.slug === "docs" ? "Website" : "All docs"}</a>
+      <details class="docs-mobile-menu">
+        <summary>Browse documentation</summary>
+        <div class="docs-mobile-menu-links">
+          {guides.map((item) => <a href={item.route} aria-current={item.slug === guide.slug ? "page" : undefined}>{item.label}</a>)}
+          <span>On this page</span>
+          {guide.sections.map((section) => <a href={`#${section.id}`}>{section.id === "overview" ? "Overview" : section.label}</a>)}
+        </div>
+      </details>
+      <nav aria-label={`${guide.label} navigation`} tabindex="0">
+        <strong>On this page</strong>
+        {guide.sections.map((section) => <a href={`#${section.id}`}>{section.id === "overview" ? "Overview" : section.label}</a>)}
+        <strong>Choose a guide</strong>
+        {guides.filter((item) => item.slug !== guide.slug).map((item) => <a href={item.route}>{item.label}</a>)}
+      </nav>
+    </aside>
+    <main class="docs-main" id="docs-main">
+      <p class="docs-breadcrumb">
+        <a href="/">repyy</a><span aria-hidden="true">/</span>{guide.slug === "docs" ? <span>Documentation</span> : <><a href="/docs/">Documentation</a><span aria-hidden="true">/</span><span>{guide.label}</span></>}
+      </p>
+      <slot />
+      <div class="docs-empty" id="docs-empty" hidden>
+        <strong>No matching documentation</strong>
+        <p>Try a command, guide name, or concept such as Docker.</p>
+      </div>
+      <footer class="docs-footer">
+        <p>{previous ? <a href={previous.route}>← {previous.label}</a> : "repyy documentation"}</p>
+        {next ? <a href={next.route}>{next.label} →</a> : <a href="/docs/">All documentation →</a>}
+      </footer>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  import "../scripts/site.js";
+</script>

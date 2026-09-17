@@ -1,0 +1,10 @@
+---
+interface Props {
+  as?: "p" | "h1" | "h2" | "h3";
+  class?: string;
+}
+
+const { as: Tag = "p", class: className } = Astro.props as Props;
+---
+
+<Tag class={className}><slot /></Tag>

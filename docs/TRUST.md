@@ -77,7 +77,7 @@ No telemetry client or report-upload path is implemented in the normal scanner.
 Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid cached
 intelligence falls back to embedded data with a warning. Updates require a valid signature and
 schema; rollback uses previously verified local snapshots. See the
-[intelligence guide](../site/intelligence/index.html).
+[intelligence guide](https://repyy.dev/intelligence/).
 
 ## Temporary repositories and cleanup
 
@@ -111,7 +111,7 @@ The image must be digest-pinned and explicitly available locally. The worker use
 input/root filesystem, dropped capabilities, no-new-privileges, process/memory/CPU limits and
 bounded temporary storage. Remote fetch and scan are separate stages. Docker daemon access itself is
 a powerful host capability. Containers share a kernel and are not equivalent to a dedicated virtual
-machine. See [isolation](../site/isolation/index.html).
+machine. See [isolation](SANDBOX.md).
 
 ## Incomplete scans and exit codes
 

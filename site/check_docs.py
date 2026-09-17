@@ -1,31 +1,42 @@
-"""Check static documentation links and the bundled cross-page search index."""
+"""Validate the built Astro site, documentation links, search data, and samples."""
 
-import ast
 import base64
-import hashlib
 from collections import Counter
+import hashlib
 from html import unescape
 from html.parser import HTMLParser
+import json
 from pathlib import Path
 import re
 from urllib.parse import unquote, urlsplit
 
 
 SITE = Path(__file__).resolve().parent
+DIST = SITE / "dist"
+REPOSITORY = SITE.parent
 GUIDES = {
-    "/trust/",
-    "/verification/",
-    "/demo/",
-    "/security-testing/",
-    "/about/",
-    "/docs/",
-    "/installation/",
-    "/cli/",
-    "/configuration/",
-    "/isolation/",
-    "/coverage/",
-    "/intelligence/",
-    "/agent-skill/",
+    "/docs/": ["README.md"],
+    "/installation/": ["docs/INSTALLATION.md"],
+    "/cli/": ["docs/CLI.md"],
+    "/configuration/": ["docs/CONFIGURATION.md"],
+    "/isolation/": ["docs/SANDBOX.md", "docs/VM-GUIDES.md"],
+    "/coverage/": ["docs/COVERAGE.md"],
+    "/intelligence/": [],
+    "/agent-skill/": ["skills/repyy/SKILL.md"],
+    "/trust/": ["docs/TRUST.md"],
+    "/demo/": ["demo/README.md"],
+    "/verification/": ["docs/VERIFICATION.md"],
+    "/security-testing/": ["docs/SECURITY-TESTING.md"],
+    "/about/": ["docs/ABOUT.md"],
+}
+EXPECTED_ROUTES = {"/", *GUIDES}
+EXPECTED_ARTIFACTS = {
+    "/demo/sample/sample.html",
+    "/demo/sample/sample.json",
+    "/demo/sample/sample.txt",
+    "/demo/sample/results.json",
+    "/demo/sample/results.md",
+    "/search-index.json",
 }
 
 
@@ -48,81 +59,100 @@ class Page(HTMLParser):
                 self.references.append(attributes[key])
 
 
+def route_file(route):
+    return (
+        DIST / route.lstrip("/") / "index.html" if route != "/" else DIST / "index.html"
+    )
+
+
 def main():
+    if not DIST.is_dir():
+        raise SystemExit("site/dist is missing; run `npm run build` in site first")
+
     pages = {}
     errors = []
-    for path in SITE.rglob("*.html"):
+    for path in DIST.rglob("*.html"):
         page = Page()
         page.feed(path.read_text(encoding="utf-8"))
         pages[path.resolve()] = page
         for ident, count in Counter(page.ids).items():
             if count > 1:
-                errors.append(f"{path.name}: duplicate id #{ident}")
+                errors.append(f"{path.relative_to(DIST)}: duplicate id #{ident}")
+
+    for route in EXPECTED_ROUTES:
+        if not route_file(route).is_file():
+            errors.append(f"missing route {route}")
+    for artifact in EXPECTED_ARTIFACTS:
+        if not (DIST / artifact.lstrip("/")).is_file():
+            errors.append(f"missing artifact {artifact}")
+    for route, counterparts in GUIDES.items():
+        for counterpart in counterparts:
+            if not (REPOSITORY / counterpart).is_file():
+                errors.append(f"{route}: missing Markdown counterpart {counterpart}")
 
     for path, page in pages.items():
         for reference in page.references:
             url = urlsplit(reference)
-            if url.scheme or url.netloc:
+            if url.scheme or url.netloc or reference.startswith(("mailto:", "data:")):
                 continue
             if url.path.startswith("/"):
-                destination = (SITE / unquote(url.path).lstrip("/")).resolve()
+                destination = (DIST / unquote(url.path).lstrip("/")).resolve()
             elif url.path:
                 destination = (path.parent / unquote(url.path)).resolve()
             else:
                 destination = path
+            if destination.is_dir():
+                destination = destination / "index.html"
             if not destination.exists():
-                errors.append(f"{path.name}: missing {reference}")
+                errors.append(f"{path.relative_to(DIST)}: missing {reference}")
             elif url.fragment:
-                target_path = (
-                    (destination / "index.html").resolve()
-                    if destination.is_dir()
-                    else destination
-                )
-                target = pages.get(target_path)
+                target = pages.get(destination.resolve())
                 if target is None or unquote(url.fragment) not in target.ids:
-                    errors.append(f"{path.name}: missing anchor {reference}")
+                    errors.append(
+                        f"{path.relative_to(DIST)}: missing anchor {reference}"
+                    )
 
-    # Reports carry hashes over exact inline bytes. Reformatting them would
-    # silently disable styles or filtering in a browser enforcing the CSP.
-    report = (SITE / "demo/sample/sample.html").read_text(encoding="utf-8")
+    report = (DIST / "demo/sample/sample.html").read_text(encoding="utf-8")
     for tag in ("style", "script"):
         for body in re.findall(rf"<{tag}[^>]*>(.*?)</{tag}>", report, re.S):
             digest = base64.b64encode(hashlib.sha256(body.encode()).digest()).decode()
             if f"sha256-{digest}" not in unescape(report):
                 errors.append(f"sample.html: {tag} content does not match its CSP hash")
 
-    script = (SITE / "site.js").read_text(encoding="utf-8")
-    match = re.search(r"const docsGlobalIndex = (\[.*?\n\]);", script, re.S)
-    if not match:
-        errors.append("site.js: missing bundled documentation search index")
+    try:
+        entries = json.loads((DIST / "search-index.json").read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as error:
+        errors.append(f"search index: {error}")
         entries = []
-    else:
-        entries = ast.literal_eval(match.group(1))
     indexed = set()
     for entry in entries:
-        if len(entry) != 5:
+        required = {"route", "pageTitle", "id", "title", "text"}
+        if not isinstance(entry, dict) or set(entry) != required:
             errors.append(f"search index: malformed entry {entry!r}")
             continue
-        route, _, ident, _, _ = entry
-        key = (route, ident)
+        key = (entry["route"], entry["id"])
         if key in indexed:
-            errors.append(f"search index: duplicate {route}#{ident}")
+            errors.append(f"search index: duplicate {entry['route']}#{entry['id']}")
         indexed.add(key)
-        target = pages.get((SITE / route.lstrip("/") / "index.html").resolve())
-        if route not in GUIDES or target is None or ident not in target.ids:
-            errors.append(f"search index: missing {route}#{ident}")
+        target = pages.get(route_file(entry["route"]).resolve())
+        if (
+            entry["route"] not in GUIDES
+            or target is None
+            or entry["id"] not in target.ids
+        ):
+            errors.append(f"search index: missing {entry['route']}#{entry['id']}")
     for route in GUIDES:
-        page = pages.get((SITE / route.lstrip("/") / "index.html").resolve())
-        if page is None:
-            errors.append(f"missing guide {route}")
-            continue
-        for ident in page.searchable:
-            if (route, ident) not in indexed:
-                errors.append(f"search index: unindexed {route}#{ident}")
+        page = pages.get(route_file(route).resolve())
+        if page:
+            for ident in page.searchable:
+                if (route, ident) not in indexed:
+                    errors.append(f"search index: unindexed {route}#{ident}")
 
     if errors:
         raise SystemExit("\n".join(errors))
-    print(f"Checked {len(pages)} HTML pages and {len(entries)} search destinations")
+    print(
+        f"Checked {len(EXPECTED_ROUTES)} routes, {len(entries)} search destinations, and {len(EXPECTED_ARTIFACTS)} artifacts"
+    )
 
 
 if __name__ == "__main__":

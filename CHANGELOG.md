@@ -10,6 +10,8 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Link directly to private vulnerability reporting from the security policy.
 - Publish v0.5.1 verification evidence and standalone demo links; refresh public samples with the verified release binary and pin fixture evidence links to the release tag.
 - Make benchmark subprocess exit-code handling explicit and organize its imports.
+- Migrate the complete landing page and documentation site from hand-authored HTML to a static Astro and TypeScript build while preserving public routes, content, metadata, accessibility, interactions, and the existing visual design.
+- Generate cross-guide search data during the Astro build, preserve sample-report bytes and CSP hashes as public assets, and update validation, CI, Make targets, and repository links for the generated static site.
 
 ### Fixed
 
@@ -87,8 +89,8 @@ Release provenance, SBOM attestations, and Scorecard configuration require succe
 - Organize supply-chain, CI workflow, and SVG detectors in focused scan
   subpackages with their tests, and separate archive and repository inspection
   from the core scan loop. Cargo build-script inventory stays local to each scan.
-- Serve the Dokploy Static site through directory-index routes such as `/docs/`
-  and `/coverage/`, and use those clean URLs in navigation and search.
+- Serve the static site through directory-index routes such as `/docs/` and
+  `/coverage/`, and use those clean URLs in navigation and search.
 
 ### Fixed
 

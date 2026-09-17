@@ -1,7 +1,7 @@
 BINARY := bin/repyy
 VERSION ?= 0.5.1
 
-.PHONY: build test check security intel install clean
+.PHONY: build test check security intel install clean site-dev site-check site-build site-preview site-format
 
 build:
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BINARY) ./cmd/repyy
@@ -25,6 +25,21 @@ install:
 
 clean:
 	rm -f $(BINARY)
+
+site-dev:
+	npm --prefix site run dev
+
+site-check:
+	npm --prefix site run check
+
+site-build:
+	npm --prefix site run build
+
+site-preview:
+	npm --prefix site run preview
+
+site-format:
+	npm --prefix site run format
 
 # Generated reports and inert test fixtures retain their exact bytes.
 .PHONY: format format-check

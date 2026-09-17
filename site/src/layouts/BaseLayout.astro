@@ -1,0 +1,27 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  rootClass?: string;
+  bodyClass?: string;
+}
+
+import { siteMetadata } from "../data/site";
+
+const { title, description, rootClass, bodyClass } = Astro.props;
+---
+
+<!doctype html>
+<html class={rootClass} lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={siteMetadata.themeColor} />
+    <title>{title}</title>
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>

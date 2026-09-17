@@ -68,14 +68,28 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Smoke test static site
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: site/.nvmrc
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install site dependencies
+        working-directory: site
+        run: npm ci
+      - name: Check and build Astro site
+        working-directory: site
+        run: |
+          npm run check
+          npm run format:check
+          npm run build
+      - name: Smoke test built site
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m http.server 4173 --directory site >/tmp/repyy-site.log 2>&1 &
+          python3 -m http.server 4173 --directory site/dist >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ trust/ verification/ demo/ security-testing/ about/ landing.css docs.css site.js landing.js; do
+          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ trust/ verification/ demo/ security-testing/ about/ search-index.json demo/sample/sample.html demo/sample/sample.json demo/sample/sample.txt demo/sample/results.json demo/sample/results.md; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
           done
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
