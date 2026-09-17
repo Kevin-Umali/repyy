@@ -175,10 +175,14 @@ html:not(.has-js) .docs-search {
   font-size: 0.7rem;
 }
 .docs-search-empty,
+.docs-search-loading,
 .docs-search-count {
   margin: 0.55rem 0.7rem;
   color: var(--muted);
   font-size: 0.75rem;
+}
+.docs-search-loading {
+  color: var(--ink);
 }
 .docs-search-count {
   padding-top: 0.45rem;
@@ -443,7 +447,8 @@ html:not(.has-js) .docs-search {
   color: #b3b3bc;
   font-size: 0.72rem;
 }
-.docs-command button {
+.docs-command button,
+.recipe-grid button {
   min-height: 44px;
   padding: 0.6rem 1rem;
   border: 0;
@@ -452,10 +457,11 @@ html:not(.has-js) .docs-search {
   color: #e5e5eb;
   font-size: 0.72rem;
   transition:
-    transform 160ms var(--ease-out),
-    opacity 160ms ease;
+    transform var(--duration-press) var(--ease-out),
+    opacity var(--duration-press) ease;
 }
-.docs-command button:active {
+.docs-command button:active,
+.recipe-grid button:active {
   transform: scale(0.97);
 }
 .docs-command > code {
@@ -1016,11 +1022,14 @@ ol.docs-list li {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .docs-command button {
-    transition: opacity 160ms ease;
+  .docs-command button,
+  .recipe-grid button {
+    transition: opacity var(--duration-press) ease;
   }
-  .docs-command button:active {
+  .docs-command button:active,
+  .recipe-grid button:active {
     transform: none;
+    opacity: 0.8;
   }
 }
 @media (prefers-reduced-transparency: reduce) {

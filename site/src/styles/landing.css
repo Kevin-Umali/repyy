@@ -133,6 +133,37 @@ main > section {
 .hero-copy {
   text-align: center;
 }
+@keyframes landing-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.hero-copy > *,
+.execution-moments li {
+  animation: landing-enter var(--duration-reveal) var(--ease-out) both;
+}
+.hero-copy > :nth-child(2) {
+  animation-delay: var(--stagger-step);
+}
+.hero-copy > :nth-child(3) {
+  animation-delay: calc(var(--stagger-step) * 2);
+}
+.hero-copy > :nth-child(4) {
+  animation-delay: calc(var(--stagger-step) * 3);
+}
+.hero-copy > :nth-child(5) {
+  animation-delay: calc(var(--stagger-step) * 4);
+}
+.execution-moments li:first-child {
+  animation-delay: calc(var(--stagger-step) * 3);
+}
+.execution-moments li:nth-child(2) {
+  animation-delay: calc(var(--stagger-step) * 4);
+}
+.execution-moments li:nth-child(3) {
+  animation-delay: calc(var(--stagger-step) * 5);
+}
 .context-line,
 .section-label,
 .panel-label {
@@ -187,13 +218,15 @@ main > section {
   font-weight: 550;
 }
 .button,
-button {
+button,
+.nav-docs {
   transition:
-    transform 160ms var(--ease-out),
-    opacity 160ms ease;
+    transform var(--duration-press) var(--ease-out),
+    opacity var(--duration-press) ease;
 }
 .button:active,
-button:active {
+button:active,
+.nav-docs:active {
   transform: scale(0.97);
 }
 .source-study {
@@ -763,14 +796,30 @@ button:active {
   display: none;
 }
 .faq-list summary::after {
-  content: "+";
+  content: "";
   position: absolute;
+  top: 50%;
   right: 0.25rem;
-  font-size: 1.1rem;
-  color: var(--muted);
+  width: 0.75rem;
+  height: 1px;
+  background: var(--muted);
 }
-.faq-list details[open] summary::after {
-  content: "−";
+.faq-list summary::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  width: 0.75rem;
+  height: 1px;
+  background: var(--muted);
+  transform: rotate(90deg);
+  transition:
+    transform var(--duration-ui) var(--ease-out),
+    opacity var(--duration-ui) var(--ease-out);
+}
+.faq-list details[open] summary::before {
+  opacity: 0;
+  transform: rotate(0deg);
 }
 .faq-list p {
   padding-bottom: 1.5rem;
@@ -801,12 +850,27 @@ footer > div {
   opacity: 0;
   transform: translateY(8px);
   transition:
-    opacity 600ms var(--ease-out),
-    transform 600ms var(--ease-out);
+    opacity var(--duration-reveal) var(--ease-out),
+    transform var(--duration-reveal) var(--ease-out);
 }
 .landing-motion .reveal.is-visible {
   opacity: 1;
   transform: none;
+}
+.landing-motion .coverage-grid .reveal:nth-child(2),
+.landing-motion .limit-grid .reveal:nth-child(2) {
+  transition-delay: var(--stagger-step);
+}
+.landing-motion .coverage-grid .reveal:nth-child(3),
+.landing-motion .limit-grid .reveal:nth-child(3) {
+  transition-delay: calc(var(--stagger-step) * 2);
+}
+.landing-motion .coverage-grid .reveal:nth-child(4),
+.landing-motion .limit-grid .reveal:nth-child(4) {
+  transition-delay: calc(var(--stagger-step) * 3);
+}
+.landing-motion .coverage-grid .reveal:nth-child(5) {
+  transition-delay: calc(var(--stagger-step) * 4);
 }
 @media (hover: hover) and (pointer: fine) {
   .nav a:hover,
@@ -1108,18 +1172,33 @@ footer > div {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .hero-copy > *,
+  .execution-moments li {
+    animation: landing-fade var(--duration-ui) ease both;
+  }
   .landing-motion .reveal {
     opacity: 1;
     transform: none;
     transition: none;
   }
   .button,
-  button {
-    transition: opacity 160ms ease;
+  button,
+  .nav-docs {
+    transition: opacity var(--duration-press) ease;
   }
   .button:active,
-  button:active {
+  button:active,
+  .nav-docs:active {
     transform: none;
+    opacity: 0.82;
+  }
+  .faq-list summary::before {
+    transition: opacity var(--duration-press) ease;
+  }
+}
+@keyframes landing-fade {
+  from {
+    opacity: 0;
   }
 }
 @media (max-width: 380px) {

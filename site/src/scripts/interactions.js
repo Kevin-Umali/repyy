@@ -1,18 +1,57 @@
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 document.documentElement.classList.add("has-js");
 
-document.querySelectorAll("button, .button, .nav-docs").forEach((pressable) => {
-  pressable.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    pressable.classList.add("is-pressed");
+const rootStyles = getComputedStyle(document.documentElement);
+const easeOut = rootStyles.getPropertyValue("--ease-out").trim() || "cubic-bezier(0.23, 1, 0.32, 1)";
+const durationValue = rootStyles.getPropertyValue("--duration-ui").trim();
+const uiDuration = durationValue.endsWith("ms") ? Number.parseFloat(durationValue) : 200;
+const activeAnimations = new Set();
+const swapAnimations = new WeakMap();
+
+const trackAnimation = (element, animation) => {
+  swapAnimations.set(element, animation);
+  activeAnimations.add(animation);
+  const cleanup = () => {
+    activeAnimations.delete(animation);
+    if (swapAnimations.get(element) === animation) swapAnimations.delete(element);
+  };
+  animation.addEventListener("finish", cleanup, { once: true });
+  animation.addEventListener("cancel", cleanup, { once: true });
+};
+
+const swapContent = (elements, update, animate) => {
+  const states = elements.map((element) => {
+    const currentAnimation = swapAnimations.get(element);
+    if (!currentAnimation) return { element, opacity: 0.58, transform: "translate3d(0, 4px, 0)" };
+
+    const styles = getComputedStyle(element);
+    const state = { element, opacity: Number.parseFloat(styles.opacity), transform: styles.transform };
+    currentAnimation.cancel();
+    return state;
   });
-  ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
-    pressable.addEventListener(eventName, () => pressable.classList.remove("is-pressed"));
+
+  update();
+  if (!animate || motionPreference.matches) return;
+
+  states.forEach(({ element, opacity, transform }) => {
+    const animation = element.animate(
+      [
+        { opacity, transform },
+        { opacity: 1, transform: "translate3d(0, 0, 0)" },
+      ],
+      { duration: uiDuration, easing: easeOut },
+    );
+    trackAnimation(element, animation);
   });
+};
+
+motionPreference.addEventListener("change", () => {
+  if (!motionPreference.matches) return;
+  activeAnimations.forEach((animation) => animation.cancel());
 });
 
 const revealItems = document.querySelectorAll(".reveal");
-if (reduceMotion) {
+if (motionPreference.matches) {
   revealItems.forEach((item) => item.classList.add("is-visible"));
 } else {
   const revealObserver = new IntersectionObserver(
@@ -28,13 +67,18 @@ if (reduceMotion) {
   revealItems.forEach((item) => revealObserver.observe(item));
 }
 
+const copyFeedback = new WeakMap();
 const showCopyResult = (button, result) => {
   const label = button.querySelector("[data-copy-label]") || button;
-  const original = label.textContent;
+  const feedback = copyFeedback.get(button) || { original: label.textContent, timeout: undefined };
+  window.clearTimeout(feedback.timeout);
   label.textContent = result;
-  window.setTimeout(() => {
-    label.textContent = original;
+  button.setAttribute("aria-live", "polite");
+  feedback.timeout = window.setTimeout(() => {
+    label.textContent = feedback.original;
+    feedback.timeout = undefined;
   }, 1600);
+  copyFeedback.set(button, feedback);
 };
 
 const copyText = async (button, value) => {
@@ -79,14 +123,20 @@ document.querySelectorAll("[data-install-tabs]").forEach((panel) => {
   const output = panel.querySelector("[data-install-output]");
   const copy = panel.querySelector("[data-install-copy]");
 
-  const select = (tab) => {
-    tabs.forEach((item) => {
-      const active = item === tab;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-selected", String(active));
-      item.tabIndex = active ? 0 : -1;
-    });
-    output.textContent = tab.dataset.installCommand;
+  const select = (tab, animate) => {
+    swapContent(
+      [output],
+      () => {
+        tabs.forEach((item) => {
+          const active = item === tab;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-selected", String(active));
+          item.tabIndex = active ? 0 : -1;
+        });
+        output.textContent = tab.dataset.installCommand;
+      },
+      animate,
+    );
   };
 
   attachTabs(tabs, select);
@@ -136,35 +186,99 @@ document.querySelectorAll("[data-report-lab]").forEach((lab) => {
   const description = lab.querySelector("[data-report-description]");
   const command = lab.querySelector("[data-report-command]");
   const copy = lab.querySelector("[data-report-copy]");
-  let animation;
-
   const select = (tab, animate) => {
     const format = reportFormats[tab.dataset.reportFormat];
-    tabs.forEach((item) => {
-      const active = item === tab;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-selected", String(active));
-      item.tabIndex = active ? 0 : -1;
-    });
-    title.textContent = format.title;
-    preview.textContent = format.preview;
-    use.textContent = format.use;
-    description.textContent = format.description;
-    command.textContent = format.command;
-    lab.dataset.input = animate ? "pointer" : "keyboard";
-
-    animation?.cancel();
-    if (animate && !reduceMotion) {
-      animation = screen.animate(
-        [
-          { opacity: 0.58, transform: "translate3d(0, 4px, 0)" },
-          { opacity: 1, transform: "translate3d(0, 0, 0)" },
-        ],
-        { duration: 200, easing: "cubic-bezier(.23, 1, .32, 1)" },
-      );
-    }
+    const notes = lab.querySelector(".report-notes");
+    swapContent(
+      [screen, notes],
+      () => {
+        tabs.forEach((item) => {
+          const active = item === tab;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-selected", String(active));
+          item.tabIndex = active ? 0 : -1;
+        });
+        title.textContent = format.title;
+        preview.textContent = format.preview;
+        use.textContent = format.use;
+        description.textContent = format.description;
+        command.textContent = format.command;
+        lab.dataset.input = animate ? "pointer" : "keyboard";
+      },
+      animate,
+    );
   };
 
   attachTabs(tabs, select);
   copy.addEventListener("click", () => copyText(copy, command.textContent));
+});
+
+document.querySelectorAll(".faq-list details").forEach((details) => {
+  const summary = details.querySelector("summary");
+  const content = details.querySelector("p");
+  let expanded = details.open;
+  let heightAnimation;
+  let contentAnimation;
+
+  motionPreference.addEventListener("change", () => {
+    if (!motionPreference.matches) return;
+    heightAnimation?.cancel();
+    contentAnimation?.cancel();
+    details.open = expanded;
+    details.style.height = "";
+    details.style.overflow = "";
+  });
+
+  summary.addEventListener("click", (event) => {
+    event.preventDefault();
+    expanded = !expanded;
+
+    if (motionPreference.matches) {
+      heightAnimation?.cancel();
+      contentAnimation?.cancel();
+      details.open = expanded;
+      details.style.height = "";
+      details.style.overflow = "";
+      return;
+    }
+
+    const startHeight = details.getBoundingClientRect().height;
+    const interruptedContent = contentAnimation ? getComputedStyle(content) : undefined;
+    heightAnimation?.cancel();
+    contentAnimation?.cancel();
+    details.style.height = `${startHeight}px`;
+    details.style.overflow = "hidden";
+    if (expanded) details.open = true;
+
+    const endHeight = summary.getBoundingClientRect().height + (expanded ? content.getBoundingClientRect().height : 0);
+    heightAnimation = details.animate([{ height: `${startHeight}px` }, { height: `${endHeight}px` }], {
+      duration: uiDuration,
+      easing: easeOut,
+    });
+    contentAnimation = content.animate(
+      [
+        {
+          opacity: interruptedContent ? Number.parseFloat(interruptedContent.opacity) : expanded ? 0 : 1,
+          transform: interruptedContent?.transform || (expanded ? "translate3d(0, -4px, 0)" : "translate3d(0, 0, 0)"),
+        },
+        {
+          opacity: expanded ? 1 : 0,
+          transform: expanded ? "translate3d(0, 0, 0)" : "translate3d(0, -4px, 0)",
+        },
+      ],
+      { duration: uiDuration, easing: easeOut },
+    );
+
+    heightAnimation.addEventListener(
+      "finish",
+      () => {
+        details.open = expanded;
+        details.style.height = "";
+        details.style.overflow = "";
+        heightAnimation = undefined;
+        contentAnimation = undefined;
+      },
+      { once: true },
+    );
+  });
 });

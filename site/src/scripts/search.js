@@ -12,26 +12,53 @@ if (input) {
   input.setAttribute("aria-controls", results.id);
   input.setAttribute("aria-expanded", "false");
   let index = [];
+  let indexPromise;
+  let loadingTimer;
 
   const loadIndex = async () => {
     if (index.length) return index;
-    const response = await fetch("/search-index.json");
-    if (!response.ok) throw new Error(`Search index returned ${response.status}`);
-    index = await response.json();
-    return index;
+    if (!indexPromise) {
+      indexPromise = fetch("/search-index.json")
+        .then((response) => {
+          if (!response.ok) throw new Error(`Search index returned ${response.status}`);
+          return response.json();
+        })
+        .then((entries) => {
+          index = entries;
+          return index;
+        })
+        .catch((error) => {
+          indexPromise = undefined;
+          throw error;
+        });
+    }
+    return indexPromise;
   };
 
   const render = async () => {
     const query = input.value.trim().toLowerCase();
+    window.clearTimeout(loadingTimer);
     results.replaceChildren();
+    results.hidden = true;
+    input.setAttribute("aria-expanded", "false");
     if (!query) {
-      results.hidden = true;
-      input.setAttribute("aria-expanded", "false");
       return;
     }
+    loadingTimer = window.setTimeout(() => {
+      if (input.value.trim().toLowerCase() !== query || index.length) return;
+      const message = document.createElement("p");
+      message.className = "docs-search-loading";
+      message.setAttribute("role", "status");
+      message.textContent = "Searching documentation…";
+      results.replaceChildren(message);
+      results.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }, 150);
     try {
       const entries = await loadIndex();
+      window.clearTimeout(loadingTimer);
       if (input.value.trim().toLowerCase() !== query) return;
+      results.replaceChildren();
       const matches = entries.filter((item) => query.split(/\s+/).every((word) => `${item.pageTitle} ${item.title} ${item.text}`.toLowerCase().includes(word)));
       if (!matches.length) {
         const message = document.createElement("p");
@@ -54,6 +81,9 @@ if (input) {
       count.textContent = matches.length > 30 ? `Showing 30 of ${matches.length} matches` : `${matches.length} ${matches.length === 1 ? "match" : "matches"}`;
       results.appendChild(count);
     } catch {
+      window.clearTimeout(loadingTimer);
+      if (input.value.trim().toLowerCase() !== query) return;
+      results.replaceChildren();
       const message = document.createElement("p");
       message.className = "docs-search-empty";
       message.textContent = "Search is temporarily unavailable. Browse the guides instead.";

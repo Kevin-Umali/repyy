@@ -3,6 +3,20 @@
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   if (!motion.matches) document.documentElement.classList.add("landing-motion");
 
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.detail === 0 || motion.matches) return;
+    const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : undefined;
+    if (!link || link.classList.contains("skip-link")) return;
+
+    const hash = link.getAttribute("href");
+    if (!hash || hash === "#") return;
+    const target = document.querySelector(hash);
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.pushState(null, "", hash);
+  });
+
   // Each reused preview stays associated with the currently selected tab.
   [
     ["[data-report-lab]", ".report-screen", "report-preview"],

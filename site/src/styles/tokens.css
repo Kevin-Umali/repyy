@@ -3,6 +3,10 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --duration-press: 160ms;
+  --duration-ui: 200ms;
+  --duration-reveal: 600ms;
+  --stagger-step: 50ms;
   --ink: #1d1d1f;
   --muted: #68686d;
   --quiet: #78787e;
