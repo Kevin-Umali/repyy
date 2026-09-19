@@ -2,6 +2,16 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the first published release.
 
+## [0.5.3] - 2026-09-19
+
+### Fixed
+
+- Build the Astro documentation site before the release workflow validates its
+  generated routes and artifacts, and refresh the npm lockfile for clean installs.
+- Publish the scanner and documentation changes prepared as v0.5.2 under v0.5.3;
+  the protected v0.5.2 tag failed its pre-publication gate and produced no release
+  or downloadable assets.
+
 ## [0.5.2] - 2026-09-19
 
 ### Added
@@ -33,8 +43,6 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ### Fixed
 
-- Build the Astro documentation site before the release workflow validates its
-  generated routes and artifacts.
 - Scan extensionless executable and shebang scripts for staged downloads; preserve
   quoted paths containing spaces, ignore quoted/commented downloader examples,
   correlate nested execution wrappers, recognize default curl/wget filenames, and
@@ -245,6 +253,7 @@ explain` for offline rule guidance.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.5.3]: https://github.com/Kevin-Umali/repyy/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/Kevin-Umali/repyy/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Kevin-Umali/repyy/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Kevin-Umali/repyy/compare/v0.4.0...v0.5.0
