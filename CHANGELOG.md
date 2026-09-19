@@ -33,6 +33,8 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ### Fixed
 
+- Build the Astro documentation site before the release workflow validates its
+  generated routes and artifacts.
 - Scan extensionless executable and shebang scripts for staged downloads; preserve
   quoted paths containing spaces, ignore quoted/commented downloader examples,
   correlate nested execution wrappers, recognize default curl/wget filenames, and
