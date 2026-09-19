@@ -117,9 +117,16 @@ const guide = getGuide("coverage");
             <div role="row">
               <b role="cell">Editor and agent execution</b
               ><span role="cell"
-                >VS Code tasks/settings/extensions, devcontainers, JetBrains, Vim/Neovim project config, AI-agent hooks and prompt injection in common
-                instruction-file names and formats</span
+                >VS Code folder-open and manual task/debug commands, JSONC recommendations, devcontainer/CLI extension installs, VSIX packages, devcontainer
+                features and lifecycle commands, trust overrides, and multiline agent/MCP hooks</span
               ><code role="cell">IDE-*, AGENT-*</code>
+            </div>
+            <div role="row">
+              <b role="cell">Host installation and startup</b
+              ><span role="cell"
+                >Host package/global-tool installers, font registration and binary-font integrity, direnv/Nix hooks, pre-commit installers, executable Git
+                filters/helpers, shell profiles, scheduled tasks, launch agents, systemd, and Windows startup</span
+              ><code role="cell">INSTALL-001, FONT-*, AUTORUN-*, GITHOOK-*, GITMETA-*, SHELL-001</code>
             </div>
             <div role="row">
               <b role="cell">Image active content</b><span role="cell">Executable SVG script elements, event handlers, and JavaScript links</span
@@ -350,7 +357,17 @@ const guide = getGuide("coverage");
             dependencies are not compared with resolved lockfile content. Wrapper archive hashes are checked for presence and format, not verified against
             downloaded bytes. Sibling <code>build.rs</code> detection applies to unpacked repository files.
           </p>
-          <p>Raster-image metadata and pixels are not parsed for embedded instructions or scripts. Valid text SVG files are inspected for active content.</p>
+          <p>
+            Raster-image metadata and pixels are not parsed for embedded instructions or scripts. Valid text SVG files are inspected for active content. Binary
+            fonts are never rendered: container/table bounds, selected structural invariants, expansion claims, embedded executable signatures, TrueType program
+            presence, and active OpenType SVG content are checked, with embedded SVG expansion capped at 8 MiB. The scanner does not execute or prove arbitrary
+            glyph or shaping bytecode safe.
+          </p>
+          <p>
+            PDF and Office checks are static: explicit PDF actions, embedded macro projects, Office external relationships, and DDE fields are reported without
+            opening the document. Encrypted content and arbitrary compressed PDF object streams are not evaluated. VSIX archives are inspected for activation and
+            execution contributions, lifecycle scripts, and bundled executable signatures, but extension behavior is not executed.
+          </p>
         </section>
 
         <section

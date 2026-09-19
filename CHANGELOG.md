@@ -2,7 +2,23 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the first published release.
 
-## [Unreleased]
+## [0.5.2] - 2026-09-19
+
+### Added
+
+- Detect VS Code workspace commands, JSONC extension recommendations, automatic
+  devcontainer or command-line extension installation, packaged VSIX files,
+  devcontainer features, editor trust overrides, and multiline agent/MCP hooks.
+- Detect additional devcontainer lifecycle commands, direnv and Nix shell hooks,
+  host package/global-tool installers, scripted font installation, opaque or
+  malformed binary fonts (including bounded WOFF/WOFF2 decompression), executable
+  TrueType instruction tables, active SVG glyph content, repository-managed
+  pre-commit hooks, and expanded
+  operating-system startup persistence surfaces.
+- Detect encoded PowerShell, Windows proxy-execution utilities, staged downloads,
+  CMake/Meson/Bazel/Make command hooks, service and daemon persistence, PDF active
+  actions, Office macros/external relationships/DDE fields, and executable VSIX
+  activation capabilities or installation scripts.
 
 ### Changed
 
@@ -12,9 +28,29 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Make benchmark subprocess exit-code handling explicit and organize its imports.
 - Migrate the complete landing page and documentation site from hand-authored HTML to a static Astro and TypeScript build while preserving public routes, content, metadata, accessibility, interactions, and the existing visual design.
 - Generate cross-guide search data during the Astro build, preserve sample-report bytes and CSP hashes as public assets, and update validation, CI, Make targets, and repository links for the generated static site.
+- Bump the embedded rules revision to `2026.09.19` for the expanded installation
+  and automatic-execution coverage.
 
 ### Fixed
 
+- Scan extensionless executable and shebang scripts for staged downloads; preserve
+  quoted paths containing spaces, ignore quoted/commented downloader examples,
+  correlate nested execution wrappers, recognize default curl/wget filenames, and
+  retain executable modes for scripts nested in ZIP or tar archives.
+- Reject malformed, overlapping, duplicate, over-expanding, or invalidly compressed
+  SFNT, TTC, WOFF, and WOFF2 font tables; accept bounded WOFF2 collection
+  directories; apply structural table checks after WOFF/WOFF2 decompression; and
+  validate conservative decoded-size lower bounds while keeping font and every
+  embedded-SVG document's decompression bounded.
+- Parse PDF names, comments, strings, and stream delimiters without treating passive
+  content as actions; correlate document-open and additional actions independently
+  of indirect-object order; reconstruct split/encoded Office DDE fields without
+  joining unrelated fields; and identify renamed macro projects from package metadata.
+- Parse escaped VSIX capability keys and executable `main`/`browser` entry points
+  while limiting activation and lifecycle checks to the extension's canonical
+  manifest, so bundled dependency manifests do not produce extension-level findings.
+- Preserve test, example, and evidence context from outer archive paths when
+  classifying findings inside Office, VSIX, font, and other nested packages.
 - Run the required platform build checks for documentation-only pull requests so branch protection can resolve every required check.
 
 ## [0.5.1] - 2026-09-15
@@ -207,6 +243,8 @@ explain` for offline rule guidance.
 - Added the optional repyy AI skill and documented installation with the
   `skills` CLI.
 
+[0.5.2]: https://github.com/Kevin-Umali/repyy/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/Kevin-Umali/repyy/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Kevin-Umali/repyy/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Kevin-Umali/repyy/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Kevin-Umali/repyy/compare/v0.3.1...v0.3.2

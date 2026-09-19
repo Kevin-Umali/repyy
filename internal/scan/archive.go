@@ -68,7 +68,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 		links[pathpkg.Clean(name)] = pathpkg.Clean(resolved)
 		return true
 	}
-	consume := func(name string, size int64, r io.Reader) bool {
+	consume := func(name string, size int64, mode os.FileMode, r io.Reader) bool {
 		if ctx.Err() != nil {
 			return false
 		}
@@ -97,7 +97,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			return true
 		}
 		virtual := parent + "!" + filepath.ToSlash(name)
-		s.scanContent(virtual, entry, 0, add, coverage)
+		s.scanContent(virtual, entry, mode, add, coverage)
 		if isArchive(name, entry) {
 			s.scanArchive(ctx, virtual, entry, depth+1, add, coverage)
 		}
@@ -149,7 +149,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 				coverage.Complete = false
 				continue
 			}
-			ok := consume(f.Name, int64(f.UncompressedSize64), r)
+			ok := consume(f.Name, int64(f.UncompressedSize64), f.Mode(), r)
 			r.Close()
 			if !ok {
 				return
@@ -198,7 +198,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			coverage.Skipped = append(coverage.Skipped, parent+"!"+h.Name+" (unsupported archive entry type)")
 			continue
 		}
-		if !consume(h.Name, h.Size, tr) {
+		if !consume(h.Name, h.Size, h.FileInfo().Mode(), tr) {
 			return
 		}
 	}
