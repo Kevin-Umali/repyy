@@ -8,6 +8,8 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 - Build the Astro documentation site before the release workflow validates its
   generated routes and artifacts, and refresh the npm lockfile for clean installs.
+- Require successful main-branch CI for the exact release commit before the prepare
+  workflow creates a tag or dispatches publication.
 - Publish the scanner and documentation changes prepared as v0.5.2 under v0.5.3;
   the protected v0.5.2 tag failed its pre-publication gate and produced no release
   or downloadable assets.

@@ -139,6 +139,12 @@ exit "${COSIGN_FAIL:-0}"
                     publish.validate_manifest(source, "11.2.3"), source.read_bytes()
                 )
 
+    def test_prepare_release_waits_for_main_ci_before_tagging(self):
+        workflow = (SCRIPTS.parent / ".github/workflows/prepare-release.yml").read_text()
+        wait = workflow.index("actions/workflows/ci.yml/runs")
+        create_tag = workflow.index('git/refs" -f "ref=refs/tags/$tag"')
+        self.assertLess(wait, create_tag)
+
 
 if __name__ == "__main__":
     unittest.main()
