@@ -87,6 +87,20 @@ func categoryLegitimateUse(category string) string {
 		return "Frameworks and developer tools sometimes evaluate generated or sandboxed code."
 	case "image-active-content":
 		return "Interactive SVG assets may intentionally contain script or event handlers."
+	case "editor-extension-recommendation":
+		return "Teams commonly recommend reviewed editor extensions for a workspace."
+	case "editor-extension-installation":
+		return "Development containers and setup scripts often provision reviewed editor extensions."
+	case "editor-command":
+		return "Workspace tasks and debugger configurations commonly invoke reviewed project tools."
+	case "devcontainer-feature-installation":
+		return "Development containers commonly install reusable, reviewed tooling features."
+	case "directory-auto-execution", "development-shell-execution":
+		return "Development environment tools run reviewed setup commands when a trusted environment is entered."
+	case "system-installation":
+		return "Bootstrap scripts commonly install reviewed packages and developer tools."
+	case "font-installation":
+		return "Applications and design projects may install bundled, licensed fonts for consistent rendering."
 	default:
 		return "The behavior may be legitimate when its inputs, destination, and execution context are understood."
 	}
@@ -137,6 +151,7 @@ func structuredRuleCatalog() []RuleInfo {
 	entries := []entry{
 		{"ARCHIVE-001", "archive-traversal", "Archive entry escapes its extraction root", "Do not extract the archive.", model.SeverityCritical, model.ConfidenceHigh},
 		{"BINARY-001", "compiled-binary", "Compiled executable content is present", "Verify the binary provenance and hash before use.", model.SeverityHigh, model.ConfidenceHigh},
+		{"CHAIN-004", "staged-download-execute", "Downloaded file is executed later in the same script", "Do not run until the downloaded content, destination, and execution path are verified.", model.SeverityCritical, model.ConfidenceHigh},
 		{"COMBO-001", "collection-and-exfiltration", "Collection appears alongside network transfer", "Verify the collected data and destination before running the repository.", model.SeverityHigh, model.ConfidenceHigh},
 		{"COMBO-002", "fetch-and-execute", "Network retrieval appears alongside execution", "Do not run until the fetched content and execution path are verified.", model.SeverityCritical, model.ConfidenceHigh},
 		{"COMBO-003", "evasion-and-execution", "Environment evasion appears alongside execution", "Verify the environment checks and execution path.", model.SeverityHigh, model.ConfidenceHigh},
@@ -144,9 +159,20 @@ func structuredRuleCatalog() []RuleInfo {
 		{"CICD-007", "ci-cache-integrity", "Low-trust workflow explicitly allows cache writes", "Keep low-trust jobs read-only for cache access, or verify that they cannot process untrusted input before saving a cache.", model.SeverityHigh, model.ConfidenceMedium},
 		{"CICD-008", "ci-runner-trust", "Pull-request workflow runs on a self-hosted runner", "Verify repository visibility, fork approval, runner isolation, and what untrusted pull-request code can access.", model.SeverityHigh, model.ConfidenceMedium},
 		{"DOTNET-001", "dotnet-build-execution", "MSBuild project or imported file runs a command", "Inspect the Exec command and its conditions before building or restoring the project.", model.SeverityHigh, model.ConfidenceMedium},
+		{"DOC-001", "document-active-content", "PDF declares active or embedded content", "Review or remove PDF actions and embedded files before opening it.", model.SeverityHigh, model.ConfidenceMedium},
+		{"DOC-002", "office-macro", "Office package contains a VBA macro project", "Inspect or remove the macro project before opening the document.", model.SeverityHigh, model.ConfidenceHigh},
+		{"DOC-003", "office-external-relationship", "Office package references external content", "Review and remove unneeded external relationships.", model.SeverityMedium, model.ConfidenceHigh},
+		{"DOC-004", "office-dynamic-data-exchange", "Office document contains a Dynamic Data Exchange field", "Remove the DDE field or inspect its command and data source.", model.SeverityHigh, model.ConfidenceMedium},
 		{"EXECBIT-001", "executable-file", "File has executable permissions", "Review whether this file needs to be executable.", model.SeverityLow, model.ConfidenceMedium},
+		{"FONT-002", "binary-font", "Binary font file requires provenance review", "Verify the font source, license, hash, and signature before installing or previewing it.", model.SeverityMedium, model.ConfidenceHigh},
+		{"FONT-003", "font-container-integrity", "Font container is malformed or contains an executable payload", "Do not install or preview the font; replace it with a trusted copy.", model.SeverityHigh, model.ConfidenceHigh},
+		{"FONT-004", "font-active-content", "OpenType SVG glyph contains active content", "Remove active SVG content or replace the font with a trusted copy.", model.SeverityMedium, model.ConfidenceMedium},
+		{"FONT-005", "font-program", "Font contains TrueType instructions", "Verify provenance before passing the instruction stream to a font engine.", model.SeverityLow, model.ConfidenceHigh},
 		{"GITHOOK-002", "git-hook", "Active Git hook contains execution or remote-fetch behavior", "Disable the hook and review it before running Git commands.", model.SeverityCritical, model.ConfidenceHigh},
 		{"IMAGE-001", "image-active-content", "SVG contains active content", "Review the SVG source and remove unneeded scripts, event handlers, or JavaScript links.", model.SeverityMedium, model.ConfidenceMedium},
+		{"IDE-007", "editor-extension-package", "Packaged VSIX editor extension is present", "Verify the extension publisher, signature, package contents, and hash before installing it.", model.SeverityMedium, model.ConfidenceHigh},
+		{"IDE-008", "editor-extension-capability", "VSIX extension declares activation or execution capabilities", "Review activation events and contributed execution surfaces before installation.", model.SeverityMedium, model.ConfidenceHigh},
+		{"IDE-009", "editor-extension-install-script", "VSIX extension package declares an installation lifecycle script", "Inspect the lifecycle command and bundled files before installation.", model.SeverityHigh, model.ConfidenceHigh},
 		{"JVMWRAP-001", "jvm-wrapper-source", "JVM wrapper distribution URL is missing or redirects from the official source", "Verify the wrapper distribution before running it.", model.SeverityHigh, model.ConfidenceHigh},
 		{"JVMWRAP-002", "jvm-wrapper-integrity", "JVM wrapper distribution has no expected SHA-256", "Pin the reviewed distribution SHA-256 in the wrapper properties.", model.SeverityMedium, model.ConfidenceHigh},
 		{"JVMWRAP-003", "jvm-wrapper-integrity", "JVM wrapper distribution SHA-256 is malformed", "Replace the checksum with the reviewed 64-character SHA-256.", model.SeverityHigh, model.ConfidenceHigh},
@@ -208,6 +234,16 @@ func structuredApplicablePaths(id string) []string {
 		return []string{".github/workflows/*.yml", ".github/workflows/*.yaml"}
 	case id == "IMAGE-001":
 		return []string{"*.svg"}
+	case strings.HasPrefix(id, "DOC-"):
+		return []string{"*.pdf", "Office Open XML package entries"}
+	case id == "IDE-007":
+		return []string{"*.vsix"}
+	case id == "IDE-008" || id == "IDE-009":
+		return []string{"*.vsix package entries"}
+	case id == "FONT-002" || id == "FONT-003":
+		return []string{"*.ttf", "*.otf", "*.ttc", "*.woff", "*.woff2"}
+	case id == "FONT-004" || id == "FONT-005":
+		return []string{"*.ttf", "*.otf", "*.ttc", "*.woff", "*.woff2"}
 	default:
 		return []string{"**"}
 	}

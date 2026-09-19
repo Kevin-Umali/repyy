@@ -405,6 +405,15 @@ func correlatedFinding(id, category, path, message, remediation string, hash [32
 }
 
 func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add func(model.Finding), coverage *model.Coverage) {
+	if strings.EqualFold(filepath.Ext(innerPath(path)), ".vsix") {
+		finding := s.finding("IDE-007", "editor-extension-package", model.SeverityMedium, model.ConfidenceHigh, path, 0, "Packaged VSIX editor extension is present", fmt.Sprintf("VSIX archive; %d bytes", len(data)), "Verify the extension publisher, signature, package contents, and hash before installing it.")
+		finding.Context = classifyContext(path, nil)
+		finding.Disposition = model.DispositionReview
+		if isContextualContext(finding.Context) {
+			finding.Disposition = model.DispositionInformational
+		}
+		add(finding)
+	}
 	if executableMagic(data) {
 		add(s.finding("BINARY-001", "compiled-binary", model.SeverityHigh, model.ConfidenceHigh, path, 0, "Compiled executable content is present", "executable file signature", "Verify the binary's provenance and hash before use."))
 	} else if mode&0o111 != 0 {
@@ -415,6 +424,8 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		finding.Context = "confirmed-ioc"
 		add(finding)
 	}
+	media.ScanFont(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
+	s.scanActiveContent(path, data, add)
 	if !looksText(data) {
 		if scanRelevantText(path, data, mode) {
 			coverage.Complete = false
@@ -550,7 +561,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			add(finding)
 		}
 	}
-	s.scanStructured(path, data, add)
+	s.scanStructured(path, data, mode, add)
 	s.scanSupplyChain(path, data, add)
 }
 
@@ -601,7 +612,8 @@ func nearbyDangerousLine(lines []bool, index, distance int) bool {
 	return false
 }
 
-func (s *Scanner) scanStructured(path string, data []byte, add func(model.Finding)) {
+func (s *Scanner) scanStructured(path string, data []byte, mode os.FileMode, add func(model.Finding)) {
+	s.scanStagedExecution(path, data, mode, add)
 	if isGitHubWorkflow(path) {
 		s.scanWorkflowActions(path, data, add)
 	}
@@ -912,8 +924,9 @@ func looksLikeSignatureDefinition(line []byte) bool {
 }
 
 func classifyContext(path string, line []byte) string {
+	fullPath := strings.ToLower(filepath.ToSlash(path))
 	plainPath := strings.ToLower(innerPath(path))
-	slashed := "/" + strings.TrimPrefix(plainPath, "/")
+	slashed := "/" + strings.TrimPrefix(fullPath, "/")
 	ext := filepath.Ext(plainPath)
 	base := filepath.Base(plainPath)
 	if strings.Contains(slashed, "/.local-evidence/") || strings.Contains(slashed, "/evidence/") {

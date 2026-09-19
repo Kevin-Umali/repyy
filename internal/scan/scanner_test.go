@@ -290,7 +290,7 @@ func TestRequiredDetectionFamilies(t *testing.T) {
 		"CRED-001", "FINGERPRINT-001", "MINER-001", "UNICODE-001", "EVADE-001",
 		"IDE-001", "OBFS-003", "CICD-001", "SECRET-001", "IMPORT-001",
 		"DOCKER-001", "REVSHELL-001", "EXFIL-001", "PROTO-001", "PKG-004",
-		"TYPOSQUAT-001",
+		"TYPOSQUAT-001", "IDE-003", "IDE-004", "IDE-005", "IDE-006", "AUTORUN-001", "AUTORUN-002", "INSTALL-001", "FONT-001",
 	}
 	for _, id := range want {
 		if !ruleIDs[id] && !strings.HasPrefix(id, "PKG-") {
@@ -416,7 +416,7 @@ func TestRuleCatalogMetadataIsComplete(t *testing.T) {
 			t.Errorf("rule %s is missing from catalog", rule.ID)
 		}
 	}
-	for _, id := range []string{"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "CICD-006", "CICD-007", "CICD-008", "EXECBIT-001", "GITHOOK-002", "IMAGE-001", "IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002"} {
+	for _, id := range []string{"ARCHIVE-001", "BINARY-001", "COMBO-001", "COMBO-002", "COMBO-003", "CICD-006", "CICD-007", "CICD-008", "DOC-001", "DOC-002", "DOC-003", "DOC-004", "EXECBIT-001", "FONT-002", "FONT-003", "FONT-004", "FONT-005", "GITHOOK-002", "IDE-007", "IDE-008", "IDE-009", "IMAGE-001", "IOC-HASH-SHA256", "IOC-PKG-*", "OBFS-004", "OBFS-005", "PKG-001", "PKG-002", "PKG-003", "PKG-004", "PKG-005", "PKG-006", "PKG-007", "REPO-001", "REPO-002", "SYMLINK-001", "SYMLINK-002"} {
 		if !seen[id] {
 			t.Errorf("structured rule %s is missing from catalog", id)
 		}

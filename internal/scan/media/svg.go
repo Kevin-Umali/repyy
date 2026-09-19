@@ -4,6 +4,7 @@ package media
 import (
 	"bytes"
 	"encoding/xml"
+	"io"
 	"path/filepath"
 	"strings"
 
@@ -57,6 +58,34 @@ func ScanSVG(path string, data []byte, classifyContext func(string) string, isCo
 			finding.Disposition = model.DispositionInformational
 		}
 		add(finding)
+	}
+}
+
+func activeSVGReason(data []byte) (string, bool) {
+	decoder := xml.NewDecoder(bytes.NewReader(data))
+	seenRoot := false
+	activeReason := ""
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			return activeReason, seenRoot
+		}
+		if err != nil {
+			return "", false
+		}
+		element, ok := token.(xml.StartElement)
+		if !ok {
+			continue
+		}
+		if !seenRoot {
+			seenRoot = true
+			if !strings.EqualFold(element.Name.Local, "svg") {
+				return "", false
+			}
+		}
+		if activeReason == "" {
+			activeReason = activeElement(element)
+		}
 	}
 }
 
