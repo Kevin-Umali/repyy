@@ -36,7 +36,12 @@ state, and exported APIs used by only one internal package.
 - Reusable inert files belong under that package's `testdata/` directory.
 - Cross-package or built-binary checks belong in `test/integration/`.
 - Every detection needs a positive test and a realistic benign negative test.
-- Regression tests should name the bug or false-positive class they prevent.
+- Test observable scanner behavior with fixed, inert inputs and expected findings, locations,
+  context, or coverage. Do not generate expected matches from a rule's own regex.
+- Add a regression test for a bug only when existing behavioral tests miss the violated property;
+  expand an existing case when it already owns that behavior.
+- Avoid tests that copy a production ID list or assert that a constant exists. They detect edits,
+  not broken behavior. Combine small cases when they protect the same contract.
 
 Do not move all tests into one isolated folder: that fights Go's package test model and makes
 ownership less clear.
@@ -93,8 +98,8 @@ described in `SECURITY.md`.
 
 Run `make format` before submitting changes and `make format-check` to verify formatting. These
 commands need Go, Node.js/npm, and [uv](https://docs.astral.sh/uv/); formatter versions are pinned
-in the Makefile. Prettier matches the maintainer’s VS Code setup: version 3.7.4, a 160-character
-print width, and default Markdown wrapping (preserve). Go uses gofmt, web/docs/configuration files use Prettier, Python uses Ruff, and
+in the Makefile. The site package pins its own Prettier version. The project uses a 160-character
+print width and default Markdown wrapping (preserve). Go uses gofmt, web/docs/configuration files use Prettier, Python uses Ruff, and
 shell scripts use shfmt. Generated HTML reports are deliberately excluded: their inline CSS and
 JavaScript are protected by hashes in the report's Content Security Policy. Regenerate sample
 reports with the [benchmark runner](demo/README.md), then run `python3 site/check_docs.py` to check

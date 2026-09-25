@@ -2,7 +2,7 @@ package manifest
 
 import "testing"
 
-func TestParseSupportedManifests(t *testing.T) {
+func TestParseSupportedAndUnknownManifests(t *testing.T) {
 	tests := []struct{ path, body, ecosystem, name, version string }{
 		{"package.json", `{"dependencies":{"cors-parser":"1.0.0"}}`, "npm", "cors-parser", "1.0.0"},
 		{"requirements.txt", "openaii==1.2.3\n", "pip", "openaii", "==1.2.3"},
@@ -22,11 +22,8 @@ func TestParseSupportedManifests(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestUnknownFile(t *testing.T) {
 	if got, ok := Parse("README.md", []byte("x")); ok || got != nil {
-		t.Fatalf("got %#v, %v", got, ok)
+		t.Fatalf("unknown file parsed: %#v, supported=%v", got, ok)
 	}
 }
 

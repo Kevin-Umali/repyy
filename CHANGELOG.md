@@ -2,6 +2,19 @@
 
 All notable changes are documented here. The project follows Semantic Versioning after the first published release.
 
+## [Unreleased]
+
+### Changed
+
+- Consolidate scanner tests by behavior, replace self-referential rule and catalog checks with observable scan expectations, and keep edge-case and benign-control coverage in the relevant suites.
+- Clarify the security boundary and release evidence in the guides and website, with clearer starting paths for first-time reviewers, CLI users, and security reviewers.
+
+### Fixed
+
+- Correct documentation navigation links and labels, and serve the site favicon.
+
+No scanner runtime behavior or detection rules changed.
+
 ## [0.5.3] - 2026-09-19
 
 ### Fixed

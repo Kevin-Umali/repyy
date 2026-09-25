@@ -20,6 +20,10 @@ func TestScanJVMWrapperFlagsRedirectedDistributionAndMissingChecksum(t *testing.
 	if finding, ok := ruleFinding(findings, "JVMWRAP-002"); !ok || finding.Severity != model.SeverityMedium || finding.Disposition != model.DispositionHarden {
 		t.Fatalf("unexpected missing checksum finding: %+v", finding)
 	}
+	unexpectedPort := scanInertPackageFixture(t, "gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://services.gradle.org:444/distributions/gradle-9.1-bin.zip\ndistributionSha256Sum="+strings.Repeat("a", 64)+"\n")
+	if !hasRule(unexpectedPort, "JVMWRAP-001") || hasRule(unexpectedPort, "JVMWRAP-002") {
+		t.Fatalf("official host on unexpected port was trusted or checksum ignored: %+v", unexpectedPort)
+	}
 }
 
 func TestScanJVMWrapperFlagsMalformedChecksum(t *testing.T) {

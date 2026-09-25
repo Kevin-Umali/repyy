@@ -3,6 +3,7 @@
 /bin/
 /output/
 /outputs/
+/.tmp/
 /.playwright-cli/
 **/testdata/**
 # Exact inline CSS/JS bytes are covered by report Content-Security-Policy hashes.
