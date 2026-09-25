@@ -80,17 +80,24 @@ func TestSecureGitEnvironmentAllowsOnlyRequestedSSHProtocol(t *testing.T) {
 	t.Fatal("SSH clone did not restrict Git to the SSH protocol")
 }
 
-func TestRejectsCredentialsInURL(t *testing.T) {
-	_, err := Prepare(context.Background(), "https://user:secret@example.com/repo.git", Options{})
-	if err == nil || strings.Contains(err.Error(), "secret") {
-		t.Fatalf("expected redacted rejection, got %v", err)
-	}
-}
-
-func TestRejectsQueryAndFragmentInURL(t *testing.T) {
-	_, err := Prepare(context.Background(), "https://example.com/repo.git?token=secret#fragment", Options{})
-	if err == nil || strings.Contains(err.Error(), "secret") || strings.Contains(err.Error(), "token=") || strings.Contains(err.Error(), "#fragment") {
-		t.Fatalf("expected redacted rejection, got %v", err)
+func TestRejectsRemoteURLsContainingSecretsWithoutLeakingThem(t *testing.T) {
+	for _, tc := range []struct {
+		input   string
+		secrets []string
+	}{
+		{"https://user:secret@example.com/repo.git", []string{"secret"}},
+		{"https://example.com/repo.git?token=secret#fragment", []string{"secret", "token=", "#fragment"}},
+	} {
+		_, err := Prepare(context.Background(), tc.input, Options{})
+		if err == nil {
+			t.Errorf("expected rejection for %q", tc.input)
+			continue
+		}
+		for _, secret := range tc.secrets {
+			if strings.Contains(err.Error(), secret) {
+				t.Errorf("rejection leaked %q: %v", secret, err)
+			}
+		}
 	}
 }
 

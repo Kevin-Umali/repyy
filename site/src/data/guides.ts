@@ -24,7 +24,11 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Start with a scan.Choose your boundary.",
+        label: "Start with a scan",
+      },
+      {
+        id: "choose-your-path",
+        label: "Choose your path",
       },
       {
         id: "getting-started",
@@ -70,7 +74,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Start with aquiet first scan.",
+        label: "Start with a first scan",
       },
       {
         id: "prerequisites",
@@ -112,7 +116,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Every command.A clear next move.",
+        label: "Every command, one next move",
       },
       {
         id: "shape",
@@ -170,7 +174,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Make policy explicit.Keep review narrow.",
+        label: "Make policy explicit",
       },
       {
         id: "boundary",
@@ -220,7 +224,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Give the scanits own boundary.",
+        label: "Give the scan its own boundary",
       },
       {
         id: "docker",
@@ -270,7 +274,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Know what the scan can see.Know where review still matters.",
+        label: "Know what the scan can see",
       },
       {
         id: "map",
@@ -316,7 +320,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Fresh signals.Private by default.",
+        label: "Fresh signals, private by default",
       },
       {
         id: "difference",
@@ -350,7 +354,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Make the safe first move.Before code runs.",
+        label: "Make the first move before code runs",
       },
       {
         id: "install",
@@ -380,7 +384,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Understand the boundary.Inspect the evidence.",
+        label: "Understand the boundary",
       },
       {
         id: "security-model",
@@ -442,7 +446,7 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Inspect a real report.No installation needed.",
+        label: "Inspect a real report",
       },
       {
         id: "safety-design",
@@ -476,11 +480,11 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Verify what you download.Know what it proves.",
+        label: "Verify what you download",
       },
       {
         id: "current-evidence-status",
-        label: "Current evidence status",
+        label: "Verified v0.5.3 release",
       },
       {
         id: "version-and-commit-identity",
@@ -522,11 +526,11 @@ export const guides = [
     sections: [
       {
         id: "overview",
-        label: "Test the scanner.Keep the gaps visible.",
+        label: "Test the scanner",
       },
       {
         id: "existing-regression-coverage",
-        label: "Existing regression coverage",
+        label: "Behavioral test coverage",
       },
       {
         id: "fuzz-targets-and-properties",

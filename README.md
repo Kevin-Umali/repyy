@@ -6,7 +6,9 @@
 
 Inspect a take-home assignment before installing dependencies, starting the project, or opening its
 folder in your IDE. `repyy` provides a local static security review of unfamiliar source
-repositories. It reads files as data and does not import, build, test, or execute the target.
+repositories. During a normal scan, it reads target files as data and does not intentionally import,
+build, test, or execute assignment code. Remote scans may invoke host Git, and Docker mode invokes
+the Docker client and Repyy worker; see [Trust and Limitations](docs/TRUST.md) for those boundaries.
 
 **Repyy identifies risks. It cannot prove that a repository is safe.**
 
@@ -58,6 +60,15 @@ Use [repyy.dev/docs](https://repyy.dev/docs/) for the rendered documentation. In
 - [Trust and limitations](docs/TRUST.md)
 - [Release verification](docs/VERIFICATION.md)
 - [Security testing](docs/SECURITY-TESTING.md)
+
+### Choose a starting point
+
+- **New to repository review:** start with [Installation](docs/INSTALLATION.md), run a local scan,
+  then follow [Detection coverage and limits](docs/COVERAGE.md) to read the report.
+- **Comfortable with the command line:** use the [CLI reference](docs/CLI.md) for flags, formats,
+  and repeatable scan workflows.
+- **Reviewing the security boundary:** read [Trust and Limitations](docs/TRUST.md), then check
+  [Release verification](docs/VERIFICATION.md) and [Security testing](docs/SECURITY-TESTING.md).
 
 Development and deployment instructions for the Astro site are in [site/README.md](site/README.md).
 

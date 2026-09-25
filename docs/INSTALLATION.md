@@ -1,8 +1,9 @@
 # Installation and first scan
 
 repyy is a native command-line program. Install it before opening or building an unfamiliar
-repository. The scanner reads target files as data and never installs target packages or runs target
-code.
+repository. During a normal scan, the scanner reads target files as data and does not intentionally
+install target packages or run target code. Remote scans may invoke Git; Docker mode also invokes
+the Docker client and Repyy worker. See [Trust and Limitations](TRUST.md) for the full boundary.
 
 For a first review, verify the binary and save an HTML report:
 

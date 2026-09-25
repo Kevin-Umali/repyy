@@ -141,36 +141,34 @@ func TestDirectorySymlinkKeepsRequestedNameAndFindings(t *testing.T) {
 	}
 }
 
-func TestTerminalScanReportsProgressOnStderr(t *testing.T) {
+func TestScanProgressFollowsOutputFormat(t *testing.T) {
 	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
 	target := t.TempDir()
 	if err := os.WriteFile(filepath.Join(target, "main.go"), []byte("package main\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	var stdout, stderr bytes.Buffer
-	code, err := Run([]string{"scan", target}, &stdout, &stderr, "test")
-	if err != nil || code != 0 {
-		t.Fatalf("code=%d err=%v", code, err)
-	}
-	progress := stderr.String()
-	if !strings.Contains(progress, "repyy: scanning ") || !strings.Contains(progress, "repyy: scanned ") {
-		t.Fatalf("missing scan progress on stderr: %q", progress)
-	}
-}
-
-func TestMachineReadableScanDoesNotReportProgress(t *testing.T) {
-	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
-	target := t.TempDir()
-	if err := os.WriteFile(filepath.Join(target, "main.go"), []byte("package main\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	var stdout, stderr bytes.Buffer
-	code, err := Run([]string{"scan", target, "--format=json"}, &stdout, &stderr, "test")
-	if err != nil || code != 0 {
-		t.Fatalf("code=%d err=%v", code, err)
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("machine-readable scan wrote progress to stderr: %q", stderr.String())
+	for _, tc := range []struct {
+		name, format string
+		wantProgress bool
+	}{
+		{"terminal", "terminal", true},
+		{"machine-readable", "json", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code, err := Run([]string{"scan", target, "--format", tc.format}, &stdout, &stderr, "test")
+			if err != nil || code != 0 {
+				t.Fatalf("code=%d err=%v", code, err)
+			}
+			progress := stderr.String()
+			if tc.wantProgress {
+				if !strings.Contains(progress, "repyy: scanning ") || !strings.Contains(progress, "repyy: scanned ") {
+					t.Fatalf("missing scan progress on stderr: %q", progress)
+				}
+			} else if progress != "" {
+				t.Fatalf("machine-readable scan wrote progress to stderr: %q", progress)
+			}
+		})
 	}
 }
 
@@ -207,17 +205,14 @@ func TestColorModeHonorsNoColor(t *testing.T) {
 	}
 }
 
-func TestDisplayTargetRedactsURLCredentials(t *testing.T) {
-	got := displayTarget("https://user:secret@example.com/repo.git")
-	if got != "https://[REDACTED]@example.com/repo.git" {
-		t.Fatalf("got %q", got)
-	}
-}
-
-func TestDisplayTargetOmitsURLQueryAndFragment(t *testing.T) {
-	got := displayTarget("https://example.com/repo.git?token=secret#fragment")
-	if got != "https://example.com/repo.git" {
-		t.Fatalf("got %q", got)
+func TestDisplayTargetRemovesURLSecrets(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"https://user:secret@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"},
+		{"https://example.com/repo.git?token=secret#fragment", "https://example.com/repo.git"},
+	} {
+		if got := displayTarget(tc.input); got != tc.want {
+			t.Errorf("displayTarget(%q) = %q, want %q", tc.input, got, tc.want)
+		}
 	}
 }
 
@@ -446,19 +441,15 @@ func TestScanCanRenderHTMLDirectly(t *testing.T) {
 	}
 }
 
-func TestReportRejectsUnsupportedSchema(t *testing.T) {
-	input := filepath.Join(t.TempDir(), "report.json")
-	if err := os.WriteFile(input, []byte(`{"schema_version":"2"}`), 0o600); err != nil {
+func TestReportRejectsInvalidInput(t *testing.T) {
+	root := t.TempDir()
+	unsupported := filepath.Join(root, "unsupported.json")
+	if err := os.WriteFile(unsupported, []byte(`{"schema_version":"2"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	code, err := Run([]string{"report", input}, &bytes.Buffer{}, &bytes.Buffer{}, "test")
-	if code != 3 || err == nil || !strings.Contains(err.Error(), "unsupported report schema") {
-		t.Fatalf("code=%d err=%v", code, err)
+	if code, err := Run([]string{"report", unsupported}, &bytes.Buffer{}, &bytes.Buffer{}, "test"); code != 3 || err == nil || !strings.Contains(err.Error(), "unsupported report schema") {
+		t.Fatalf("unsupported schema: code=%d err=%v", code, err)
 	}
-}
-
-func TestReportRejectsMalformedAndOversizedInput(t *testing.T) {
-	root := t.TempDir()
 	malformed := filepath.Join(root, "malformed.json")
 	if err := os.WriteFile(malformed, []byte(`{"schema_version":`), 0o600); err != nil {
 		t.Fatal(err)

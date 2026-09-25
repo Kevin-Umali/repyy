@@ -1,7 +1,6 @@
 # Releases and Verification
 
-Reviewed: 2026-09-15. Release evidence is checked against the published version; subsequent changes are
-identified explicitly.
+Reviewed: 2026-09-25. Release evidence is tied to the exact version and source commit.
 
 Download only from [official GitHub Releases](https://github.com/Kevin-Umali/repyy/releases). The
 sandbox image is `ghcr.io/kevin-umali/repyy-sandbox`. Verify downloaded artifacts before executing
@@ -10,16 +9,23 @@ them.
 Provenance identifies a build's source and workflow. It does not prove the code is harmless, that
 the maintainer account was uncompromised, or that a scan will detect every risk.
 
-## Current evidence status
+## Current verified release: v0.5.3
 
-[v0.5.1 is published](https://github.com/Kevin-Umali/repyy/releases/tag/v0.5.1) from commit
-`261cc64bde67b9c73ba23021e052c330f64bbd05`. Its
-[release workflow](https://github.com/Kevin-Umali/repyy/actions/runs/34874376636) passed the
-fresh-download gate before publication, including checksum signatures, hashes, build provenance,
-SPDX attestations, and container signatures/provenance. Homebrew and Scoop manifests were updated
-after that gate passed. A separate local download verification also passed using GitHub CLI 2.100.0
-and Cosign 3.1.3. The extracted Linux binary's provenance was verified before reproducing benchmark
-1.1.0: eight expected indicators, no high/critical control findings, no skipped or incomplete scans.
+[v0.5.3 is published](https://github.com/Kevin-Umali/repyy/releases/tag/v0.5.3) from commit
+`bf3b423841c78f91c0353c8c455d202c4aa29f76`. Its
+[release workflow](https://github.com/Kevin-Umali/repyy/actions/runs/35443929820) completed
+successfully, including the step that downloads draft assets and runs `scripts/verify-release.sh`.
+That gate checks checksum signatures and hashes, artifact provenance, SPDX attestations, and
+container signatures/provenance. The workflow then published package-manager manifests. These are
+workflow results, not a separate local re-verification.
+
+The published [benchmark results](https://github.com/Kevin-Umali/repyy/releases/download/v0.5.3/results.md)
+record benchmark 1.1.0 against Repyy 0.5.3: eight of eight expected risky fixtures detected, zero
+of eight clean controls flagged at high/critical, and no skipped or incomplete fixture scans. This
+small inert corpus does not establish general detection accuracy.
+
+For any later release, inspect that release's assets and workflow run, then verify the downloaded
+artifact with the steps below. Do not transfer the v0.5.3 result to another build.
 
 Release v0.5.0 publishes checksums and signing certificates, a signed sandbox image digest and
 per-archive SBOMs. v0.5.1 adds GitHub attestations and a release-set SPDX SBOM.
@@ -115,12 +121,12 @@ bash scripts/verify-release.sh vX.Y.Z /tmp/repyy-verification-vX.Y.Z
 This needs GitHub CLI with attestation support, Cosign and SHA-256 tooling; GitHub Actions supplies
 the tools for maintainers who do not want local installations. It downloads release assets into the
 fresh directory and checks checksum signatures, hashes, artifact provenance, SBOM attestations and
-container signatures/provenance. A nonzero result blocks publication. The v0.5.1 workflow passed this gate before publication. Every subsequent release must pass it again.
+container signatures/provenance. A nonzero result blocks publication. The v0.5.3 workflow passed this gate before publication. Every subsequent release must pass it again.
 
 ## Repository security signals
 
 CodeQL is configured for Go and [GitHub Actions workflow security analysis](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries).
-Go and Actions analysis passed on the v0.5.1 source commit.
+Go and Actions analysis [passed on the v0.5.3 source commit](https://github.com/Kevin-Umali/repyy/actions/runs/35443775664).
 
 Inspect [CodeQL runs](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml),
 [Scorecard workflow](https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml), the
@@ -135,12 +141,12 @@ cannot enforce them. No extra paid service or separate badging account is requir
 pipeline.
 
 The first assessment flagged broad release-workflow token permissions, unpinned Docker base images,
-and the missing private-reporting link. Follow-up changes scope write permissions to the release
-jobs, pin the base images by verified digest, and link the reporting form. These changes are after
-the v0.5.1 tag and will apply to subsequent releases.
+and the missing private-reporting link. Follow-up source changes scope write permissions to the
+release jobs, pin the base images by verified digest, and link the reporting form. Those changes are
+after the v0.5.1 tag and are present in the v0.5.3 source. Verify their presence in each later
+release separately.
 
-Main requires CI checks and disallows bypass by administrators. Release tags matching `v*` are
-protected against updates and deletion. Main does not require independent approval or CODEOWNERS
-review; those Scorecard findings remain open. Repository age and the absence of an OpenSSF
-best-practices badge are also visible limitations. Independent security review was deferred for
-this release; no independent audit or certification is claimed.
+Branch and tag protection are live GitHub settings, not properties of a release artifact. Check
+them in GitHub before relying on them. The earlier Scorecard assessment identified missing
+independent approval and CODEOWNERS review; treat those as dated observations. No independent audit
+or certification is claimed.

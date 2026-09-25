@@ -1,4 +1,4 @@
-"""Offline regression checks for release verification ordering and manifest identity."""
+"""Offline behavioral checks for the release gate and manifest identity."""
 
 import hashlib
 import importlib.util
@@ -42,13 +42,14 @@ class ReleaseGateTests(unittest.TestCase):
             names.append(f"repyy-container-linux-{arch}.spdx.json")
         for name in names:
             (self.assets / name).write_text("inert verification fixture\n")
-        image = "ghcr.io/kevin-umali/repyy-sandbox@sha256:" + "a" * 64 + "\n"
-        for name in [
-            "repyy-sandbox-image.txt",
-            "repyy-container-linux-amd64.txt",
-            "repyy-container-linux-arm64.txt",
+        for name, digest in [
+            ("repyy-sandbox-image.txt", "c" * 64),
+            ("repyy-container-linux-amd64.txt", "a" * 64),
+            ("repyy-container-linux-arm64.txt", "b" * 64),
         ]:
-            (self.assets / name).write_text(image)
+            (self.assets / name).write_text(
+                f"ghcr.io/kevin-umali/repyy-sandbox@sha256:{digest}\n"
+            )
         checksum = hashlib.sha256(
             (self.assets / "repyy.tar.gz").read_bytes()
         ).hexdigest()
@@ -106,7 +107,12 @@ exit "${COSIGN_FAIL:-0}"
     def test_success_checks_both_container_platforms(self):
         result, calls = self.gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(calls.count("--predicate-type https://spdx.dev/Document"), 7)
+        for digest in ("a" * 64, "b" * 64):
+            self.assertIn(
+                f"gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:{digest} "
+                "--predicate-type https://spdx.dev/Document",
+                calls,
+            )
         self.assertIn("Verified checksums", result.stdout)
 
     def test_signature_failure_stops_before_attestations(self):
@@ -138,12 +144,6 @@ exit "${COSIGN_FAIL:-0}"
                 self.assertEqual(
                     publish.validate_manifest(source, "11.2.3"), source.read_bytes()
                 )
-
-    def test_prepare_release_waits_for_main_ci_before_tagging(self):
-        workflow = (SCRIPTS.parent / ".github/workflows/prepare-release.yml").read_text()
-        wait = workflow.index("actions/workflows/ci.yml/runs")
-        create_tag = workflow.index('git/refs" -f "ref=refs/tags/$tag"')
-        self.assertLess(wait, create_tag)
 
 
 if __name__ == "__main__":

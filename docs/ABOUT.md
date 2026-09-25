@@ -17,7 +17,7 @@ history and maintainer context.
 ## Project principles
 
 Read assignment contents as untrusted data. Report evidence and uncertainty. Keep incomplete
-coverage visible. Keep private source and reports local during scans. Prefer regression coverage and
+coverage visible. Keep private source and reports local during scans. Prefer behavioral tests and
 verifiable releases over expanding rule counts.
 
 Repyy identifies risks. It cannot prove that a repository is safe.

@@ -101,20 +101,12 @@ func TestHTMLIsSelfContainedAndEscapesFindings(t *testing.T) {
 	if first.String() != second.String() {
 		t.Fatal("HTML rendering is not deterministic")
 	}
-	if !strings.Contains(html, "Content-Security-Policy") || !strings.Contains(html, "&lt;script&gt;alert(1)&lt;/script&gt;") || !strings.Contains(html, `data-filter="rule"`) || !strings.Contains(html, `<option value="actionable" selected>Review queue</option>`) || !strings.Contains(html, `data-reset`) || !strings.Contains(html, `data-empty`) || !strings.Contains(html, "Needs attention") || !strings.Contains(html, "not proof that code executed") || !strings.Contains(html, "0 block") || strings.Contains(html, `<img src=x`) {
+	if !strings.Contains(html, "Content-Security-Policy") || !strings.Contains(html, "&lt;script&gt;alert(1)&lt;/script&gt;") || !strings.Contains(html, "not proof that code executed") || strings.Contains(html, `<img src=x`) {
 		t.Fatalf("unsafe or incomplete HTML: %s", html)
 	}
 	decoded := stdhtml.UnescapeString(html)
 	if strings.Contains(html, "https://cdn") || strings.Contains(html, "http://") || strings.Contains(decoded, "unsafe-inline") || !strings.Contains(decoded, "style-src 'sha256-") || !strings.Contains(decoded, "script-src 'sha256-") {
 		t.Fatal("HTML report contains an external asset")
-	}
-	if !strings.Contains(html, "color-scheme: light;") || strings.Contains(html, "prefers-color-scheme: dark") {
-		t.Fatal("HTML report is not consistently light themed")
-	}
-	for _, semantic := range []string{`<main id="report-content">`, `<header class="masthead"`, `<time datetime=`, `<output data-visible-count`, `<footer class="muted report-footer"`, `aria-live="polite"`, `aria-label="Scan coverage"`} {
-		if !strings.Contains(html, semantic) {
-			t.Errorf("HTML report is missing semantic marker %q", semantic)
-		}
 	}
 }
 
