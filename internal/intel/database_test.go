@@ -54,6 +54,9 @@ func TestAffectedExactAndAllVersions(t *testing.T) {
 	if !rangeCanInclude("^1.14.0", []string{"= 1.14.1", "= 0.30.4"}) || rangeCanInclude("^2.0.0", []string{"= 1.14.1"}) {
 		t.Fatal("caret range exposure was misclassified")
 	}
+	if rangeCanInclude("^0.0.3", []string{"= 0.0.4"}) || !rangeCanInclude("^0.0.3", []string{"= 0.0.3"}) {
+		t.Fatal("zero-major caret range crossed its patch boundary")
+	}
 	if !affected("2.0.0", []string{">= 0"}) {
 		t.Fatal("all-version advisory did not match")
 	}

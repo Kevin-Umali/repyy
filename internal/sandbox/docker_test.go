@@ -210,9 +210,9 @@ func TestBindMountQuotesSpecialPaths(t *testing.T) {
 		path string
 		want string
 	}{
-		{path: "/tmp/repo,with comma", want: `type=bind,src="/tmp/repo,with comma",dst=/input,readonly`},
-		{path: `/tmp/repo"with quote`, want: `type=bind,src="/tmp/repo""with quote",dst=/input`},
-		{path: `C:\repo,with comma`, want: `type=bind,src="C:\repo,with comma",dst=/input`},
+		{path: "/tmp/repo,with comma", want: `type=bind,"src=/tmp/repo,with comma",dst=/input,readonly`},
+		{path: `/tmp/repo"with quote`, want: `type=bind,"src=/tmp/repo""with quote",dst=/input`},
+		{path: `C:\repo,with comma`, want: `type=bind,"src=C:\repo,with comma",dst=/input`},
 		{path: "/tmp/plain", want: "type=bind,src=/tmp/plain,dst=/input"},
 	}
 	for _, tc := range cases {

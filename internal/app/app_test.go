@@ -210,6 +210,16 @@ func TestScanProgressUpdateIncludesWorkCompleted(t *testing.T) {
 	}
 }
 
+func TestScanProgressSanitizesTarget(t *testing.T) {
+	var stderr bytes.Buffer
+	progress := &scanProgress{w: &stderr, mode: "plain", active: map[int]*scanProgressState{}}
+	progress.start(0, "repo\x1b[2J\napi_key=secret")
+	progress.finish(0, model.RepoResult{})
+	if strings.Contains(stderr.String(), "\x1b") || strings.Contains(stderr.String(), "api_key=secret") || strings.Count(stderr.String(), "repyy:") != 2 {
+		t.Fatalf("progress rendered unsafe target text: %q", stderr.String())
+	}
+}
+
 func TestInteractiveProgressCompactsConcurrentTargets(t *testing.T) {
 	var stderr bytes.Buffer
 	progress := &scanProgress{w: &stderr, mode: "interactive", active: map[int]*scanProgressState{}}

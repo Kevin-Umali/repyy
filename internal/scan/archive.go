@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"context"
+	"errors"
 	"io"
 	"os"
 	pathpkg "path"
@@ -13,6 +14,36 @@ import (
 
 	"github.com/Kevin-Umali/repyy/internal/model"
 )
+
+var errArchiveExpansionLimit = errors.New("archive expansion limit")
+
+// archiveExpansionReader bounds bytes consumed by tar.Reader, including data it
+// drains internally for unsupported entries and PAX/GNU metadata.
+type archiveExpansionReader struct {
+	ctx       context.Context
+	source    io.Reader
+	remaining int64
+}
+
+func (r *archiveExpansionReader) Read(p []byte) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	if r.remaining <= 0 {
+		var probe [1]byte
+		n, err := r.source.Read(probe[:])
+		if n > 0 {
+			return 0, errArchiveExpansionLimit
+		}
+		return 0, err
+	}
+	if int64(len(p)) > r.remaining {
+		p = p[:int(r.remaining)]
+	}
+	n, err := r.source.Read(p)
+	r.remaining -= int64(n)
+	return n, err
+}
 
 func isArchive(path string, data []byte) bool {
 	l := strings.ToLower(path)
@@ -157,7 +188,7 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 		}
 		return
 	}
-	var tr *tar.Reader
+	var expanded io.Reader
 	if strings.HasSuffix(strings.ToLower(parent), ".gz") || strings.HasSuffix(strings.ToLower(parent), ".tgz") {
 		gz, err := gzip.NewReader(strings.NewReader(string(data)))
 		if err != nil {
@@ -165,10 +196,11 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			return
 		}
 		defer gz.Close()
-		tr = tar.NewReader(gz)
+		expanded = gz
 	} else {
-		tr = tar.NewReader(strings.NewReader(string(data)))
+		expanded = strings.NewReader(string(data))
 	}
+	tr := tar.NewReader(&archiveExpansionReader{ctx: ctx, source: expanded, remaining: s.opts.Limits.MaxArchiveBytes})
 	for {
 		h, err := tr.Next()
 		if err == io.EOF {
@@ -176,6 +208,13 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 		}
 		if err != nil {
 			coverage.Complete = false
+			if errors.Is(err, errArchiveExpansionLimit) {
+				coverage.Skipped = append(coverage.Skipped, parent+" (archive expansion limit)")
+			} else if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				coverage.Skipped = append(coverage.Skipped, parent+" (archive inspection canceled)")
+			} else {
+				coverage.Warnings = append(coverage.Warnings, parent+": unreadable archive entry")
+			}
 			break
 		}
 		if h.FileInfo().IsDir() {

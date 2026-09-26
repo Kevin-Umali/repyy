@@ -3,7 +3,9 @@ package scan
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Kevin-Umali/repyy/internal/model"
@@ -239,7 +241,8 @@ func (s *Scanner) scanJSAxiosFlow(path string, data []byte, add func(model.Findi
 			}
 			arg := string(argument)
 			matched := false
-			if function.start >= 0 && jsContainingFunction(scopes, sink[0]) == function {
+			moduleScope := function.start < 0 && (strings.EqualFold(filepath.Ext(path), ".mjs") || strings.EqualFold(filepath.Ext(path), ".mts"))
+			if (function.start >= 0 || moduleScope) && jsContainingFunction(scopes, sink[0]) == function {
 				if response != "" {
 					matched = jsSinkUses(arg, jsSimpleAlias(code[end:sink[0]], response, sink[0]-end), false)
 				}

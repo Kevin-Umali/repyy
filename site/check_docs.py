@@ -28,6 +28,7 @@ GUIDES = {
     "/demo/": ["demo/README.md"],
     "/verification/": ["docs/VERIFICATION.md"],
     "/security-testing/": ["docs/SECURITY-TESTING.md"],
+    "/changelog/": ["CHANGELOG.md"],
     "/about/": ["docs/ABOUT.md"],
 }
 EXPECTED_ROUTES = {"/", *GUIDES}

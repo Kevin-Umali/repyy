@@ -34,6 +34,7 @@ func NewDatabase(packages []Package, hashes []FileHash) *Database {
 	for _, p := range packages {
 		key := strings.ToLower(p.Ecosystem + "\x00" + p.Name)
 		p.Affected = slices.Clone(p.Affected)
+		p.Aliases = slices.Clone(p.Aliases)
 		p.References = slices.Clone(p.References)
 		d.packages[key] = append(d.packages[key], p)
 	}
@@ -56,6 +57,7 @@ func (d *Database) MatchPackage(ecosystem, name, version string) []PackageMatch 
 		rangePotential := rangeCanInclude(version, p.Affected)
 		exactOutsideAffected := !matched && exactVersion(version) != "" && allExactAffected(p.Affected)
 		p.Affected = slices.Clone(p.Affected)
+		p.Aliases = slices.Clone(p.Aliases)
 		p.References = slices.Clone(p.References)
 		out = append(out, PackageMatch{Indicator: p, VersionMatched: matched, RangePotential: rangePotential, ExactOutsideAffected: exactOutsideAffected, DeclaredVersion: version})
 	}
@@ -176,6 +178,11 @@ func rangeCanInclude(declared string, affectedRanges []string) bool {
 		}
 		if declared[0] == '~' || baseParts[0] == "0" {
 			if baseParts[1] != candidateParts[1] {
+				continue
+			}
+		}
+		if declared[0] == '^' && baseParts[0] == "0" && baseParts[1] == "0" && len(baseParts) >= 3 {
+			if len(candidateParts) < 3 || baseParts[2] != candidateParts[2] {
 				continue
 			}
 		}

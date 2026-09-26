@@ -29,6 +29,7 @@ var (
 	jsDynamicRotation = regexp.MustCompile(`\[\s*['"]push['"]\s*\]\s*\([^\n]{0,128}\[\s*['"]shift['"]\s*\]\s*\(`)
 	jsArrayDecl       = regexp.MustCompile(`\bconst\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*\[`)
 	jsStaticLookup    = regexp.MustCompile(`\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\[\s*(0x[0-9A-Fa-f]+|[0-9]+)\s*\]`)
+	jsTableAlias      = regexp.MustCompile(`(?:^|[^A-Za-z0-9_$])([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*(?:[;,\n]|$)`)
 	jsTableMutation   = regexp.MustCompile(`\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*(?:push|shift|pop|unshift|reverse|splice|sort)\s*\(`)
 )
 
@@ -305,6 +306,19 @@ func decodeJS(path string, data []byte) ([]jsRecovered, string) {
 			unsupported = true
 			tables = nil // A rotated table cannot be indexed using its original order.
 			break
+		}
+	}
+	aliases := jsTableAlias.FindAllSubmatchIndex(projection, jsDecodeMaxValues+1)
+	if len(aliases) > jsDecodeMaxValues {
+		return values, "JavaScript decoder alias limit"
+	}
+	for _, index := range aliases {
+		for _, span := range [][2]int{{index[2], index[3]}, {index[4], index[5]}} {
+			name := string(projection[span[0]:span[1]])
+			if _, exists := tables[name]; exists {
+				delete(tables, name)
+				unsupported = true
+			}
 		}
 	}
 	mutations := jsTableMutation.FindAllSubmatchIndex(projection, jsDecodeMaxValues+1)

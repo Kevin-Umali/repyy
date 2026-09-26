@@ -60,6 +60,16 @@ func TestBuiltinSnapshotDoesNotShareIndicatorSlices(t *testing.T) {
 	if !foundAxios {
 		t.Fatal("Axios indicator missing from embedded snapshot")
 	}
+	for index := range snapshot.Packages {
+		if snapshot.Packages[index].Name == "vite-tsconsole-log" {
+			originalAlias := snapshot.Packages[index].Aliases[0]
+			snapshot.Packages[index].Aliases[0] = "changed by caller"
+			if got := BuiltinSnapshot().Packages[index].Aliases[0]; got != originalAlias {
+				t.Fatalf("caller changed embedded aliases: %q", got)
+			}
+			break
+		}
+	}
 	originalHashReference := snapshot.FileHashes[0].References[0]
 	defer func() { snapshot.FileHashes[0].References[0] = originalHashReference }()
 	snapshot.FileHashes[0].References[0] = "changed by caller"

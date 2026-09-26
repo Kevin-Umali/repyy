@@ -542,6 +542,7 @@ func (p *scanProgress) start(index int, target string) {
 	if p.mode == "quiet" {
 		return
 	}
+	target = output.SanitizeSourceText(target)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.active[index] = &scanProgressState{target: target, started: time.Now()}

@@ -1,11 +1,11 @@
 {
-  "benchmark_version": "1.1.0",
-  "tool_version": "0.5.1",
-  "build_identity": "repyy 0.5.1\ncommit: 261cc64bde67b9c73ba23021e052c330f64bbd05\nbuilt-by: GitHub Actions\nsource: github.com/Kevin-Umali/repyy\ngo: go1.25.13\nbuild-date: 2026-09-14T17:24:40Z\nrules: 2026.09.15",
-  "risky_detected": 8,
-  "risky_total": 8,
+  "benchmark_version": "1.2.0",
+  "tool_version": "0.6.0-dev",
+  "build_identity": "repyy 0.6.0-dev\ncommit: unknown\nbuilt-by: development\nsource: github.com/Kevin-Umali/repyy\ngo: go1.27.1\nbuild-date: unknown\nrules: 2026.09.26",
+  "risky_detected": 11,
+  "risky_total": 11,
   "controls_high_flagged": 0,
-  "controls_total": 8,
+  "controls_total": 11,
   "incomplete_scans": 0,
   "unsupported_fixtures": 0,
   "cases": [
@@ -100,7 +100,8 @@
       "known_missing": [],
       "risky": {
         "rules": [
-          "IDE-001"
+          "IDE-001",
+          "IDE-005"
         ],
         "complete": true,
         "exit_code": 1,
@@ -111,7 +112,9 @@
         "warnings": []
       },
       "control": {
-        "rules": [],
+        "rules": [
+          "IDE-005"
+        ],
         "complete": true,
         "exit_code": 0,
         "high_findings": [],
@@ -229,6 +232,95 @@
       },
       "control": {
         "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "sourced-package",
+      "expected_rules": [
+        "IOC-PKG-GHSA-rqwx-v86m-wwff"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "IOC-PKG-GHSA-rqwx-v86m-wwff"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "IOC-PKG-GHSA-rqwx-v86m-wwff"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "axios-response-execution",
+      "expected_rules": [
+        "FLOW-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "EXEC-001",
+          "FLOW-001"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "EXEC-001",
+          "FLOW-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [],
+        "complete": true,
+        "exit_code": 0,
+        "high_findings": [],
+        "skipped": [],
+        "warnings": []
+      },
+      "missing": []
+    },
+    {
+      "id": "literal-recovery",
+      "expected_rules": [
+        "DECODE-001"
+      ],
+      "known_missing": [],
+      "risky": {
+        "rules": [
+          "DECODE-001",
+          "OBFS-002"
+        ],
+        "complete": true,
+        "exit_code": 1,
+        "high_findings": [
+          "DECODE-001"
+        ],
+        "skipped": [],
+        "warnings": []
+      },
+      "control": {
+        "rules": [
+          "OBFS-002"
+        ],
         "complete": true,
         "exit_code": 0,
         "high_findings": [],

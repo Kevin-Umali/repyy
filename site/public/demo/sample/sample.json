@@ -1,15 +1,15 @@
 {
   "schema_version": "1",
-  "tool_commit": "261cc64bde67b9c73ba23021e052c330f64bbd05",
+  "tool_commit": "unknown",
   "limitation": "Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.",
-  "tool_version": "0.5.1",
-  "rules_version": "2026.09.15",
+  "tool_version": "0.6.0-dev",
+  "rules_version": "2026.09.26",
   "intelligence": {
-    "version": "2026-09-12.1",
-    "date": "2026-09-12",
+    "version": "2026-09-26.1",
+    "date": "2026-09-26",
     "source": "embedded"
   },
-  "generated_at": "2026-09-14T17:32:25.222033217Z",
+  "generated_at": "2026-09-26T07:23:34.199672Z",
   "results": [
     {
       "target": "demo/lifecycle/risky",
@@ -200,6 +200,28 @@
               "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}\u2026"
             }
           ]
+        },
+        {
+          "rule_id": "IDE-005",
+          "category": "editor-command",
+          "severity": "medium",
+          "confidence": "high",
+          "context": "executable",
+          "path": ".vscode/tasks.json",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Workspace task or debug configuration references an executable command",
+          "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}\u2026",
+          "remediation": "Inspect the task command, arguments, referenced scripts, and debugger configuration before running it.",
+          "fingerprint": "sha256:f5a7beeb7bc7a9cfbcd4bee385464f3189004eb834fd7379f479aca0c0ab45f7",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": ".vscode/tasks.json",
+              "start_line": 1,
+              "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Inert fixture\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\", \"runOptions\": {\"runOn\": \"folderOpen\"}}\u2026"
+            }
+          ]
         }
       ],
       "coverage": {
@@ -212,8 +234,31 @@
     {
       "target": "demo/folder-open/control",
       "scan_mode": "host",
-      "verdict": "NO FINDINGS",
-      "findings": [],
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "IDE-005",
+          "category": "editor-command",
+          "severity": "medium",
+          "confidence": "high",
+          "context": "executable",
+          "path": ".vscode/tasks.json",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Workspace task or debug configuration references an executable command",
+          "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Manual marker\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\"}]}",
+          "remediation": "Inspect the task command, arguments, referenced scripts, and debugger configuration before running it.",
+          "fingerprint": "sha256:f5a7beeb7bc7a9cfbcd4bee385464f3189004eb834fd7379f479aca0c0ab45f7",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": ".vscode/tasks.json",
+              "start_line": 1,
+              "evidence": "{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"Manual marker\", \"type\": \"process\", \"command\": \"REPYY_NONEXISTENT_INERT_MARKER\"}]}"
+            }
+          ]
+        }
+      ],
       "coverage": {
         "complete": true,
         "files_scanned": 3,
@@ -493,6 +538,224 @@
         "complete": true,
         "files_scanned": 3,
         "bytes_scanned": 162
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/sourced-package/risky",
+      "scan_mode": "host",
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "IOC-PKG-GHSA-rqwx-v86m-wwff",
+          "category": "known-malicious-package",
+          "severity": "high",
+          "confidence": "medium",
+          "context": "manifest-review",
+          "path": "package.json",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Exact declared version matches malware advisory GHSA-rqwx-v86m-wwff; no resolved version was established",
+          "evidence": "process-log 1.0.0",
+          "remediation": "Do not install dependencies. Review the source advisory and resolved lockfile before proceeding: https://github.com/advisories/GHSA-rqwx-v86m-wwff",
+          "fingerprint": "sha256:214d04ac06b5bc6daf9fd578eb4a97f229fa9a482dff00d01545bb3866582390",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "package.json",
+              "start_line": 1,
+              "evidence": "process-log 1.0.0"
+            }
+          ]
+        }
+      ],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 110
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/sourced-package/control",
+      "scan_mode": "host",
+      "verdict": "NO FINDINGS",
+      "findings": [],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 113
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/axios-response-execution/risky",
+      "scan_mode": "host",
+      "verdict": "DO NOT RUN",
+      "findings": [
+        {
+          "rule_id": "FLOW-001",
+          "category": "remote-response-execution",
+          "severity": "critical",
+          "confidence": "high",
+          "context": "executable",
+          "path": "loader.mjs",
+          "line": 1,
+          "occurrences": 2,
+          "message": "Axios response data from line 1 reaches execution at line 1",
+          "evidence": "axios.get(",
+          "remediation": "Do not execute remote response data. Review both the request and execution path.",
+          "fingerprint": "sha256:466527783e6b2e6b2eebfa623f2b186f3387e7820bf96f02e4e4001a7d16aea3",
+          "disposition": "block",
+          "locations": [
+            {
+              "path": "loader.mjs",
+              "start_line": 1,
+              "end_line": 1,
+              "evidence": "axios.get("
+            },
+            {
+              "path": "loader.mjs",
+              "start_line": 1,
+              "end_line": 1,
+              "evidence": "eval("
+            }
+          ]
+        },
+        {
+          "rule_id": "EXEC-001",
+          "category": "dynamic-execution",
+          "severity": "high",
+          "confidence": "medium",
+          "context": "executable",
+          "path": "loader.mjs",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Dynamic code execution primitive",
+          "evidence": "async function unusedExample() { const response = await [REDACTED] eval(response.data); }",
+          "remediation": "Inspect the surrounding code and remove the behavior if it is not essential.",
+          "fingerprint": "sha256:debc1a1c5ca1f401d84dd7dcf42407f83599ae74318549d616bb6ad6d03b20d9",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "loader.mjs",
+              "start_line": 1,
+              "evidence": "async function unusedExample() { const response = await [REDACTED] eval(response.data); }"
+            }
+          ]
+        }
+      ],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 176
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/axios-response-execution/control",
+      "scan_mode": "host",
+      "verdict": "NO FINDINGS",
+      "findings": [],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 177
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/literal-recovery/risky",
+      "scan_mode": "host",
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "DECODE-001",
+          "category": "decoded-indicator",
+          "severity": "high",
+          "confidence": "medium",
+          "context": "executable",
+          "path": "marker.js",
+          "line": 1,
+          "occurrences": 1,
+          "message": "Static literal character/byte array reveals Access to sensitive credential storage",
+          "evidence": ".ssh/id_rsa",
+          "remediation": "Review the source literal and its use without executing it.",
+          "fingerprint": "sha256:34c0b2d7b121a4c3044f009f8aa7d5f433c111f4f316064a143b81e441bb6ba8",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "marker.js",
+              "start_line": 1,
+              "evidence": ".ssh/id_rsa"
+            }
+          ],
+          "contributing_rule_ids": [
+            "CRED-001"
+          ]
+        },
+        {
+          "rule_id": "OBFS-002",
+          "category": "string-obfuscation",
+          "severity": "medium",
+          "confidence": "medium",
+          "context": "executable",
+          "path": "marker.js",
+          "line": 1,
+          "occurrences": 1,
+          "message": "String decoding or character-code construction",
+          "evidence": "const marker = [REDACTED]",
+          "remediation": "Inspect the surrounding code and remove the behavior if it is not essential.",
+          "fingerprint": "sha256:d89965430503871cdb50b57010b6585d6f4a2404c7b2d3bee605ae742aace934",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "marker.js",
+              "start_line": 1,
+              "evidence": "const marker = [REDACTED]"
+            }
+          ]
+        }
+      ],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 131
+      },
+      "duration_ns": 0
+    },
+    {
+      "target": "demo/literal-recovery/control",
+      "scan_mode": "host",
+      "verdict": "REVIEW REQUIRED",
+      "findings": [
+        {
+          "rule_id": "OBFS-002",
+          "category": "string-obfuscation",
+          "severity": "medium",
+          "confidence": "medium",
+          "context": "executable",
+          "path": "marker.js",
+          "line": 1,
+          "occurrences": 1,
+          "message": "String decoding or character-code construction",
+          "evidence": "const marker = String.fromCharCode(72,101,108,108,111);",
+          "remediation": "Inspect the surrounding code and remove the behavior if it is not essential.",
+          "fingerprint": "sha256:d89965430503871cdb50b57010b6585d6f4a2404c7b2d3bee605ae742aace934",
+          "disposition": "review",
+          "locations": [
+            {
+              "path": "marker.js",
+              "start_line": 1,
+              "evidence": "const marker = String.fromCharCode(72,101,108,108,111);"
+            }
+          ]
+        }
+      ],
+      "coverage": {
+        "complete": true,
+        "files_scanned": 3,
+        "bytes_scanned": 110
       },
       "duration_ns": 0
     }

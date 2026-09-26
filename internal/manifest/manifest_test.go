@@ -53,3 +53,22 @@ func TestNPMAliasExposesResolvedPackageIdentity(t *testing.T) {
 	}
 	t.Fatalf("actual npm package identity missing: %+v", got)
 }
+
+func TestLegacyNPMLockIncludesNestedResolvedDependencies(t *testing.T) {
+	data := []byte(`{"lockfileVersion":1,"dependencies":{"parent":{"version":"1.0.0","dependencies":{"process-log":{"version":"2.0.0"}}}}}`)
+	for _, path := range []string{"package-lock.json", "npm-shrinkwrap.json"} {
+		dependencies, supported := Parse(path, data)
+		if !supported {
+			t.Fatalf("%s unsupported", path)
+		}
+		var found bool
+		for _, dependency := range dependencies {
+			if dependency.Name == "process-log" && dependency.Version == "2.0.0" && dependency.Scope == "lockfile" && dependency.Line == 1 {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("%s lost nested resolved package: %+v", path, dependencies)
+		}
+	}
+}

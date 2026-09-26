@@ -31,6 +31,7 @@ import (
 const (
 	maxLocationsPerFinding = model.MaxLocationsPerFinding
 	maxLocationsPerRepo    = model.MaxLocationsPerRepo
+	maxRuleLines           = 250_000
 )
 
 // Limits bounds repository and archive work performed on untrusted input.
@@ -431,6 +432,13 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, path+" (undecodable source or configuration)")
 		}
+		return
+	}
+	// Rule evaluation keeps two line views. Bound their slice metadata before
+	// splitting attacker-controlled files with millions of tiny lines.
+	if bytes.Count(data, []byte{'\n'}) > maxRuleLines {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, path+" (line-count limit)")
 		return
 	}
 	media.ScanSVG(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
@@ -984,7 +992,7 @@ func classifyContext(path string, line []byte) string {
 	if base == "package.json" || base == "pyproject.toml" || base == "setup.py" || base == "composer.json" || base == "cargo.toml" || base == "pom.xml" || strings.HasPrefix(base, "build.gradle") {
 		return "manifest"
 	}
-	if strings.Contains(base, "signature") || strings.Contains(base, "indicator") || strings.Contains(base, "rules") || strings.Contains(base, "scanner") && looksLikeSignatureDefinition(line) {
+	if (strings.HasSuffix(base, "_signatures.sh") || base == "scanner.go" || base == "rules.go") && looksLikeSignatureDefinition(line) {
 		return "detection-definition"
 	}
 	return "executable"

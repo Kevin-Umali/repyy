@@ -273,6 +273,13 @@ func decodeSnapshot(data []byte) (Snapshot, error) {
 		if p.Ecosystem == "" || p.Name == "" || p.AdvisoryID == "" || p.Source == "" || !validHTTPSURL(p.SourceURL) || p.Description == "" || !validDate(p.Added) || p.SnapshotVersion != snapshot.SnapshotVersion || seenPackages[key] {
 			return Snapshot{}, fmt.Errorf("invalid or duplicate package indicator %q", p.Name)
 		}
+		seenAliases := map[string]bool{p.AdvisoryID: true}
+		for _, alias := range p.Aliases {
+			if strings.TrimSpace(alias) == "" || seenAliases[alias] {
+				return Snapshot{}, fmt.Errorf("invalid or duplicate advisory alias for %s", p.Name)
+			}
+			seenAliases[alias] = true
+		}
 		if p.Modified != "" && !validDate(p.Modified) {
 			return Snapshot{}, fmt.Errorf("invalid modified date for package indicator %q", p.Name)
 		}

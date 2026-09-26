@@ -72,7 +72,7 @@ test. Do not replace the input with live malware or remove it to obtain a passin
 
 ## Public benchmark
 
-The [demo](../demo/README.md) and its versioned paired controls are a separate behavioral check.
+The [inert sample benchmark](https://repyy.dev/demo/sample/results.json) and its versioned paired controls are a separate behavioral check.
 Per-release results are attached by the release workflow. Known misses and all observed rules remain
 public; a synthetic benchmark does not establish general accuracy.
 

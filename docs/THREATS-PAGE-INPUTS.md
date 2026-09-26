@@ -6,7 +6,7 @@ The remaining source requirements are unknown.
 
 Before implementing that page, obtain the complete Part XIV text. It needs to
 identify any additional required scenarios, page content or structure, evidence
-standards, and acceptance criteria. The Phase 1 report proposes a concise
+standards, and acceptance criteria. The research report proposes a concise
 threat-model page mapping concrete repository scenarios to current rule IDs and
 static-analysis limits, without actor attribution. That proposal does not fill
 in the missing user requirements.

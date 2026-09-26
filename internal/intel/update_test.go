@@ -282,6 +282,18 @@ func TestDecodeSnapshotRejectsUnknownAndTrailingContent(t *testing.T) {
 	}
 }
 
+func TestDecodeSnapshotRejectsDuplicateAdvisoryAliases(t *testing.T) {
+	snapshot := testSnapshot("2026-09-27.1", "2026-09-27")
+	snapshot.Packages[0].Aliases = []string{"MAL-duplicate", "MAL-duplicate"}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := decodeSnapshot(data); err == nil || !strings.Contains(err.Error(), "duplicate advisory alias") {
+		t.Fatalf("expected duplicate alias rejection, got %v", err)
+	}
+}
+
 func TestDefaultStoreUsesPrivateCacheSubdirectory(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("REPYY_CACHE_DIR", root)

@@ -53,8 +53,8 @@ scans use a temporary networked fetch stage.
 | `--min-confidence LEVEL` | `low`               | Display filter for `low`, `medium`, or `high`; it does not alter the verdict.                                               |
 | `--group-by`             | `severity`          | Groups presentation by `severity`, `file`, or `rule`.                                                                       |
 
-The default resource limits also bound archive work: 10,000 archive entries, 1 GiB of archive bytes,
-and archive nesting depth 3. A limit or read error is reported as `SCAN INCOMPLETE`; do not treat an
+The default resource limits also bound archive work: 10,000 archive entries, 1 GiB of expanded tar bytes,
+and archive nesting depth 3. Rule evaluation skips a text file with more than 250,000 lines. A limit or read error is reported as `SCAN INCOMPLETE`; do not treat an
 incomplete result as clean. Flags may appear before or after targets. Value flags accept a space or
 `=`, such as `--format html` and `--format=html`.
 
