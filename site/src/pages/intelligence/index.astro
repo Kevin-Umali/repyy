@@ -49,8 +49,8 @@ const guide = getGuide("intelligence");
             </div>
           </div>
           <p>
-            Every release includes an embedded snapshot. A normal host scan uses a verified cached snapshot when available and falls back to the embedded copy
-            if the cache is broken. Docker scans use the image’s embedded snapshot so they do not read the host cache.
+            Every release includes an embedded snapshot. A normal host scan uses a verified cached snapshot when it is at least as recent as the embedded copy;
+            older or broken cache data falls back to the embedded copy. Docker scans use the image’s embedded snapshot so they do not read the host cache.
           </p>
         </section>
         <section class="docs-section docs-searchable" id="status" data-search="status snapshot date source embedded cache freshness verification count command">

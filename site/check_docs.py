@@ -21,12 +21,14 @@ GUIDES = {
     "/configuration/": ["docs/CONFIGURATION.md"],
     "/isolation/": ["docs/SANDBOX.md", "docs/VM-GUIDES.md"],
     "/coverage/": ["docs/COVERAGE.md"],
+    "/rules/": ["docs/RULES.md"],
     "/intelligence/": [],
     "/agent-skill/": ["skills/repyy/SKILL.md"],
     "/trust/": ["docs/TRUST.md"],
     "/demo/": ["demo/README.md"],
     "/verification/": ["docs/VERIFICATION.md"],
     "/security-testing/": ["docs/SECURITY-TESTING.md"],
+    "/changelog/": ["CHANGELOG.md"],
     "/about/": ["docs/ABOUT.md"],
 }
 EXPECTED_ROUTES = {"/", *GUIDES}
@@ -147,6 +149,30 @@ def main():
             for ident in page.searchable:
                 if (route, ident) not in indexed:
                     errors.append(f"search index: unindexed {route}#{ident}")
+
+    try:
+        catalog = json.loads((SITE / "src/data/rule-catalog.json").read_text(encoding="utf-8"))
+        rule_ids = [rule["id"] for rule in catalog["rules"]]
+        if catalog["schema_version"] != "1" or len(rule_ids) != len(set(rule_ids)):
+            errors.append("rule catalog: invalid schema or duplicate IDs")
+        source = (REPOSITORY / "internal/scan/builtin.go").read_text(encoding="utf-8")
+        version = re.search(r'BuiltinRulesVersion = "([^"]+)"', source)
+        if not version or version.group(1) != catalog["rules_version"]:
+            errors.append("rule catalog: ruleset version differs from scanner")
+        rules_html = route_file("/rules/").read_text(encoding="utf-8")
+        coverage_html = route_file("/coverage/").read_text(encoding="utf-8")
+        rendered = re.findall(r'<section class="[^"]*rule-entry" id="rule-([A-Za-z0-9*_-]+)"', rules_html)
+        linked = re.findall(r'href="/rules/#rule-([A-Za-z0-9*_-]+)"', coverage_html)
+        if Counter(rendered) != Counter(rule_ids):
+            errors.append("rule reference: rendered IDs do not match catalog exactly")
+        if Counter(linked) != Counter(rule_ids):
+            errors.append("coverage map: linked IDs do not match catalog exactly")
+        if catalog["rules_version"] not in rules_html or catalog["rules_version"] not in coverage_html:
+            errors.append("rule reference: rendered ruleset version missing")
+        if {entry["id"] for entry in entries if entry["route"] == "/rules/" and entry["id"].startswith("rule-")} != {"rule-" + ident for ident in rule_ids}:
+            errors.append("rule reference: catalog entries missing from search")
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+        errors.append(f"rule catalog: {error}")
 
     if errors:
         raise SystemExit("\n".join(errors))

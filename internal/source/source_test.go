@@ -2,11 +2,31 @@ package source
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestAuthenticatedCloneFailureDoesNotExposeCredentials(t *testing.T) {
+	if os.PathSeparator == '\\' {
+		t.Skip("shell fixture requires Unix")
+	}
+	secret := "fixture-private-token"
+	t.Setenv("GITHUB_TOKEN", secret)
+	encoded := base64.StdEncoding.EncodeToString([]byte("x-access-token:" + secret))
+	bin := t.TempDir()
+	script := "#!/bin/sh\n" + "printf '%s\\n' '" + secret + "' '" + encoded + "' >&2\nexit 1\n"
+	if err := os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin)
+	_, err := Prepare(context.Background(), "https://github.com/example/repo.git", Options{})
+	if err == nil || strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), encoded) {
+		t.Fatalf("authenticated clone leaked credential in error: %v", err)
+	}
+}
 
 func TestPrepareLocalDirectory(t *testing.T) {
 	dir := t.TempDir()

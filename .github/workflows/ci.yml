@@ -89,7 +89,7 @@ jobs:
           python3 -m http.server 4173 --directory site/dist >/tmp/repyy-site.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ trust/ verification/ demo/ security-testing/ about/ search-index.json demo/sample/sample.html demo/sample/sample.json demo/sample/sample.txt demo/sample/results.json demo/sample/results.md; do
+          for site_path in index.html docs/ installation/ cli/ configuration/ isolation/ coverage/ intelligence/ agent-skill/ trust/ verification/ demo/ security-testing/ changelog/ about/ search-index.json demo/sample/sample.html demo/sample/sample.json demo/sample/sample.txt demo/sample/results.json demo/sample/results.md; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 "http://127.0.0.1:4173/$site_path" >/dev/null
           done
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html

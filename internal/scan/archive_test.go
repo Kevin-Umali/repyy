@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"os"
 	"path/filepath"
@@ -12,6 +13,32 @@ import (
 
 	"github.com/Kevin-Umali/repyy/internal/model"
 )
+
+func TestUnsupportedTarBodyObeysExpandedByteLimit(t *testing.T) {
+	var archive bytes.Buffer
+	compressed := gzip.NewWriter(&archive)
+	writer := tar.NewWriter(compressed)
+	content := bytes.Repeat([]byte("x"), 4096)
+	if err := writer.WriteHeader(&tar.Header{Name: "unsupported", Typeflag: tar.TypeCont, Size: int64(len(content))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writer.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := compressed.Close(); err != nil {
+		t.Fatal(err)
+	}
+	limits := DefaultLimits()
+	limits.MaxArchiveBytes = 2048
+	coverage := model.Coverage{Complete: true}
+	New(Options{Limits: limits}).scanArchive(context.Background(), "fixture.tar.gz", archive.Bytes(), 1, func(model.Finding) {}, &coverage)
+	if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), "archive expansion limit") {
+		t.Fatalf("unsupported TAR body escaped expanded byte limit: %+v", coverage)
+	}
+}
 
 func TestArchiveLinkTraversalIsDetected(t *testing.T) {
 	t.Run("tar-directory", func(t *testing.T) {

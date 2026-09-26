@@ -1,0 +1,70 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+import catalog from "../../data/rule-catalog.json";
+
+const guide = getGuide("rules");
+const categories = [...new Set(catalog.rules.map((rule) => rule.category))].sort();
+---
+
+<DocsLayout guide={guide}>
+  <section class="docs-hero docs-searchable" id="overview" data-search="behavioral rule catalog version scope severity confidence">
+    <p class="docs-kicker">Behavioral rules · {catalog.rules_version}</p>
+    <h1>Inspect the exact rule.</h1>
+    <p>
+      This reference is generated from <code>BuiltinRuleCatalog</code> for ruleset <code>{catalog.rules_version}</code>.
+      Package and file-hash advisories use a separate <a href="/intelligence/">intelligence snapshot</a>.
+      A rule match is evidence to review, not a guarantee about the repository.
+    </p>
+    <p><code>repyy rules catalog --format json</code> exports this versioned behavioral catalog.</p>
+  </section>
+
+  <div id="catalog" class="docs-section">
+    <h2>Browse {catalog.rules.length} rule definitions</h2>
+    <div class="rule-filters">
+      <label>Search rules <input id="rule-filter" type="search" placeholder="ID, behavior, path, remediation" /></label>
+      <label>Category <select id="rule-category"><option value="">All categories</option>{categories.map((category) => <option value={category}>{category}</option>)}</select></label>
+      <label>Severity <select id="rule-severity"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+    </div>
+    <p id="rule-empty" hidden>No rules match those filters.</p>
+  </div>
+  {catalog.rules.map((rule) => (
+    <section class="docs-section docs-searchable rule-entry" id={`rule-${rule.id}`} data-category={rule.category} data-severity={rule.severity} data-search={`${rule.id} ${rule.category} ${rule.applicable_paths.join(" ")}`}>
+      <h2><code>{rule.id}</code> · {rule.description}</h2>
+      <p><b>{rule.category}</b> · {rule.severity} severity · {rule.confidence} confidence · {rule.disposition}</p>
+      <p>{rule.rationale}</p>
+      <p><b>Legitimate use:</b> {rule.legitimate_use}</p>
+      <p><b>Review action:</b> {rule.remediation}</p>
+      <p><b>Scope:</b> {rule.match_scope} · <b>Paths:</b> {rule.applicable_paths.join(", ")} · <b>Context downgrade:</b> {rule.allow_context_downgrade ? "allowed" : "disabled"}</p>
+    </section>
+  ))}
+</DocsLayout>
+
+<style>
+  .rule-filters { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; }
+  .rule-filters label { display: grid; gap: .35rem; font-weight: 600; }
+  .rule-filters input, .rule-filters select { min-width: 12rem; padding: .65rem; border: 1px solid #9b9ba4; border-radius: .35rem; background: white; color: inherit; }
+  .rule-entry { border-top: 1px solid #d4d4d8; }
+  .rule-entry p { margin-top: .7rem; }
+</style>
+
+<script>
+  const search = document.querySelector<HTMLInputElement>("#rule-filter");
+  const category = document.querySelector<HTMLSelectElement>("#rule-category");
+  const severity = document.querySelector<HTMLSelectElement>("#rule-severity");
+  const entries = [...document.querySelectorAll<HTMLElement>(".rule-entry")];
+  const empty = document.querySelector<HTMLElement>("#rule-empty");
+  const update = () => {
+    const query = search?.value.trim().toLowerCase() || "";
+    let count = 0;
+    for (const entry of entries) {
+      const show = (!query || entry.textContent?.toLowerCase().includes(query)) && (!category?.value || entry.dataset.category === category.value) && (!severity?.value || entry.dataset.severity === severity.value);
+      entry.hidden = !show;
+      if (show) count++;
+    }
+    if (empty) empty.hidden = count !== 0;
+  };
+  search?.addEventListener("input", update);
+  category?.addEventListener("change", update);
+  severity?.addEventListener("change", update);
+</script>

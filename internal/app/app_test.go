@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -53,6 +54,32 @@ func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
 	}
 	if report.Results[1].Verdict != model.VerdictDoNotRun {
 		t.Fatalf("risky verdict: %s", report.Results[1].Verdict)
+	}
+}
+
+func TestBehavioralCatalogJSONMatchesSiteArtifact(t *testing.T) {
+	var stdout bytes.Buffer
+	code, err := Run([]string{"rules", "catalog", "--format", "json"}, &stdout, &bytes.Buffer{}, "test")
+	if err != nil || code != 0 {
+		t.Fatalf("catalog command: code=%d err=%v", code, err)
+	}
+	var actual scan.RuleCatalogDocument
+	if err := json.Unmarshal(stdout.Bytes(), &actual); err != nil {
+		t.Fatal(err)
+	}
+	if actual.SchemaVersion != "1" || actual.RulesVersion != scan.BuiltinRulesVersion || len(actual.Rules) != len(scan.BuiltinRuleCatalog()) {
+		t.Fatalf("catalog metadata mismatch: %+v", actual)
+	}
+	artifact, err := os.ReadFile("../../site/src/data/rule-catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var siteCatalog scan.RuleCatalogDocument
+	if err := json.Unmarshal(artifact, &siteCatalog); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(actual, siteCatalog) {
+		t.Fatal("site catalog differs from CLI export; regenerate the site artifact")
 	}
 }
 
@@ -180,6 +207,16 @@ func TestScanProgressUpdateIncludesWorkCompleted(t *testing.T) {
 	progress.printUpdates()
 	if !strings.Contains(stderr.String(), "12 files, 1.5 KiB") {
 		t.Fatalf("missing progress counters: %q", stderr.String())
+	}
+}
+
+func TestScanProgressSanitizesTarget(t *testing.T) {
+	var stderr bytes.Buffer
+	progress := &scanProgress{w: &stderr, mode: "plain", active: map[int]*scanProgressState{}}
+	progress.start(0, "repo\x1b[2J\napi_key=secret")
+	progress.finish(0, model.RepoResult{})
+	if strings.Contains(stderr.String(), "\x1b") || strings.Contains(stderr.String(), "api_key=secret") || strings.Count(stderr.String(), "repyy:") != 2 {
+		t.Fatalf("progress rendered unsafe target text: %q", stderr.String())
 	}
 }
 

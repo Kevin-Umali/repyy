@@ -31,6 +31,7 @@ import (
 const (
 	maxLocationsPerFinding = model.MaxLocationsPerFinding
 	maxLocationsPerRepo    = model.MaxLocationsPerRepo
+	maxRuleLines           = 250_000
 )
 
 // Limits bounds repository and archive work performed on untrusted input.
@@ -433,20 +434,41 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 		return
 	}
+	// Rule evaluation keeps two line views. Bound their slice metadata before
+	// splitting attacker-controlled files with millions of tiny lines.
+	if bytes.Count(data, []byte{'\n'}) > maxRuleLines {
+		coverage.Complete = false
+		coverage.Skipped = append(coverage.Skipped, path+" (line-count limit)")
+		return
+	}
 	media.ScanSVG(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
+	if isJavaScriptPath(path) {
+		s.scanJSDecoded(path, data, add, coverage)
+		s.scanJSAxiosFlow(path, data, add, coverage)
+	}
 	if dependencies, supported := manifest.Parse(path, data); supported {
 		for _, dependency := range dependencies {
 			confirmed := false
 			for _, match := range s.opts.Intelligence.MatchPackage(dependency.Ecosystem, dependency.Name, dependency.Version) {
+				if match.ExactOutsideAffected && dependency.Scope == "lockfile" {
+					continue
+				}
 				confirmed = true
-				severity, confidence, context := model.SeverityHigh, model.ConfidenceHigh, "manifest-review"
-				message := "Package name appears in confirmed malware advisory " + match.Indicator.AdvisoryID
-				if match.VersionMatched {
-					severity, context = model.SeverityCritical, "confirmed-ioc"
-					message = "Declared package version matches confirmed malware advisory " + match.Indicator.AdvisoryID
+				severity, confidence, findingContext := model.SeverityHigh, model.ConfidenceMedium, "manifest-review"
+				message := "Package name appears in malware advisory " + match.Indicator.AdvisoryID + "; version exposure is unknown"
+				if match.ExactOutsideAffected {
+					message = "Declared version is outside the listed affected versions in advisory " + match.Indicator.AdvisoryID + "; verify package identity and resolution"
+				}
+				if match.VersionMatched && dependency.Scope == "lockfile" {
+					severity, confidence, findingContext = model.SeverityCritical, model.ConfidenceHigh, "confirmed-ioc"
+					message = "Resolved lockfile version matches malware advisory " + match.Indicator.AdvisoryID
+				} else if match.VersionMatched {
+					message = "Exact declared version matches malware advisory " + match.Indicator.AdvisoryID + "; no resolved version was established"
+				} else if match.RangePotential {
+					message = "Declared version range could resolve to a version in malware advisory " + match.Indicator.AdvisoryID
 				}
 				f := s.finding("IOC-PKG-"+match.Indicator.AdvisoryID, "known-malicious-package", severity, confidence, path, dependency.Line, message, dependency.Name+" "+safeEvidence([]byte(dependency.Version)), "Do not install dependencies. Review the source advisory and resolved lockfile before proceeding: "+match.Indicator.SourceURL)
-				f.Context = context
+				f.Context = findingContext
 				add(f)
 			}
 			if !confirmed {
@@ -495,7 +517,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 				confidence = model.ConfidenceLow
 			}
 			findingContext := matchContext(rule, path, originalLine)
-			if skipContextualRule(rule.ID, findingContext) {
+			if skipContextualRule(rule.ID, findingContext, path) {
 				continue
 			}
 			severity, confidence = contextualize(rule, findingContext, severity, confidence)
@@ -514,7 +536,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 				endLine := line + bytes.Count(matchData[loc[0]:loc[1]], []byte{'\n'})
 				severity, confidence := rule.Severity, rule.Confidence
 				findingContext := classifyContext(path, nil)
-				if skipContextualRule(rule.ID, findingContext) {
+				if skipContextualRule(rule.ID, findingContext, path) {
 					continue
 				}
 				severity, confidence = contextualize(rule, findingContext, severity, confidence)
@@ -563,6 +585,14 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 	}
 	s.scanStructured(path, data, mode, add)
 	s.scanSupplyChain(path, data, add)
+}
+
+func isJavaScriptPath(path string) bool {
+	switch strings.ToLower(filepath.Ext(innerPath(path))) {
+	case ".js", ".cjs", ".mjs", ".jsx", ".ts", ".tsx":
+		return true
+	}
+	return false
 }
 
 func (s *Scanner) supplyChainDetector() supplychain.Detector {
@@ -938,7 +968,7 @@ func classifyContext(path string, line []byte) string {
 	if strings.Contains(slashed, "/_generated/") || strings.Contains(slashed, "/generated/") || strings.Contains(slashed, "/build/generated/") || strings.Contains(slashed, "/autolinking/") || ext == ".pbxproj" || strings.Contains(base, ".generated.") || strings.Contains(base, "_generated.") || strings.HasSuffix(base, ".gen.go") || strings.HasSuffix(base, ".g.cs") {
 		return "generated"
 	}
-	if strings.Contains(slashed, "/dist/") || strings.Contains(slashed, "/build/") || strings.HasSuffix(base, ".min.js") || strings.HasSuffix(base, ".bundle.js") || strings.HasSuffix(base, ".min.css") || base == "sw.js" && strings.Contains(slashed, "/public/") && len(line) > 600 {
+	if strings.Contains(slashed, "/dist/") || strings.Contains(slashed, "/build/") || strings.Contains(slashed, "/charting_library/bundles/") || strings.HasSuffix(base, ".min.js") || strings.HasSuffix(base, ".bundle.js") || strings.HasSuffix(base, ".min.css") || base == "sw.js" && strings.Contains(slashed, "/public/") && len(line) > 600 {
 		return "generated"
 	}
 	if strings.Contains(slashed, "/node_modules/") || strings.Contains(slashed, "/vendor/") || strings.Contains(slashed, "/pods/") || strings.Contains(slashed, "/.venv/") {
@@ -962,7 +992,7 @@ func classifyContext(path string, line []byte) string {
 	if base == "package.json" || base == "pyproject.toml" || base == "setup.py" || base == "composer.json" || base == "cargo.toml" || base == "pom.xml" || strings.HasPrefix(base, "build.gradle") {
 		return "manifest"
 	}
-	if looksLikeSignatureDefinition(line) || strings.Contains(base, "signature") || strings.Contains(base, "indicator") || strings.Contains(base, "rules") {
+	if (strings.HasSuffix(base, "_signatures.sh") || base == "scanner.go" || base == "rules.go") && looksLikeSignatureDefinition(line) {
 		return "detection-definition"
 	}
 	return "executable"
@@ -1052,9 +1082,15 @@ func contextualize(rule Rule, context string, severity model.Severity, confidenc
 	return severity, model.ConfidenceLow
 }
 
-func skipContextualRule(ruleID, context string) bool {
+func skipContextualRule(ruleID, context, path string) bool {
 	if context != "generated" && context != "dependency" {
 		return false
+	}
+	if strings.Contains(strings.ToLower(filepath.ToSlash(path)), "/charting_library/bundles/") {
+		switch ruleID {
+		case "EXEC-001", "PROTO-001", "OBFS-001", "OBFS-002", "OBFS-003", "OBFS-004", "OBFS-005", "OBFS-008":
+			return true
+		}
 	}
 	switch ruleID {
 	case "ENV-001", "EXEC-004", "OBFS-004", "OBFS-005":

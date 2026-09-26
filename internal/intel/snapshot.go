@@ -2,12 +2,15 @@
 // It performs no network access. Every entry must point to a primary source.
 package intel
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 // SnapshotVersion and SnapshotDate identify the embedded intelligence revision.
 const (
-	SnapshotVersion = "2026-09-12.1"
-	SnapshotDate    = "2026-09-12"
+	SnapshotVersion = "2026-09-26.1"
+	SnapshotDate    = "2026-09-26"
 )
 
 // Package is an attributable malicious-package intelligence record.
@@ -18,6 +21,7 @@ type Package struct {
 	Source          string   `json:"source"`
 	SourceURL       string   `json:"source_url"`
 	AdvisoryID      string   `json:"advisory_id"`
+	Aliases         []string `json:"aliases,omitempty"`
 	Description     string   `json:"description"`
 	Added           string   `json:"added"`
 	Modified        string   `json:"modified,omitempty"`
@@ -61,17 +65,29 @@ type Snapshot struct {
 
 // BuiltinSnapshot returns a copy of the intelligence embedded in the binary.
 func BuiltinSnapshot() Snapshot {
+	packages := make([]Package, len(Packages))
+	for i, entry := range Packages {
+		entry.Affected = slices.Clone(entry.Affected)
+		entry.Aliases = slices.Clone(entry.Aliases)
+		entry.References = slices.Clone(entry.References)
+		packages[i] = entry
+	}
+	hashes := make([]FileHash, len(FileHashes))
+	for i, entry := range FileHashes {
+		entry.References = slices.Clone(entry.References)
+		hashes[i] = entry
+	}
 	return Snapshot{
 		SnapshotVersion: SnapshotVersion,
 		SnapshotDate:    SnapshotDate,
-		Packages:        append([]Package(nil), Packages...),
-		FileHashes:      append([]FileHash(nil), FileHashes...),
+		Packages:        packages,
+		FileHashes:      hashes,
 	}
 }
 
-// Packages is a bounded snapshot of malware advisories returned by GitHub's
-// Global Security Advisory API on SnapshotDate. Package identity is a review
-// signal rather than proof about every possible version of a reused name.
+// Packages is a bounded snapshot of sourced malware advisories. Package
+// identity is a review signal rather than proof about every possible version
+// of a reused name.
 var Packages = []Package{
 	{Ecosystem: "npm", Name: "cors-parser", AdvisoryID: "GHSA-5g94-qjr8-2q72"},
 	{Ecosystem: "npm", Name: "crossenv", AdvisoryID: "GHSA-c2m4-w5hm-vqjw"},
@@ -82,6 +98,9 @@ var Packages = []Package{
 	{Ecosystem: "npm", Name: "bcrypts-js", AdvisoryID: "GHSA-h6cw-hrwc-f4wm"},
 	{Ecosystem: "npm", Name: "mongose", AdvisoryID: "GHSA-894f-rw44-qrw5"},
 	{Ecosystem: "npm", Name: "axios", Severity: "critical", Source: "microsoft-threat-intelligence", SourceURL: microsoftAxiosSource, AdvisoryID: "MSFT-2026-04-01-AXIOS", Description: "Compromised Axios npm releases identified by Microsoft", Added: "2026-04-01", Affected: []string{"= 1.14.1", "= 0.30.4"}, Campaign: "Sapphire Sleet Axios supply-chain compromise", References: []string{microsoftAxiosSource}},
+	{Ecosystem: "npm", Name: "process-log", AdvisoryID: "GHSA-rqwx-v86m-wwff"},
+	{Ecosystem: "npm", Name: "cdn-icon-fetch", AdvisoryID: "GHSA-gmvp-cqg5-vgvh"},
+	{Ecosystem: "npm", Name: "vite-tsconsole-log", Severity: "high", Source: "osv", SourceURL: "https://osv.dev/vulnerability/MAL-2025-4289", AdvisoryID: "MAL-2025-4289", Aliases: []string{"GHSA-x78w-rcq7-hrmr"}, Description: "Malicious code in vite-tsconsole-log (npm)", Added: "2025-05-22", Modified: "2025-05-23", Affected: []string{">= 0"}, References: []string{"https://osv.dev/vulnerability/MAL-2025-4289"}},
 	{Ecosystem: "npm", Name: "plain-crypto-js", Severity: "critical", Source: "microsoft-threat-intelligence", SourceURL: microsoftAxiosSource, AdvisoryID: "MSFT-2026-04-01-PLAIN-CRYPTO-JS", Description: "Compromised npm release identified by Microsoft", Added: "2026-04-01", Affected: []string{"= 4.2.1"}, Campaign: "Sapphire Sleet Axios supply-chain compromise", References: []string{microsoftAxiosSource}},
 	{Ecosystem: "npm", Name: "tailwind-form-kit", AdvisoryID: "GHSA-p7c5-phj5-qm49"},
 	{Ecosystem: "npm", Name: "cr-bot-common", AdvisoryID: "GHSA-mjmf-5pc4-pfrp"},
@@ -131,7 +150,7 @@ func init() {
 			entry.SourceURL = "https://github.com/advisories/" + entry.AdvisoryID
 		}
 		entry.SnapshotVersion = SnapshotVersion
-		if details, ok := packageDetailsByAdvisory[entry.AdvisoryID]; ok {
+		if details, ok := packageDetailsByAdvisory[entry.AdvisoryID]; ok && entry.Description == "" {
 			entry.Description = details.Description
 			entry.Added = details.Added
 			entry.Modified = details.Modified

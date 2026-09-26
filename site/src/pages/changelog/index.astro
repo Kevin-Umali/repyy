@@ -1,0 +1,43 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { getGuide } from "../../data/guides";
+
+const guide = getGuide("changelog");
+---
+
+<DocsLayout guide={guide}>
+  <section class="docs-hero docs-searchable" id="overview">
+    <p class="docs-kicker">Release changes</p>
+    <h1>What changed.<span>And where to verify it.</span></h1>
+    <p>
+      This page highlights the current version. The repository <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">CHANGELOG.md</a>
+      is the complete record, including earlier releases and fixes. Use the <a href="/verification/">verification guide</a> for signed release artifacts.
+    </p>
+  </section>
+
+  <section class="docs-section docs-searchable" id="version-0-6-0">
+    <h2>0.6.0 · 26 September 2026</h2>
+    <p>Repyy 0.6.0 adds narrow static checks for malicious package advisories, literal JavaScript decoding, and supported Axios response flows into execution.</p>
+    <div class="docs-table-scroll" role="region" aria-label="Repyy 0.6.0 changes" tabindex="0">
+      <table class="docs-data-table">
+        <thead><tr><th>Area</th><th>Change</th><th>Read more</th></tr></thead>
+        <tbody>
+          <tr><td>Intelligence</td><td>Sourced records for three malicious npm packages; clearer exact-version and unlocked-range results.</td><td><a href="/intelligence/">Intelligence guide</a></td></tr>
+          <tr><td>Behavior</td><td>Bounded data-only literal recovery and same-function Axios-to-execution correlation with source locations.</td><td><a href="/rules/">Rule reference</a></td></tr>
+          <tr><td>Coverage</td><td>Explicit incomplete status for unsupported decoding and resource limits; less weak noise in vendor bundles.</td><td><a href="/coverage/">Coverage guide</a></td></tr>
+          <tr><td>Review workflow</td><td>A refreshed 11-pair inert demo and a bounded maintainer path for advisory ingestion.</td><td><a href="/demo/">Demo report</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md#060---2026-09-26">full 0.6.0 entry</a> lists the smaller fixes and release details.</p>
+  </section>
+
+  <section class="docs-section docs-searchable" id="history">
+    <h2>Earlier releases</h2>
+    <p>
+      Browse <a href="https://github.com/Kevin-Umali/repyy/releases">published releases</a> for assets and release notes, or read the
+      <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">complete changelog</a> for the chronological change history.
+      A version heading on this page describes code changes; it does not replace the release verification record.
+    </p>
+  </section>
+</DocsLayout>

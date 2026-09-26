@@ -55,6 +55,8 @@ jobs:
           go test -race ./...
           go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
           python3 site/check_docs.py
+          python3 -m unittest scripts/test_ingest_intelligence.py
+          test "$(go run ./cmd/repyy intel export | wc -c)" -le $((16 * 1024 * 1024))
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
       - uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
       - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3

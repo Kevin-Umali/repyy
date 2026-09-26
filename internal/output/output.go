@@ -123,6 +123,12 @@ func sanitizeSourceText(value string) string {
 	return value
 }
 
+// SanitizeSourceText makes source-derived text safe for human-facing output
+// written outside the report renderer, such as live scan progress.
+func SanitizeSourceText(value string) string {
+	return sanitizeSourceText(value)
+}
+
 func sanitizeSourceTexts(values []string) []string {
 	if values == nil {
 		return nil

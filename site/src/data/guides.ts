@@ -311,6 +311,18 @@ export const guides = [
     ],
   },
   {
+    slug: "rules",
+    route: "/rules/",
+    label: "Rule reference",
+    title: "Behavioral rule reference · repyy documentation",
+    description: "Versioned reference for Repyy's built-in behavioral rules, separate from threat intelligence.",
+    markdown: ["docs/RULES.md"],
+    sections: [
+      { id: "overview", label: "Read the catalog" },
+      { id: "catalog", label: "Browse rules" },
+    ],
+  },
+  {
     slug: "intelligence",
     route: "/intelligence/",
     label: "Intelligence",
@@ -439,34 +451,34 @@ export const guides = [
   {
     slug: "demo",
     route: "/demo/",
-    label: "Demo and Sample Report",
-    title: "Demo and Sample Report · repyy documentation",
-    description: "Demo and Sample Report: Repyy reviews take-home assignments before execution, with evidence and visible limitations.",
+    label: "Demo and sample report",
+    title: "Demo and sample report · repyy documentation",
+    description: "Explore a Repyy 0.6.0 preview report with inert paired examples, source evidence, controls, and visible coverage limits.",
     markdown: ["demo/README.md"],
     sections: [
       {
         id: "overview",
-        label: "Inspect a real report",
+        label: "Open the sample report",
       },
       {
-        id: "safety-design",
-        label: "Safety design",
+        id: "reading-the-report",
+        label: "Read the report",
+      },
+      {
+        id: "paired-examples",
+        label: "Paired examples",
       },
       {
         id: "reproduce",
-        label: "Reproduce",
+        label: "Reproduce safely",
       },
       {
-        id: "expected-outcomes-and-controls",
-        label: "Expected outcomes and controls",
+        id: "corpus-context",
+        label: "Real corpus context",
       },
       {
-        id: "benchmark-versioning",
-        label: "Benchmark versioning",
-      },
-      {
-        id: "changes-from-benchmark-1-0-0",
-        label: "Changes from benchmark 1.0.0",
+        id: "limits",
+        label: "Limits",
       },
     ],
   },
@@ -548,6 +560,19 @@ export const guides = [
         id: "known-gaps-and-independent-review",
         label: "Known gaps and independent review",
       },
+    ],
+  },
+  {
+    slug: "changelog",
+    route: "/changelog/",
+    label: "Changelog",
+    title: "Changelog · repyy documentation",
+    description: "What changed in Repyy 0.6.0 and where to find the complete release history and verification evidence.",
+    markdown: ["CHANGELOG.md"],
+    sections: [
+      { id: "overview", label: "Release changes" },
+      { id: "version-0-6-0", label: "Version 0.6.0" },
+      { id: "history", label: "Earlier releases" },
     ],
   },
   {

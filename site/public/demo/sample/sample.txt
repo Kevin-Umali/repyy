@@ -1,5 +1,5 @@
-repyy 0.5.1 — read-only repository preflight
-rules 2026.09.15 · intelligence 2026-09-12.1 (2026-09-12, embedded)
+repyy 0.6.0-dev — read-only repository preflight
+rules 2026.09.26 · intelligence 2026-09-26.1 (2026-09-26, embedded)
 
 REVIEW REQUIRED · demo/lifecycle/risky
   critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
@@ -48,7 +48,7 @@ NO RELEVANT FINDINGS DETECTED · demo/disguised-asset/control
   why: no enabled rule matched within the completed scan
 
 REVIEW REQUIRED · demo/folder-open/risky
-  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  critical 0 · high 1 · medium 1 · low 0 · files 3 · complete
   why: IDE-001 at .vscode/tasks.json:1
 
   REVIEW
@@ -56,10 +56,20 @@ REVIEW REQUIRED · demo/folder-open/risky
       .vscode/tasks.json:1
         {"version": "2.0.0", "tasks": [{"label": "Inert fixture", "type": "process", "command": "REPYY_NONEXISTENT_INERT_MARKER", "runOptions": {"runOn": "folderOpen"}}…
       fix: Do not run the repository. Verify the source and intent in an isolated environment.
+  MEDIUM · HIGH  IDE-005 · Workspace task or debug configuration references an executable command
+      .vscode/tasks.json:1
+        {"version": "2.0.0", "tasks": [{"label": "Inert fixture", "type": "process", "command": "REPYY_NONEXISTENT_INERT_MARKER", "runOptions": {"runOn": "folderOpen"}}…
+      fix: Inspect the task command, arguments, referenced scripts, and debugger configuration before running it.
 
-NO RELEVANT FINDINGS DETECTED · demo/folder-open/control
-  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
-  why: no enabled rule matched within the completed scan
+REVIEW REQUIRED · demo/folder-open/control
+  critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
+  why: IDE-005 at .vscode/tasks.json:1
+
+  REVIEW
+  MEDIUM · HIGH  IDE-005 · Workspace task or debug configuration references an executable command
+      .vscode/tasks.json:1
+        {"version": "2.0.0", "tasks": [{"label": "Manual marker", "type": "process", "command": "REPYY_NONEXISTENT_INERT_MARKER"}]}
+      fix: Inspect the task command, arguments, referenced scripts, and debugger configuration before running it.
 
 REVIEW REQUIRED · demo/git-hook/risky
   critical 0 · high 1 · medium 0 · low 1 · files 3 · complete
@@ -128,6 +138,67 @@ REVIEW REQUIRED · demo/docker-socket/risky
 NO RELEVANT FINDINGS DETECTED · demo/docker-socket/control
   critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
   why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/sourced-package/risky
+  critical 0 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: IOC-PKG-GHSA-rqwx-v86m-wwff at package.json:1
+
+  REVIEW
+  HIGH · MEDIUM  IOC-PKG-GHSA-rqwx-v86m-wwff · Exact declared version matches malware advisory GHSA-rqwx-v86m-wwff; no resolved version was established
+      package.json:1
+        process-log 1.0.0
+      fix: Do not install dependencies. Review the source advisory and resolved lockfile before proceeding: https://github.com/advisories/GHSA-rqwx-v86m-wwff
+
+NO RELEVANT FINDINGS DETECTED · demo/sourced-package/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+FINDINGS DETECTED · demo/axios-response-execution/risky
+  critical 1 · high 1 · medium 0 · low 0 · files 3 · complete
+  why: FLOW-001 at loader.mjs:1
+
+  BLOCK
+  CRITICAL · HIGH  FLOW-001 · Axios response data from line 1 reaches execution at line 1
+      loader.mjs:1
+        axios.get(
+      loader.mjs:1
+        eval(
+      fix: Do not execute remote response data. Review both the request and execution path.
+
+  REVIEW
+  HIGH · MEDIUM  EXEC-001 · Dynamic code execution primitive
+      loader.mjs:1
+        async function unusedExample() { const response = await [REDACTED] eval(response.data); }
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+NO RELEVANT FINDINGS DETECTED · demo/axios-response-execution/control
+  critical 0 · high 0 · medium 0 · low 0 · files 3 · complete
+  why: no enabled rule matched within the completed scan
+
+REVIEW REQUIRED · demo/literal-recovery/risky
+  critical 0 · high 1 · medium 1 · low 0 · files 3 · complete
+  why: DECODE-001 at marker.js:1
+
+  REVIEW
+  HIGH · MEDIUM  DECODE-001 · Static literal character/byte array reveals Access to sensitive credential storage
+      marker.js:1
+        .ssh/id_rsa
+      fix: Review the source literal and its use without executing it.
+      contributing rules: CRED-001
+  MEDIUM · MEDIUM  OBFS-002 · String decoding or character-code construction
+      marker.js:1
+        const marker = [REDACTED]
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
+
+REVIEW REQUIRED · demo/literal-recovery/control
+  critical 0 · high 0 · medium 1 · low 0 · files 3 · complete
+  why: OBFS-002 at marker.js:1
+
+  REVIEW
+  MEDIUM · MEDIUM  OBFS-002 · String decoding or character-code construction
+      marker.js:1
+        const marker = String.fromCharCode(72,101,108,108,111);
+      fix: Inspect the surrounding code and remove the behavior if it is not essential.
 
 Findings are repository evidence, not proof that code executed or a host was compromised.
 Repyy performs static analysis. A result with no relevant findings does not prove that the repository is safe.

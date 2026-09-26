@@ -23,6 +23,18 @@ type RuleInfo struct {
 	AllowContextDowngrade bool              `json:"allow_context_downgrade"`
 }
 
+// RuleCatalogDocument is the stable behavioral catalog export. It contains no
+// package or hash intelligence, which has a separate snapshot lifecycle.
+type RuleCatalogDocument struct {
+	SchemaVersion string     `json:"schema_version"`
+	RulesVersion  string     `json:"rules_version"`
+	Rules         []RuleInfo `json:"rules"`
+}
+
+func BuiltinRuleCatalogDocument() RuleCatalogDocument {
+	return RuleCatalogDocument{SchemaVersion: "1", RulesVersion: BuiltinRulesVersion, Rules: BuiltinRuleCatalog()}
+}
+
 func applyRuleDefaults(rule *Rule) {
 	if rule.MatchScope == "" && codeScopedRule(rule.ID) {
 		rule.MatchScope = "code"
@@ -159,6 +171,7 @@ func structuredRuleCatalog() []RuleInfo {
 		{"CICD-007", "ci-cache-integrity", "Low-trust workflow explicitly allows cache writes", "Keep low-trust jobs read-only for cache access, or verify that they cannot process untrusted input before saving a cache.", model.SeverityHigh, model.ConfidenceMedium},
 		{"CICD-008", "ci-runner-trust", "Pull-request workflow runs on a self-hosted runner", "Verify repository visibility, fork approval, runner isolation, and what untrusted pull-request code can access.", model.SeverityHigh, model.ConfidenceMedium},
 		{"DOTNET-001", "dotnet-build-execution", "MSBuild project or imported file runs a command", "Inspect the Exec command and its conditions before building or restoring the project.", model.SeverityHigh, model.ConfidenceMedium},
+		{"DECODE-001", "decoded-indicator", "A bounded literal decode reveals a rule indicator", "Review the source literal and its use without executing it.", model.SeverityHigh, model.ConfidenceMedium},
 		{"DOC-001", "document-active-content", "PDF declares active or embedded content", "Review or remove PDF actions and embedded files before opening it.", model.SeverityHigh, model.ConfidenceMedium},
 		{"DOC-002", "office-macro", "Office package contains a VBA macro project", "Inspect or remove the macro project before opening the document.", model.SeverityHigh, model.ConfidenceHigh},
 		{"DOC-003", "office-external-relationship", "Office package references external content", "Review and remove unneeded external relationships.", model.SeverityMedium, model.ConfidenceHigh},
@@ -168,6 +181,7 @@ func structuredRuleCatalog() []RuleInfo {
 		{"FONT-003", "font-container-integrity", "Font container is malformed or contains an executable payload", "Do not install or preview the font; replace it with a trusted copy.", model.SeverityHigh, model.ConfidenceHigh},
 		{"FONT-004", "font-active-content", "OpenType SVG glyph contains active content", "Remove active SVG content or replace the font with a trusted copy.", model.SeverityMedium, model.ConfidenceMedium},
 		{"FONT-005", "font-program", "Font contains TrueType instructions", "Verify provenance before passing the instruction stream to a font engine.", model.SeverityLow, model.ConfidenceHigh},
+		{"FLOW-001", "remote-response-execution", "Axios response data reaches dynamic or process execution in the same function", "Do not execute remote response data. Review the request and execution path.", model.SeverityCritical, model.ConfidenceHigh},
 		{"GITHOOK-002", "git-hook", "Active Git hook contains execution or remote-fetch behavior", "Disable the hook and review it before running Git commands.", model.SeverityCritical, model.ConfidenceHigh},
 		{"IMAGE-001", "image-active-content", "SVG contains active content", "Review the SVG source and remove unneeded scripts, event handlers, or JavaScript links.", model.SeverityMedium, model.ConfidenceMedium},
 		{"IDE-007", "editor-extension-package", "Packaged VSIX editor extension is present", "Verify the extension publisher, signature, package contents, and hash before installing it.", model.SeverityMedium, model.ConfidenceHigh},
@@ -212,7 +226,7 @@ func structuredRuleCatalog() []RuleInfo {
 			Disposition: defaultRuleDisposition(value.id, value.category, value.severity, value.confidence),
 			Description: value.description, Rationale: categoryRationale(value.category),
 			LegitimateUse: categoryLegitimateUse(value.category), Remediation: value.remediation,
-			MatchScope: "structured", ApplicablePaths: structuredApplicablePaths(value.id), AllowContextDowngrade: !strings.HasPrefix(value.id, "IOC-"),
+			MatchScope: "structured", ApplicablePaths: structuredApplicablePaths(value.id), AllowContextDowngrade: !strings.HasPrefix(value.id, "IOC-") && value.id != "FLOW-001" && value.id != "DECODE-001",
 		})
 	}
 	return items
@@ -226,6 +240,8 @@ func structuredApplicablePaths(id string) []string {
 		return []string{"repository root"}
 	case strings.HasPrefix(id, "COMBO-"):
 		return []string{"executable source files"}
+	case id == "DECODE-001" || id == "FLOW-001":
+		return []string{"*.js", "*.cjs", "*.mjs", "*.jsx", "*.ts", "*.tsx"}
 	case id == "ARCHIVE-001":
 		return []string{"archive entries"}
 	case id == "GITHOOK-002":

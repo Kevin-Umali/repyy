@@ -61,7 +61,7 @@ feature uploads assignment contents or scan reports to a Repyy service.
 | Sandbox image retrieval                       | Explicit user `docker pull`; never implicit in scan | Container registry and its backing storage; image digest and connection metadata                                                            | Docker's configured registry credentials                                        | Missing image fails preflight; Docker daemon retrieves image                                                    |
 | Offline HTML report                           | Rendering is local; user may click a source link    | No remote assets loaded; a click opens the supported source provider at a pinned revision                                                   | Browser session when following a link                                           | Network is outside report rendering; link may fail or require login                                             |
 | Installation / optional agent-skill installer | Explicit user installation command                  | GitHub, package registries or package-manager sources; requested package metadata                                                           | Installer's configured credentials                                              | Outside normal scan; source and reports are not installer inputs                                                |
-| Maintainer intelligence generation            | Explicit `make intel`                               | GitHub advisory API; advisory identifiers                                                                                                   | Maintainer's authenticated `gh`                                                 | Failure stops generation; never a normal scan path                                                              |
+| Maintainer intelligence generation            | Explicit `make intel` or ingestion script           | GitHub advisory API or reviewed GitHub/OpenSSF JSON; advisory identifiers and public report metadata                                        | Explicit `--github-token` for ingestion network mode                            | Bounded failure stops generation; unsigned output requires review; never a normal scan path                      |
 | CI / release / security evidence workflows    | Repository events or scheduled workflows            | GitHub, registries, Go modules, signing and Scorecard services; public project source/build/security metadata                               | Scoped Actions tokens; existing release secrets where required                  | Workflow failure remains visible; these workflows do not process users' private assignments                     |
 
 The website links to third-party evidence. Opening those links contacts their operators. CLI privacy
@@ -74,7 +74,7 @@ sensitive filenames, repository identity and redacted evidence. Redaction is pat
 guarantee that arbitrary secrets are removed. Treat reports as sensitive and review before sharing.
 No telemetry client or report-upload path is implemented in the normal scanner.
 
-Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid cached
+Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid or older cached
 intelligence falls back to embedded data with a warning. Updates require a valid signature and
 schema; rollback uses previously verified local snapshots. See the
 [intelligence guide](https://repyy.dev/intelligence/).
@@ -85,6 +85,11 @@ Host remotes use a private `repyy-clone-*` temporary directory. Git hooks/templa
 submodules, redirects, system/global Git configuration and unrequested Git protocols are disabled.
 Default history depth is one. `--keep-workdir` deliberately retains host checkouts. Otherwise
 cleanup is deferred; clone/revision failures also attempt removal.
+
+Git acquisition has a context timeout but no byte, pack, checkout-file-count,
+or disk-space cap before scanner traversal. Scanner file and archive limits
+cannot bound temporary checkout storage. A clone failure is reported as an
+incomplete target; this remains a resource boundary to address separately.
 
 Docker remotes use a private `repyy-sandbox-*` parent with a writable fetch child, followed by a
 read-only scan mount. Provider tokens use a separate mode-0600 temporary env file. Timed-out
@@ -137,7 +142,7 @@ interpret an empty result or exit 0 as proof of safety.
 Static analysis can miss malicious behavior and flag legitimate code. Dynamic imports, generated
 code, encrypted content and runtime state may be unresolved. A filename, signature or suspicious
 string alone does not establish malicious intent. Inspect the evidence and ask the sender for
-context. The demo benchmark versions its expectations and keeps misses and expectation corrections visible.
+context. The inert sample benchmark versions its expectations and keeps misses and expectation corrections visible.
 
 ## Claim-to-evidence map
 
@@ -150,7 +155,7 @@ context. The demo benchmark versions its expectations and keeps misses and expec
 | Repository values are escaped                | `TestHumanReportsNeutralizeControlCharacters`, `TestSourceDerivedSecretsAreRedactedAcrossFormats`, `FuzzHumanOutput`                                                                                                                                                                                                                                                                                                                                     | Pattern redaction is not a complete secret classifier                      |
 | Releases identify source                     | [internal/buildinfo](https://github.com/Kevin-Umali/repyy/tree/main/internal/buildinfo), [.github/workflows/release.yml](https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/release.yml)                                                                                                                                                                                                                                                   | New attestations require a successful tagged run and download verification |
 | Dependencies are disclosed                   | `.goreleaser.yaml`, release SBOM assets                                                                                                                                                                                                                                                                                                                                                                                                                  | Component inventory does not establish harmlessness                        |
-| Detection behavior is measurable             | `demo/cases.json`, `scripts/benchmark.py`                                                                                                                                                                                                                                                                                                                                                                                                                | Eight inert paired cases; not representative global accuracy               |
+| Detection behavior is measurable             | `demo/cases.json`, `scripts/benchmark.py`                                                                                                                                                                                                                                                                                                                                                                                                                | Eleven inert paired cases; not representative global accuracy              |
 | Hostile inputs receive behavioral/fuzz tests | [internal/scan/repository_test.go](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/repository_test.go), [archive_test.go](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/archive_test.go), [context_test.go](https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/context_test.go), [.github/workflows/security-evidence.yml](https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/security-evidence.yml) | Bounded test runs; no exhaustive assurance                                 |
 | External review                              | `docs/EXTERNAL-REVIEW.md`                                                                                                                                                                                                                                                                                                                                                                                                                                | Prepared scope only; no independent review completed by this work          |
 

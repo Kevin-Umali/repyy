@@ -35,6 +35,49 @@ func TestSnapshotEntriesAreValidAndUnique(t *testing.T) {
 	}
 }
 
+func TestBuiltinSnapshotDoesNotShareIndicatorSlices(t *testing.T) {
+	snapshot := BuiltinSnapshot()
+	foundAxios := false
+	for index := range snapshot.Packages {
+		if snapshot.Packages[index].Name != "axios" {
+			continue
+		}
+		foundAxios = true
+		original := snapshot.Packages[index].Affected[0]
+		defer func() { snapshot.Packages[index].Affected[0] = original }()
+		snapshot.Packages[index].Affected[0] = "changed by caller"
+		if got := BuiltinSnapshot().Packages[index].Affected[0]; got != original {
+			t.Fatalf("caller changed embedded affected versions: %q", got)
+		}
+		originalReference := snapshot.Packages[index].References[0]
+		defer func() { snapshot.Packages[index].References[0] = originalReference }()
+		snapshot.Packages[index].References[0] = "changed by caller"
+		if got := BuiltinSnapshot().Packages[index].References[0]; got != originalReference {
+			t.Fatalf("caller changed embedded package provenance: %q", got)
+		}
+		break
+	}
+	if !foundAxios {
+		t.Fatal("Axios indicator missing from embedded snapshot")
+	}
+	for index := range snapshot.Packages {
+		if snapshot.Packages[index].Name == "vite-tsconsole-log" {
+			originalAlias := snapshot.Packages[index].Aliases[0]
+			snapshot.Packages[index].Aliases[0] = "changed by caller"
+			if got := BuiltinSnapshot().Packages[index].Aliases[0]; got != originalAlias {
+				t.Fatalf("caller changed embedded aliases: %q", got)
+			}
+			break
+		}
+	}
+	originalHashReference := snapshot.FileHashes[0].References[0]
+	defer func() { snapshot.FileHashes[0].References[0] = originalHashReference }()
+	snapshot.FileHashes[0].References[0] = "changed by caller"
+	if got := BuiltinSnapshot().FileHashes[0].References[0]; got != originalHashReference {
+		t.Fatalf("caller changed embedded hash provenance: %q", got)
+	}
+}
+
 func TestWithdrawnAdvisoryIsNotSelected(t *testing.T) {
 	for _, entry := range Packages {
 		if entry.AdvisoryID == "GHSA-rwq7-v7c7-27gx" {

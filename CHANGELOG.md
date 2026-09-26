@@ -4,16 +4,39 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-26
+
+### Added
+
+- Add sourced package indicators for `process-log`, `cdn-icon-fetch`, and
+  `vite-tsconsole-log`, preserving exact affected Axios versions.
+- Add bounded, data-only JavaScript literal recovery and conservative
+  same-function Axios response-to-execution correlation with source and sink
+  locations. Unsupported decoding remains visible as incomplete coverage.
+- Publish a versioned behavioral rule catalog and a rules reference for the
+  existing documentation site.
+- Add a bounded maintainer ingestion path for paginated GitHub malware
+  advisories and pinned OpenSSF OSV reports, including alias deduplication,
+  withdrawal/correction audit output, provenance, exact versions, and a hard
+  candidate-size check against the 16 MiB updater limit.
+
 ### Changed
 
+- Refresh the public demo with eleven inert paired cases scanned by the 0.6.0 preview code. Keep pinned real-corpus observations as context and label current-version corpus measurements as pending.
+- Bound Git diagnostics, TAR expansion, and text line indexing; read nested npm v1 lockfile dependencies and index manifest locations in one pass.
 - Consolidate scanner tests by behavior, replace self-referential rule and catalog checks with observable scan expectations, and keep edge-case and benign-control coverage in the relevant suites.
 - Clarify the security boundary and release evidence in the guides and website, with clearer starting paths for first-time reviewers, CLI users, and security reviewers.
+- Reduce weak findings in generated vendor bundles while retaining secrets,
+  confirmed indicators, and correlated behavior.
 
 ### Fixed
 
+- Sanitize progress targets and withhold authenticated Git diagnostics; encode Docker bind mounts correctly for paths containing commas or quotes.
+- Preserve executable context in ordinary files named like rule or signature sources, and handle top-level module Axios flows and aliased table mutation conservatively.
 - Correct documentation navigation links and labels, and serve the site favicon.
-
-No scanner runtime behavior or detection rules changed.
+- Keep safe exact lockfile versions outside a narrowly affected advisory from
+  being described as confirmed compromise; label eligible unlocked ranges as
+  potential exposure.
 
 ## [0.5.3] - 2026-09-19
 

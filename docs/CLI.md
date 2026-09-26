@@ -11,6 +11,7 @@ repyy report [options] <report.json|->
 repyy rules validate <rules.yaml>
 repyy rules check
 repyy rules list [--format terminal|json]
+repyy rules catalog [--format terminal|json]
 repyy rules explain <rule-id> [--format terminal|json]
 repyy intel status [--format terminal|json]
 repyy intel update
@@ -52,10 +53,14 @@ scans use a temporary networked fetch stage.
 | `--min-confidence LEVEL` | `low`               | Display filter for `low`, `medium`, or `high`; it does not alter the verdict.                                               |
 | `--group-by`             | `severity`          | Groups presentation by `severity`, `file`, or `rule`.                                                                       |
 
-The default resource limits also bound archive work: 10,000 archive entries, 1 GiB of archive bytes,
-and archive nesting depth 3. A limit or read error is reported as `SCAN INCOMPLETE`; do not treat an
+The default resource limits also bound archive work: 10,000 archive entries, 1 GiB of expanded tar bytes,
+and archive nesting depth 3. Rule evaluation skips a text file with more than 250,000 lines. A limit or read error is reported as `SCAN INCOMPLETE`; do not treat an
 incomplete result as clean. Flags may appear before or after targets. Value flags accept a space or
 `=`, such as `--format html` and `--format=html`.
+
+These scanner limits apply after a remote Git checkout. Git remains the default remote
+acquisition method; the clone has a timeout but no pre-checkout byte or disk quota.
+Do not treat `--max-files` or `--max-file-size` as a clone storage limit.
 
 For `--file targets.txt`, create a UTF-8 text file like this:
 
@@ -131,6 +136,7 @@ Use these offline inspection commands when a finding needs context:
 ```sh
 repyy rules list
 repyy rules list --format json
+repyy rules catalog --format json
 repyy rules explain EXEC-001
 repyy rules check
 repyy intel status
@@ -140,6 +146,13 @@ repyy intel status --format json
 `repyy intel update` explicitly downloads and verifies a public intelligence snapshot.
 `repyy intel rollback` restores the previous verified cached snapshot. Scans never update
 intelligence automatically.
+
+`rules catalog` exports the versioned built-in behavioral rule definitions.
+`rules list` exports the separate active package and file-hash intelligence snapshot.
+For npm, an exact affected version in a parsed lockfile is a confirmed resolved
+match. A manifest range that could include an affected version is a possible
+exposure, even when a safe lockfile entry is present; review declaration/lock
+disagreements manually.
 
 ## Human status and build identity
 

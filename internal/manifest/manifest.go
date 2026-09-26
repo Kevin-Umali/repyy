@@ -40,6 +40,8 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 	switch {
 	case base == "package.json":
 		dependencies, supported = parseJSONMaps("npm", data, "dependencies", "devDependencies", "optionalDependencies", "peerDependencies"), true
+	case base == "package-lock.json" || base == "npm-shrinkwrap.json":
+		dependencies, supported = parseNPMLock(data), true
 	case base == "composer.json":
 		dependencies, supported = parseJSONMaps("composer", data, "require", "require-dev"), true
 	case base == "pom.xml":
@@ -63,21 +65,111 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 	return dependencies, supported
 }
 
+func parseNPMLock(data []byte) []Dependency {
+	type lockDependency struct {
+		Version      string                    `json:"version"`
+		Dependencies map[string]lockDependency `json:"dependencies"`
+	}
+	var doc struct {
+		Packages map[string]struct {
+			Version string `json:"version"`
+		} `json:"packages"`
+		Dependencies map[string]lockDependency `json:"dependencies"`
+	}
+	if json.Unmarshal(data, &doc) != nil {
+		return nil
+	}
+	var out []Dependency
+	for path, item := range doc.Packages {
+		index := strings.LastIndex(path, "node_modules/")
+		if index < 0 || item.Version == "" {
+			continue
+		}
+		name := path[index+len("node_modules/"):]
+		if name != "" {
+			out = append(out, Dependency{Ecosystem: "npm", Name: name, Version: item.Version, Scope: "lockfile"})
+		}
+	}
+	if len(doc.Packages) == 0 {
+		type namedDependency struct {
+			name string
+			item lockDependency
+		}
+		pending := make([]namedDependency, 0, len(doc.Dependencies))
+		for name, item := range doc.Dependencies {
+			pending = append(pending, namedDependency{name, item})
+		}
+		for len(pending) > 0 {
+			current := pending[len(pending)-1]
+			pending = pending[:len(pending)-1]
+			name, item := current.name, current.item
+			if item.Version != "" {
+				out = append(out, Dependency{Ecosystem: "npm", Name: name, Version: item.Version, Scope: "lockfile"})
+			}
+			for childName, child := range item.Dependencies {
+				pending = append(pending, namedDependency{childName, child})
+			}
+		}
+	}
+	return sorted(out)
+}
+
 func attachLines(data []byte, dependencies []Dependency) {
+	if len(dependencies) == 0 {
+		return
+	}
+	needles := make(map[string]int, len(dependencies))
+	for _, dependency := range dependencies {
+		for _, needle := range dependencyNeedles(dependency) {
+			if needle != "" {
+				needles[needle] = 0
+			}
+		}
+	}
+	line := 1
+	for start := 0; start < len(data); {
+		if data[start] == '\n' {
+			line++
+			start++
+			continue
+		}
+		if !manifestTokenByte(data[start]) {
+			start++
+			continue
+		}
+		end := start + 1
+		for end < len(data) && manifestTokenByte(data[end]) {
+			end++
+		}
+		if token := string(data[start:end]); needles[token] == 0 {
+			if _, wanted := needles[token]; wanted {
+				needles[token] = line
+			}
+		}
+		start = end
+	}
 	for i := range dependencies {
-		needles := []string{dependencies[i].Name}
-		if dependencies[i].Alias != "" {
-			needles = append([]string{dependencies[i].Alias}, needles...)
-		}
-		if separator := strings.LastIndex(dependencies[i].Name, ":"); separator >= 0 {
-			needles = append(needles, dependencies[i].Name[separator+1:])
-		}
-		for _, needle := range needles {
-			if dependencies[i].Line = DeclarationLine(data, needle); dependencies[i].Line > 0 {
+		for _, needle := range dependencyNeedles(dependencies[i]) {
+			dependencies[i].Line = needles[needle]
+			if dependencies[i].Line == 0 && strings.IndexFunc(needle, func(r rune) bool { return r > 127 || !manifestTokenByte(byte(r)) }) >= 0 {
+				dependencies[i].Line = DeclarationLine(data, needle)
+			}
+			if dependencies[i].Line > 0 {
 				break
 			}
 		}
 	}
+}
+
+func dependencyNeedles(dependency Dependency) []string {
+	needles := []string{dependency.Name}
+	if dependency.Alias != "" {
+		needles = append([]string{dependency.Alias}, needles...)
+	}
+	if separator := strings.LastIndex(dependency.Name, ":"); separator >= 0 {
+		needles = append(needles, dependency.Name[separator+1:])
+	}
+	return needles
 }
 
 // DeclarationLine returns the first line containing token as a complete

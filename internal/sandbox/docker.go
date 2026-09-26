@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -349,17 +350,15 @@ func scrub(s string) string {
 }
 
 func bindMount(path, destination string, readOnly bool) string {
-	// Docker parses --mount as CSV. Quote the source within that single CLI
-	// argument so commas and quotes in macOS/Windows paths remain path data.
-	source := strings.ReplaceAll(path, `"`, `""`)
-	if strings.ContainsAny(source, `,"`) {
-		source = `"` + source + `"`
-	}
-	mount := "type=bind,src=" + source + ",dst=" + destination
+	fields := []string{"type=bind", "src=" + path, "dst=" + destination}
 	if readOnly {
-		mount += ",readonly"
+		fields = append(fields, "readonly")
 	}
-	return mount
+	var buf strings.Builder
+	writer := csv.NewWriter(&buf)
+	_ = writer.Write(fields)
+	writer.Flush()
+	return strings.TrimSuffix(buf.String(), "\n")
 }
 
 func containerUserArgs() []string {

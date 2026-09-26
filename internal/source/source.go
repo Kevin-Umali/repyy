@@ -12,7 +12,44 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
+
+const maxGitDiagnosticBytes = 8 << 10
+
+type gitDiagnostics struct {
+	mu        sync.Mutex
+	data      []byte
+	truncated bool
+}
+
+func (d *gitDiagnostics) Write(p []byte) (int, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	n := len(p)
+	if n >= maxGitDiagnosticBytes {
+		d.data = append(d.data[:0], p[n-maxGitDiagnosticBytes:]...)
+		d.truncated = true
+		return n, nil
+	}
+	if overflow := len(d.data) + n - maxGitDiagnosticBytes; overflow > 0 {
+		copy(d.data, d.data[overflow:])
+		d.data = d.data[:len(d.data)-overflow]
+		d.truncated = true
+	}
+	d.data = append(d.data, p...)
+	return n, nil
+}
+
+func (d *gitDiagnostics) errorText() string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	text := sanitizeGitError(string(d.data))
+	if d.truncated {
+		return "[Git diagnostics truncated] " + text
+	}
+	return text
+}
 
 // Options controls safe remote-history depth and checkout retention.
 type Options struct {
@@ -74,9 +111,14 @@ func Prepare(ctx context.Context, target string, opts Options) (Prepared, error)
 	args = append(args, "--", target, dest)
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = secureGitEnv(target)
-	output, err := cmd.CombinedOutput()
+	output := &gitDiagnostics{}
+	cmd.Stdout, cmd.Stderr = output, output
+	err = cmd.Run()
 	if err != nil {
-		return Prepared{}, errors.Join(fmt.Errorf("safe clone failed: %s", sanitizeGitError(string(output))), removeFailedCheckout(tmp))
+		if _, token := tokenFor(target); token != "" {
+			return Prepared{}, errors.Join(errors.New("safe clone failed; Git diagnostics withheld for authenticated request"), removeFailedCheckout(tmp))
+		}
+		return Prepared{}, errors.Join(fmt.Errorf("safe clone failed: %s", output.errorText()), removeFailedCheckout(tmp))
 	}
 	revisionCmd := exec.CommandContext(ctx, "git", "-c", "core.hooksPath="+nullDevice(), "-C", dest, "rev-parse", "HEAD")
 	revisionCmd.Env = secureGitEnv(target)

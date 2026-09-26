@@ -89,15 +89,18 @@ func (s *Store) LoadActive(now time.Time) (*Database, Status) {
 // LoadActiveSnapshot returns verified cached records or the embedded fallback.
 // It never accesses the network.
 func (s *Store) LoadActiveSnapshot(now time.Time) (Snapshot, Status) {
+	builtin := BuiltinSnapshot()
 	snapshot, err := s.loadPointer("active")
 	if err == nil {
+		if snapshotOlderThan(snapshot, builtin) {
+			return builtin, statusFor(builtin, "embedded", true, s.Dir, now, "cached intelligence predates the embedded snapshot")
+		}
 		return snapshot, statusFor(snapshot, "cache", true, s.Dir, now, "")
 	}
 	warning := ""
 	if !errors.Is(err, os.ErrNotExist) {
 		warning = "cached intelligence was ignored: " + err.Error()
 	}
-	builtin := BuiltinSnapshot()
 	return builtin, statusFor(builtin, "embedded", true, s.Dir, now, warning)
 }
 
@@ -130,10 +133,7 @@ func (s *Store) Update(ctx context.Context, now time.Time) (Status, error) {
 	if snapshotTime(snapshot).After(now.Add(24 * time.Hour)) {
 		return Status{}, fmt.Errorf("refusing future-dated snapshot %s", snapshot.SnapshotDate)
 	}
-	active, activeErr := s.loadPointer("active")
-	if activeErr != nil {
-		active = BuiltinSnapshot()
-	}
+	active, _ := s.LoadActiveSnapshot(now)
 	if snapshotOlderThan(snapshot, active) {
 		return Status{}, fmt.Errorf("refusing older snapshot %s; active snapshot is %s", snapshot.SnapshotDate, active.SnapshotDate)
 	}
@@ -272,6 +272,13 @@ func decodeSnapshot(data []byte) (Snapshot, error) {
 		key := strings.ToLower(p.Ecosystem + "\x00" + p.Name + "\x00" + p.AdvisoryID)
 		if p.Ecosystem == "" || p.Name == "" || p.AdvisoryID == "" || p.Source == "" || !validHTTPSURL(p.SourceURL) || p.Description == "" || !validDate(p.Added) || p.SnapshotVersion != snapshot.SnapshotVersion || seenPackages[key] {
 			return Snapshot{}, fmt.Errorf("invalid or duplicate package indicator %q", p.Name)
+		}
+		seenAliases := map[string]bool{p.AdvisoryID: true}
+		for _, alias := range p.Aliases {
+			if strings.TrimSpace(alias) == "" || seenAliases[alias] {
+				return Snapshot{}, fmt.Errorf("invalid or duplicate advisory alias for %s", p.Name)
+			}
+			seenAliases[alias] = true
 		}
 		if p.Modified != "" && !validDate(p.Modified) {
 			return Snapshot{}, fmt.Errorf("invalid modified date for package indicator %q", p.Name)

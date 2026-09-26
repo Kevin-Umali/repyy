@@ -21,6 +21,8 @@ jobs:
           cache: true
       - run: go build -o /tmp/repyy ./cmd/repyy
       - run: python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/benchmark --check
+      - name: Check bounded intelligence ingestion
+        run: python3 -m unittest scripts/test_ingest_intelligence.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
