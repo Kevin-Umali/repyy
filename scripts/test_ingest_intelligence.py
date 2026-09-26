@@ -75,7 +75,7 @@ class IngestionTests(unittest.TestCase):
             ingest.normalize_github(report)
 
     def test_candidate_preserves_curated_base_and_bounds_local_pages(self):
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary:
+        with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "osv").mkdir()
             (root / "osv" / "MAL-1.json").write_text('{"id":"MAL-1","affected":[{"package":{"ecosystem":"npm","name":"bad-example"},"ranges":[{"type":"ECOSYSTEM","events":[{"introduced":"0"}]}]}]}')
