@@ -89,15 +89,18 @@ func (s *Store) LoadActive(now time.Time) (*Database, Status) {
 // LoadActiveSnapshot returns verified cached records or the embedded fallback.
 // It never accesses the network.
 func (s *Store) LoadActiveSnapshot(now time.Time) (Snapshot, Status) {
+	builtin := BuiltinSnapshot()
 	snapshot, err := s.loadPointer("active")
 	if err == nil {
+		if snapshotOlderThan(snapshot, builtin) {
+			return builtin, statusFor(builtin, "embedded", true, s.Dir, now, "cached intelligence predates the embedded snapshot")
+		}
 		return snapshot, statusFor(snapshot, "cache", true, s.Dir, now, "")
 	}
 	warning := ""
 	if !errors.Is(err, os.ErrNotExist) {
 		warning = "cached intelligence was ignored: " + err.Error()
 	}
-	builtin := BuiltinSnapshot()
 	return builtin, statusFor(builtin, "embedded", true, s.Dir, now, warning)
 }
 
@@ -130,10 +133,7 @@ func (s *Store) Update(ctx context.Context, now time.Time) (Status, error) {
 	if snapshotTime(snapshot).After(now.Add(24 * time.Hour)) {
 		return Status{}, fmt.Errorf("refusing future-dated snapshot %s", snapshot.SnapshotDate)
 	}
-	active, activeErr := s.loadPointer("active")
-	if activeErr != nil {
-		active = BuiltinSnapshot()
-	}
+	active, _ := s.LoadActiveSnapshot(now)
 	if snapshotOlderThan(snapshot, active) {
 		return Status{}, fmt.Errorf("refusing older snapshot %s; active snapshot is %s", snapshot.SnapshotDate, active.SnapshotDate)
 	}

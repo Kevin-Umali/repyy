@@ -167,7 +167,7 @@ const guide = getGuide("trust");
       telemetry client or report-upload path is implemented in the normal scanner.
     </p>
     <p>
-      Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid cached intelligence falls back to embedded data with a warning.
+      Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid or older cached intelligence falls back to embedded data with a warning.
       Updates require a valid signature and schema; rollback uses previously verified local snapshots. See the
       <a href="../intelligence/">intelligence guide</a>.
     </p>
@@ -178,6 +178,10 @@ const guide = getGuide("trust");
       Host remotes use a private <code>repyy-clone-*</code> temporary directory. Git hooks/templates, recursive submodules, redirects, system/global Git
       configuration and unrequested Git protocols are disabled. Default history depth is one. <code>--keep-workdir</code> deliberately retains host checkouts.
       Otherwise cleanup is deferred; clone/revision failures also attempt removal.
+    </p>
+    <p>
+      Git acquisition has a timeout but no byte, pack, file-count, or disk quota before checkout. Scanner file limits begin after retrieval and do not
+      protect temporary checkout storage. Clone failures are reported as incomplete targets.
     </p>
     <p>
       Docker remotes use a private <code>repyy-sandbox-*</code> parent with a writable fetch child, followed by a read-only scan mount. Provider tokens use a

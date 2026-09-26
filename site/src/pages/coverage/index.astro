@@ -1,6 +1,9 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { getGuide } from "../../data/guides";
+import catalog from "../../data/rule-catalog.json";
+
+const categories = [...new Set(catalog.rules.map((rule) => rule.category))].sort();
 
 const guide = getGuide("coverage");
 ---
@@ -26,132 +29,25 @@ const guide = getGuide("coverage");
           </div>
         </section>
 
-        <section
-          class="docs-section docs-searchable"
-          id="map"
-          data-search="dynamic execution obfuscation package lifecycle dependencies registry download execution backdoors credentials secrets network exfiltration reverse shells mining sandbox ci editor containers git metadata repository integrity social engineering rule ids"
-        >
+        <section class="docs-section docs-searchable" id="map" data-search="versioned behavioral rule catalog categories scope severity confidence">
           <h2>Coverage map</h2>
           <p>
-            The scanner combines individual indicators with correlated behavior. The IDs below are the families you will see in terminal, JSON, SARIF, and HTML
-            reports.
+            Generated from the built-in behavioral catalog for ruleset <code>{catalog.rules_version}</code>.
+            Each ID links to its exact scope, base severity and confidence, legitimate use, and review action.
+            Package and hash advisories belong to the separate <a href="/intelligence/">intelligence snapshot</a>.
           </p>
-          <div class="docs-table coverage-table" role="table" aria-label="Detection coverage and rule IDs">
-            <div role="row"><b role="cell">Detection area</b><b role="cell">Representative checks</b><b role="cell">Rule IDs</b></div>
-            <div role="row">
-              <b role="cell">Dynamic execution</b
-              ><span role="cell"><code>eval</code>, Function constructors, VM execution, string timers, browser execution APIs, OS process spawning</span
-              ><code role="cell">EXEC-*, COMBO-002</code>
-            </div>
-            <div role="row">
-              <b role="cell">Obfuscation</b
-              ><span role="cell">Base64, hex and Unicode decoding; dense escapes; string reversal; computed globals; shufflers; long or high-entropy lines</span
-              ><code role="cell">OBFS-*, UNICODE-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Package lifecycle</b><span role="cell">npm and Composer hooks; Python, Cargo, Go, JVM, and MSBuild build-time execution</span
-              ><code role="cell">PKG-001, PY-001, PHP-001, RUST-001, RUST-002, GO-001, JVM-001, DOTNET-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Malicious dependencies</b
-              ><span role="cell">Sourced package/version indicators across eight ecosystems, typosquats, unusual versions, URL/VCS dependencies</span
-              ><code role="cell">IOC-PKG-*, TYPOSQUAT-001, PKG-002, PKG-003, PKG-005</code>
-            </div>
-            <div role="row">
-              <b role="cell">Package-manager integrity</b
-              ><span role="cell"
-                >Registry credentials, alternate sources, overrides and aliases, nonstandard lockfile URLs, local package-manager executables/plugins, wrapper
-                URLs and checksums, unsafe package binaries</span
-              ><code role="cell"
-                >NPMRC-*, LOCK-001, PKG-004, PKG-006, PKG-008, PKG-009, PY-003, RUBY-002, RUST-003, RUST-004, RUST-005, PHP-002, PHP-003, NUGET-001, YARN-*,
-                JVMWRAP-*</code
-              >
-            </div>
-            <div role="row">
-              <b role="cell">Download and execution</b><span role="cell">Pipe-to-shell, decode-to-execute, downloaded executable launch, remote imports</span
-              ><code role="cell">CHAIN-*, IMPORT-002, DOCKER-002</code>
-            </div>
-            <div role="row">
-              <b role="cell">Backdoors</b
-              ><span role="cell">Request-controlled commands, runtime-computed imports, Node require bypasses, hardcoded authentication bypasses</span
-              ><code role="cell">BACKDOOR-*, IMPORT-001, IMPORT-003</code>
-            </div>
-            <div role="row">
-              <b role="cell">Credential and wallet access</b
-              ><span role="cell">SSH, cloud and container credentials; browser databases; wallets; clipboard, cookies, keylogging, forms, sensitive reads</span
-              ><code role="cell">CRED-*, EXFIL-002, ENV-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Secrets</b><span role="cell">Private keys and AWS, GitHub, Stripe, Slack-style tokens; evidence is redacted</span
-              ><code role="cell">SECRET-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Suspicious network</b
-              ><span role="cell">Discord, Telegram, Pastebin, ngrok, public raw-IP URLs, WebSockets, DNS transfer primitives</span
-              ><code role="cell">NET-*, IPURL-001, EXFIL-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Collection and exfiltration</b
-              ><span role="cell">Host fingerprinting or environment collection correlated with outbound transfer</span
-              ><code role="cell">FINGERPRINT-001, COMBO-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Reverse and bind shells</b><span role="cell">Shell, netcat/ncat, socat, FIFO, scripting-language and socket/dup patterns</span
-              ><code role="cell">REVSHELL-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Cryptomining</b><span role="cell">XMRig, CoinHive, CryptoNight, Stratum, pool names, corroborated mining ports</span
-              ><code role="cell">MINER-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Sandbox and CI evasion</b><span role="cell">VM, container, and CI probes with elevated correlated execution</span
-              ><code role="cell">EVADE-001, COMBO-003</code>
-            </div>
-            <div role="row">
-              <b role="cell">CI/CD integrity</b
-              ><span role="cell"
-                >Untrusted GitHub event interpolation, privileged checkout, mutable actions, secret egress, low-trust cache writes, artifact use in privileged
-                <code>workflow_run</code> jobs, pull requests on self-hosted runners, CI variable injection</span
-              ><code role="cell">CICD-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Editor and agent execution</b
-              ><span role="cell"
-                >VS Code folder-open and manual task/debug commands, JSONC recommendations, devcontainer/CLI extension installs, VSIX packages, devcontainer
-                features and lifecycle commands, trust overrides, and multiline agent/MCP hooks</span
-              ><code role="cell">IDE-*, AGENT-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Host installation and startup</b
-              ><span role="cell"
-                >Host package/global-tool installers, font registration and binary-font integrity, direnv/Nix hooks, pre-commit installers, executable Git
-                filters/helpers, shell profiles, scheduled tasks, launch agents, systemd, and Windows startup</span
-              ><code role="cell">INSTALL-001, FONT-*, AUTORUN-*, GITHOOK-*, GITMETA-*, SHELL-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Image active content</b><span role="cell">Executable SVG script elements, event handlers, and JavaScript links</span
-              ><code role="cell">IMAGE-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">Containers</b
-              ><span role="cell">Remote <code>ADD</code>, privileged/host namespaces, Docker socket, capabilities, sensitive mounts</span
-              ><code role="cell">DOCKER-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Git metadata</b><span role="cell">Active hooks, hooks-path changes, executable filters/helpers, unsafe protocol configuration</span
-              ><code role="cell">GITHOOK-*, GITMETA-001</code>
-            </div>
-            <div role="row">
-              <b role="cell">File and repository integrity</b
-              ><span role="cell"
-                >Known SHA-256 indicators, binaries, executable bits, escaping symlinks, archive traversal/resource bounds, missing README/license</span
-              ><code role="cell">IOC-HASH-SHA256, BINARY-001, EXECBIT-001, SYMLINK-*, ARCHIVE-001, REPO-*</code>
-            </div>
-            <div role="row">
-              <b role="cell">Social engineering</b
-              ><span role="cell">Urgency plus interview pressure, instructions to disable security or elevate privileges</span
-              ><code role="cell">SOCIAL-*, APT-001</code>
-            </div>
+          <div class="docs-table coverage-table" role="table" aria-label="Behavioral categories and rules">
+            <div role="row"><b role="cell">Detection area</b><b role="cell">Rule IDs and description</b></div>
+            {categories.map((category) => (
+              <div role="row">
+                <b role="cell">{category.replaceAll("-", " ")}</b>
+                <span role="cell">
+                  {catalog.rules.filter((rule) => rule.category === category).map((rule) => (
+                    <span><a href={`/rules/#rule-${rule.id}`}><code>{rule.id}</code></a> {rule.description} ({rule.severity}/{rule.confidence}; {rule.match_scope})<br /></span>
+                  ))}
+                </span>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -354,7 +250,7 @@ const guide = getGuide("coverage");
           </p>
           <p>
             Package-manager options such as pip <code>-r</code>/<code>-c</code> are not followed, build configuration is not evaluated, and declared
-            dependencies are not compared with resolved lockfile content. Wrapper archive hashes are checked for presence and format, not verified against
+            declarations are not fully reconciled with resolved lockfile content; npm lockfile versions are checked as separate package records. Wrapper archive hashes are checked for presence and format, not verified against
             downloaded bytes. Sibling <code>build.rs</code> detection applies to unpacked repository files.
           </p>
           <p>
@@ -411,6 +307,7 @@ const guide = getGuide("coverage");
             Rule explanations are available offline and show the rule’s severity, confidence, disposition, category, matching scope, applicable paths,
             rationale, legitimate-use context, and recommended action.
           </p>
+          <p>Browse the <a href="/rules/">versioned behavioral rule reference</a> or export it with <code>repyy rules catalog --format json</code>.</p>
           <div class="docs-command">
             <div><span>Terminal explanation</span><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button></div>
             <code>repyy rules explain EXEC-001</code>
@@ -440,7 +337,7 @@ const guide = getGuide("coverage");
             <code>repyy intel status</code>
           </div>
           <div class="docs-command">
-            <div><span>Rules and sources</span><button type="button" data-copy="repyy rules list">Copy</button></div>
+            <div><span>Intelligence indicators and sources</span><button type="button" data-copy="repyy rules list">Copy</button></div>
             <code>repyy rules list</code>
           </div>
           <div class="docs-command">

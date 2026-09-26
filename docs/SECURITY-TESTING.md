@@ -14,6 +14,12 @@ verify URL rejection and sanitized Git configuration. Docker unit tests use a fa
 to test invocation and hostile JSON handling; they are not live isolation-escape tests. CI
 separately builds and starts the worker image for a version smoke check.
 
+Focused inert fixtures also cover advisory version semantics, bounded JavaScript
+literal recovery, unsupported/limited decode coverage, same-function Axios
+response-to-execution with ordinary request controls, and generated vendor
+bundle noise. The four skipped corpus paths were traced to invalid UTF-8 in
+their first 8 KiB; unsupported text remains visible as incomplete coverage.
+
 `internal/scan/repository_test.go` covers Git metadata and symlink behavior; `archive_test.go` covers
 archive traversal and nested inspection; `active_content_test.go` covers staged execution, active document content, and VSIX packages;
 `context_test.go` checks prompt-injection context; and `scanner_test.go` exercises cross-surface

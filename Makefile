@@ -1,5 +1,5 @@
 BINARY := bin/repyy
-VERSION ?= 0.5.3
+VERSION ?= 0.6.0
 
 .PHONY: build test check security intel install clean site-dev site-check site-build site-preview site-format
 

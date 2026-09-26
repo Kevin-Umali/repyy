@@ -40,6 +40,8 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 	switch {
 	case base == "package.json":
 		dependencies, supported = parseJSONMaps("npm", data, "dependencies", "devDependencies", "optionalDependencies", "peerDependencies"), true
+	case base == "package-lock.json" || base == "npm-shrinkwrap.json":
+		dependencies, supported = parseNPMLock(data), true
 	case base == "composer.json":
 		dependencies, supported = parseJSONMaps("composer", data, "require", "require-dev"), true
 	case base == "pom.xml":
@@ -61,6 +63,39 @@ func Parse(path string, data []byte) ([]Dependency, bool) {
 	}
 	attachLines(data, dependencies)
 	return dependencies, supported
+}
+
+func parseNPMLock(data []byte) []Dependency {
+	var doc struct {
+		Packages map[string]struct {
+			Version string `json:"version"`
+		} `json:"packages"`
+		Dependencies map[string]struct {
+			Version string `json:"version"`
+		} `json:"dependencies"`
+	}
+	if json.Unmarshal(data, &doc) != nil {
+		return nil
+	}
+	var out []Dependency
+	for path, item := range doc.Packages {
+		index := strings.LastIndex(path, "node_modules/")
+		if index < 0 || item.Version == "" {
+			continue
+		}
+		name := path[index+len("node_modules/"):]
+		if name != "" {
+			out = append(out, Dependency{Ecosystem: "npm", Name: name, Version: item.Version, Scope: "lockfile"})
+		}
+	}
+	if len(doc.Packages) == 0 {
+		for name, item := range doc.Dependencies {
+			if item.Version != "" {
+				out = append(out, Dependency{Ecosystem: "npm", Name: name, Version: item.Version, Scope: "lockfile"})
+			}
+		}
+	}
+	return sorted(out)
 }
 
 func attachLines(data []byte, dependencies []Dependency) {

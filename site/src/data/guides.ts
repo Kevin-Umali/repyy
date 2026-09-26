@@ -311,6 +311,18 @@ export const guides = [
     ],
   },
   {
+    slug: "rules",
+    route: "/rules/",
+    label: "Rule reference",
+    title: "Behavioral rule reference · repyy documentation",
+    description: "Versioned reference for Repyy's built-in behavioral rules, separate from threat intelligence.",
+    markdown: ["docs/RULES.md"],
+    sections: [
+      { id: "overview", label: "Read the catalog" },
+      { id: "catalog", label: "Browse rules" },
+    ],
+  },
+  {
     slug: "intelligence",
     route: "/intelligence/",
     label: "Intelligence",
@@ -451,6 +463,10 @@ export const guides = [
       {
         id: "safety-design",
         label: "Safety design",
+      },
+      {
+        id: "real-corpus",
+        label: "Observed corpus evidence",
       },
       {
         id: "reproduce",

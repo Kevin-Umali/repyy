@@ -24,6 +24,12 @@ inert corpus as benchmark [v1.1.0](https://github.com/Kevin-Umali/repyy-demo/tre
 Its checked-in reports were generated with the verified official Repyy v0.5.1 Linux binary from
 commit `261cc64bde67b9c73ba23021e052c330f64bbd05`. The same samples are available on this site.
 
+## Observed corpus evidence
+
+The site's [real-corpus example](https://repyy.dev/demo/#real-corpus) is separate from this inert benchmark. An earlier scan reviewed the [malicious-repositories corpus](https://github.com/xndbogdan/malicious-repositories/tree/dc82f332dae0f4e9ea6bdc1d8341c7743c59913f) at commit `dc82f332dae0f4e9ea6bdc1d8341c7743c59913f` with Repyy rules `2026.09.19`. It observed a missed `process-log` package indicator, an Axios response passed to `eval` without source-to-sink correlation, and three skipped DEX locale files that kept coverage incomplete. Rules `2026.09.26` add the relevant package record and bounded Axios correlation. A local replay was run, but its results have not yet been reviewed and published as the demo. These are example review paths, not a published measurement of the new rules or an accuracy score.
+
+[OpenSSF Malicious Packages](https://github.com/ossf/malicious-packages) publishes package advisory reports. It is an intelligence source, distinct from the repository sample corpus. Neither source establishes remote payload contents or a common actor.
+
 ## Reproduce
 
 From the Repyy source checkout, build Repyy itself and run its trusted benchmark runner:

@@ -4,7 +4,7 @@ package scan
 import "github.com/Kevin-Umali/repyy/internal/model"
 
 // BuiltinRulesVersion identifies the behavioral rule revision.
-const BuiltinRulesVersion = "2026.09.19"
+const BuiltinRulesVersion = "2026.09.26"
 
 // BuiltinRules returns a newly compiled copy of the embedded behavioral rules.
 func BuiltinRules() []Rule {

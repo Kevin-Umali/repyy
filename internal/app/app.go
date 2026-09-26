@@ -36,6 +36,7 @@ Usage:
   repyy rules validate <rules.yaml>
   repyy rules check
   repyy rules list [--format terminal|json]
+  repyy rules catalog [--format terminal|json]
   repyy rules explain <rule-id> [--format terminal|json]
   repyy intel status [--format terminal|json]
   repyy intel update
@@ -172,6 +173,26 @@ func printIntelStatus(stdout io.Writer, status intel.Status) {
 }
 
 func runRules(args []string, stdout io.Writer) (int, error) {
+	if len(args) >= 1 && args[0] == "catalog" {
+		format := "terminal"
+		if len(args) == 3 && args[1] == "--format" {
+			format = args[2]
+		} else if len(args) != 1 {
+			return 3, errors.New("usage: repyy rules catalog [--format terminal|json]")
+		}
+		catalog := scan.BuiltinRuleCatalogDocument()
+		if format == "json" {
+			return encodeJSON(stdout, catalog)
+		}
+		if format != "terminal" {
+			return 3, errors.New("--format must be terminal or json")
+		}
+		fmt.Fprintf(stdout, "Behavioral ruleset %s (%d rules)\n", catalog.RulesVersion, len(catalog.Rules))
+		for _, rule := range catalog.Rules {
+			fmt.Fprintf(stdout, "%-18s %-28s %s\n", rule.ID, rule.Category, rule.Description)
+		}
+		return 0, nil
+	}
 	if len(args) >= 1 && args[0] == "explain" {
 		if len(args) < 2 {
 			return 3, errors.New("usage: repyy rules explain <rule-id> [--format terminal|json]")

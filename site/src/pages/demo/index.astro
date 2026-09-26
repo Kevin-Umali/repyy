@@ -43,6 +43,42 @@ const guide = getGuide("demo");
             v0.5.1 Linux binary from commit <code>261cc64bde67b9c73ba23021e052c330f64bbd05</code>. The same samples are available on this site.
           </p>
         </section>
+        <section class="docs-section docs-searchable" id="real-corpus" data-search="real corpus pinned malicious repositories OpenSSF process-log Axios incomplete coverage">
+          <h2>What a real corpus taught us</h2>
+          <p>
+            The inert benchmark above is reproducible on this site. Separately, a static Phase 1 review scanned the
+            <a href="https://github.com/xndbogdan/malicious-repositories/tree/dc82f332dae0f4e9ea6bdc1d8341c7743c59913f">pinned malicious-repositories corpus</a>
+            at commit <code>dc82f332</code> with Repyy rules <code>2026.09.19</code>. These are observed gaps from that run, followed by the narrow checks added
+            in rules <code>2026.09.26</code>. A local replay was run, but its results have not yet been reviewed and published as the demo. The right column
+            describes a capability, not a published measurement.
+          </p>
+          <div class="docs-table-scroll" role="region" aria-label="Pinned corpus evidence" tabindex="0">
+            <table class="docs-data-table">
+              <thead><tr><th>Static evidence</th><th>Phase 1 observed</th><th>Current rule to review</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>coinpool-rental-platform1.0</code> calls <code>process-log</code> at module load.</td>
+                  <td>No package indicator finding.</td>
+                  <td>The embedded snapshot now includes the all-version <a href="https://github.com/advisories/GHSA-rqwx-v86m-wwff">process-log advisory</a>. Inspect the resolved version and source before any install.</td>
+                </tr>
+                <tr>
+                  <td><code>real-estate-rental-platform</code> passes Axios response data to <code>eval</code>.</td>
+                  <td>The execution sink was reported; the fetch-to-execution path was not correlated.</td>
+                  <td><a href="/rules/#rule-FLOW-001"><code>FLOW-001</code></a> correlates supported same-function Axios response flows and retains source and sink lines.</td>
+                </tr>
+                <tr>
+                  <td><code>DEX-staking-project-ultrax</code> declares <code>vite-tsconsole-log</code> and contains undecodable locale files.</td>
+                  <td>The package indicator was absent; three files were skipped, so the scan was incomplete.</td>
+                  <td>The <a href="https://osv.dev/vulnerability/MAL-2025-4289">OSV record</a> is embedded. Undecodable source still makes coverage incomplete.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <a href="https://github.com/ossf/malicious-packages">OpenSSF Malicious Packages</a> is an advisory-report source; it is separate from the
+            repository sample corpus. Neither source establishes remote payload contents or a common actor.
+          </p>
+        </section>
         <section class="docs-section docs-searchable" id="reproduce">
           <h2>Reproduce</h2>
           <p>From the Repyy source checkout, build Repyy itself and run its trusted benchmark runner:</p>

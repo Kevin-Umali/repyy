@@ -74,7 +74,7 @@ sensitive filenames, repository identity and redacted evidence. Redaction is pat
 guarantee that arbitrary secrets are removed. Treat reports as sensitive and review before sharing.
 No telemetry client or report-upload path is implemented in the normal scanner.
 
-Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid cached
+Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid or older cached
 intelligence falls back to embedded data with a warning. Updates require a valid signature and
 schema; rollback uses previously verified local snapshots. See the
 [intelligence guide](https://repyy.dev/intelligence/).
@@ -85,6 +85,11 @@ Host remotes use a private `repyy-clone-*` temporary directory. Git hooks/templa
 submodules, redirects, system/global Git configuration and unrequested Git protocols are disabled.
 Default history depth is one. `--keep-workdir` deliberately retains host checkouts. Otherwise
 cleanup is deferred; clone/revision failures also attempt removal.
+
+Git acquisition has a context timeout but no byte, pack, checkout-file-count,
+or disk-space cap before scanner traversal. Scanner file and archive limits
+cannot bound temporary checkout storage. A clone failure is reported as an
+incomplete target; this remains a resource boundary to address separately.
 
 Docker remotes use a private `repyy-sandbox-*` parent with a writable fetch child, followed by a
 read-only scan mount. Provider tokens use a separate mode-0600 temporary env file. Timed-out

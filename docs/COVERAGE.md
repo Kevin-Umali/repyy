@@ -7,6 +7,8 @@ heuristics can produce both false positives and false negatives.
 | Detection area                | Representative coverage                                                                                                                                                                                                                                                                            | Rule IDs or scanner checks                                                                                                                                                            |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Dynamic execution             | `eval`, Function constructors, VM execution, string timers, browser execution APIs, OS process spawning                                                                                                                                                                                            | `EXEC-*`, `COMBO-002`                                                                                                                                                                 |
+| Axios response to execution   | Same-function Axios response data flowing through simple aliases into `eval`, Function, or qualified `child_process` execution; source and sink lines retained                                                                                                                                    | `FLOW-001`                                                                                                                                                                           |
+| Decoded literal indicators    | Bounded JavaScript escape, Base64/hex literal, character-code, byte-array, and constant string-table lookup recovery rescanned for selected strong indicators                                                                                                                                  | `DECODE-001`                                                                                                                                                                         |
 | Obfuscation                   | Base64/hex/Unicode decoding, dense escapes, string reversal, computed globals, character shufflers, long/high-entropy lines                                                                                                                                                                        | `OBFS-*`, `UNICODE-001`                                                                                                                                                               |
 | Package lifecycle             | npm and Composer hooks; Python, Cargo, Go, JVM, and MSBuild build-time execution                                                                                                                                                                                                                   | `PKG-001`, `PY-001`, `PHP-001`, `RUST-001`, `RUST-002`, `GO-001`, `JVM-001`, `DOTNET-001`                                                                                             |
 | Malicious dependencies        | Attributed package/version IOCs across eight ecosystems, typosquat review signals, unusual versions, URL/VCS dependencies                                                                                                                                                                          | `IOC-PKG-*`, `TYPOSQUAT-001`, `PKG-002`, `PKG-003`, `PKG-005`                                                                                                                         |
@@ -110,9 +112,10 @@ it.
 - VSIX packages are inspected as bounded archives. Declared activation and execution
   surfaces, install lifecycle scripts, and bundled executable signatures are reported;
   extension JavaScript is still subject to the same static-analysis limits as other code.
-- Package names are matched only in parsed manifests. A sourced affected
-  version can become a confirmed IOC; an uncertain name/range remains a review
-  signal.
+- Package names are matched in parsed manifests and npm lockfiles. An exact
+  affected resolved lockfile version is a confirmed IOC. An unlocked declared
+  range that could include an affected version remains a possible exposure;
+  a safe exact lockfile version is not called compromised.
 - Alternate feeds, mirrors, local build scripts, and build wrappers are review
   signals because many projects use them intentionally. An official wrapper
   URL with a well-formed SHA-256 is left alone; a missing checksum is a
@@ -127,7 +130,8 @@ database. It does not resolve packages, contact registries during a scan, or
 install dependencies. It can inspect supported manifests for declared package
 indicators and lockfiles for suspicious sources and integrity clues; confirm a
 dependency finding against the ecosystem's current advisory and the exact
-resolved version.
+resolved version. The npm lockfile parser reads recorded versions but does not
+resolve packages or reconcile every declaration/lock disagreement.
 
 The scanner does not follow pip `-r`/`-c` references, evaluate Ruby or build
 configuration, compare dependency declarations to lockfile resolutions, or

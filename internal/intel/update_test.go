@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"io"
@@ -62,27 +64,59 @@ func testSnapshot(version, date string) Snapshot {
 	return snapshot
 }
 
+func TestOlderVerifiedCacheCannotHideNewEmbeddedIndicators(t *testing.T) {
+	public, private, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := &Store{Dir: t.TempDir(), PublicKey: public}
+	legacy := testSnapshot("2026-09-12.1", "2026-09-12")
+	legacy.Packages = legacy.Packages[:len(legacy.Packages)-3]
+	data, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash := sha256.Sum256(data)
+	digest := hex.EncodeToString(hash[:])
+	if err := os.MkdirAll(filepath.Join(store.Dir, "objects"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(store.Dir, "objects", digest+".json"), data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(store.Dir, "objects", digest+".sig"), ed25519.Sign(private, data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(store.Dir, "active"), []byte(digest+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	selected, status := store.LoadActiveSnapshot(time.Now())
+	if status.Source != "embedded" || selected.SnapshotVersion != SnapshotVersion || len(selected.Packages) != len(Packages) {
+		t.Fatalf("legacy cache hid embedded data: %+v", status)
+	}
+}
+
 func TestUpdateLoadsVerifiedSnapshotWithoutLaterNetwork(t *testing.T) {
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot := testSnapshot("2026-09-13.2", "2026-09-13")
+	snapshot := testSnapshot("2026-09-27.2", "2026-09-27")
 	client, requests := signedClient(t, private, func() Snapshot { return snapshot })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
-	status, err := store.Update(context.Background(), time.Date(2026, 9, 13, 0, 0, 0, 0, time.UTC))
+	status, err := store.Update(context.Background(), time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Source != "cache" || status.SnapshotVersion != "2026-09-13.2" || *requests != 2 {
+	if status.Source != "cache" || status.SnapshotVersion != "2026-09-27.2" || *requests != 2 {
 		t.Fatalf("unexpected update: status=%+v requests=%d", status, *requests)
 	}
 	store.Client = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 		t.Fatal("cached load attempted network access")
 		return nil, nil
 	})}
-	_, loaded := store.LoadActive(time.Date(2026, 9, 13, 0, 0, 0, 0, time.UTC))
-	if loaded.SnapshotVersion != "2026-09-13.2" || *requests != 2 {
+	_, loaded := store.LoadActive(time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC))
+	if loaded.SnapshotVersion != "2026-09-27.2" || *requests != 2 {
 		t.Fatalf("cached load used network or wrong snapshot: status=%+v requests=%d", loaded, *requests)
 	}
 }
@@ -96,7 +130,7 @@ func TestInvalidSignatureDoesNotActivate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot := testSnapshot("2026-09-13.9", "2026-09-13")
+	snapshot := testSnapshot("2026-09-27.9", "2026-09-27")
 	client, _ := signedClient(t, wrongPrivate, func() Snapshot { return snapshot })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
 	if _, err := store.Update(context.Background(), time.Now()); err == nil {
@@ -113,10 +147,10 @@ func TestFailedUpdatePreservesLastKnownGoodSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot := testSnapshot("2026-09-13.1", "2026-09-13")
+	snapshot := testSnapshot("2026-09-27.1", "2026-09-27")
 	client, _ := signedClient(t, private, func() Snapshot { return snapshot })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
-	now := time.Date(2026, 9, 13, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC)
 	if _, err := store.Update(context.Background(), now); err != nil {
 		t.Fatal(err)
 	}
@@ -125,13 +159,13 @@ func TestFailedUpdatePreservesLastKnownGoodSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	store.Client, _ = signedClient(t, wrongPrivate, func() Snapshot {
-		return testSnapshot("2026-09-14.9", "2026-09-14")
+		return testSnapshot("2026-09-28.9", "2026-09-28")
 	})
 	if _, err := store.Update(context.Background(), now); err == nil {
 		t.Fatal("update accepted an invalid replacement signature")
 	}
 	_, status := store.LoadActive(now)
-	if status.Source != "cache" || status.SnapshotVersion != "2026-09-13.1" {
+	if status.Source != "cache" || status.SnapshotVersion != "2026-09-27.1" {
 		t.Fatalf("failed update replaced the last-known-good snapshot: %+v", status)
 	}
 }
@@ -141,11 +175,11 @@ func TestRollbackSwapsVerifiedSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshots := []Snapshot{testSnapshot("2026-09-13.1", "2026-09-13"), testSnapshot("2026-09-14.1", "2026-09-14")}
+	snapshots := []Snapshot{testSnapshot("2026-09-27.1", "2026-09-27"), testSnapshot("2026-09-28.1", "2026-09-28")}
 	index := 0
 	client, _ := signedClient(t, private, func() Snapshot { return snapshots[index] })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
-	now := time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 9, 28, 0, 0, 0, 0, time.UTC)
 	if _, err := store.Update(context.Background(), now); err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +191,7 @@ func TestRollbackSwapsVerifiedSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.SnapshotVersion != "2026-09-13.1" {
+	if status.SnapshotVersion != "2026-09-27.1" {
 		t.Fatalf("rollback selected %s", status.SnapshotVersion)
 	}
 }
@@ -200,13 +234,13 @@ func TestUpdateRejectsLowerRevisionFromSameDate(t *testing.T) {
 		t.Fatal(err)
 	}
 	snapshots := []Snapshot{
-		testSnapshot("2026-09-13.2", "2026-09-13"),
-		testSnapshot("2026-09-13.1", "2026-09-13"),
+		testSnapshot("2026-09-27.2", "2026-09-27"),
+		testSnapshot("2026-09-27.1", "2026-09-27"),
 	}
 	index := 0
 	client, _ := signedClient(t, private, func() Snapshot { return snapshots[index] })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
-	now := time.Date(2026, 9, 13, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC)
 	if _, err := store.Update(context.Background(), now); err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +255,7 @@ func TestUpdateRejectsFutureDatedSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	snapshot := testSnapshot("2026-09-15.1", "2026-09-15")
+	snapshot := testSnapshot("2026-09-29.1", "2026-09-29")
 	client, _ := signedClient(t, private, func() Snapshot { return snapshot })
 	store := &Store{Dir: t.TempDir(), URL: "https://updates.invalid/snapshot.json", Client: client, PublicKey: public}
 	now := time.Date(2026, 9, 12, 0, 0, 0, 0, time.UTC)
@@ -231,7 +265,7 @@ func TestUpdateRejectsFutureDatedSnapshot(t *testing.T) {
 }
 
 func TestDecodeSnapshotRejectsUnknownAndTrailingContent(t *testing.T) {
-	valid, err := json.Marshal(testSnapshot("2026-09-13.1", "2026-09-13"))
+	valid, err := json.Marshal(testSnapshot("2026-09-27.1", "2026-09-27"))
 	if err != nil {
 		t.Fatal(err)
 	}
