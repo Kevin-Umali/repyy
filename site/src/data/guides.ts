@@ -496,7 +496,7 @@ export const guides = [
       },
       {
         id: "current-evidence-status",
-        label: "Verified v0.5.3 release",
+        label: "Reviewed v0.5.3 evidence",
       },
       {
         id: "version-and-commit-identity",

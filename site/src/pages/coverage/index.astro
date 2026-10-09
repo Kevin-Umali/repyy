@@ -37,10 +37,10 @@ const guide = getGuide("coverage");
             Package and hash advisories belong to the separate <a href="/intelligence/">intelligence snapshot</a>.
           </p>
           <div class="docs-table coverage-table" role="table" aria-label="Behavioral categories and rules">
-            <div role="row"><b role="cell">Detection area</b><b role="cell">Rule IDs and description</b></div>
+            <div role="row"><b role="columnheader">Detection area</b><b role="columnheader">Rule IDs and description</b></div>
             {categories.map((category) => (
               <div role="row">
-                <b role="cell">{category.replaceAll("-", " ")}</b>
+                <b role="rowheader">{category.replaceAll("-", " ")}</b>
                 <span role="cell">
                   {catalog.rules.filter((rule) => rule.category === category).map((rule) => (
                     <span><a href={`/rules/#rule-${rule.id}`}><code>{rule.id}</code></a> {rule.description} ({rule.severity}/{rule.confidence}; {rule.match_scope})<br /></span>
@@ -63,7 +63,7 @@ const guide = getGuide("coverage");
           </p>
           <div class="docs-table compact" role="table" aria-label="Supply-chain file coverage by ecosystem">
             <div role="row">
-              <b role="cell">Node/npm, Yarn, pnpm</b
+              <b role="rowheader">Node/npm, Yarn, pnpm</b
               ><span role="cell"
                 ><code>package.json</code> lifecycle scripts, non-registry dependencies across all four scopes, aliases checked by actual package name, nested
                 overrides and resolutions; registry settings, Yarn executable/plugins, and suspicious lockfile URLs.
@@ -72,7 +72,7 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
-              <b role="cell">Python</b
+              <b role="rowheader">Python</b
               ><span role="cell"
                 ><code>requirements*.txt</code>, pip config, <code>Pipfile</code>, <code>pyproject.toml</code>, and <code>uv.toml</code> alternate indexes or
                 unsafe uv strategy; setup hooks and direct URL/VCS dependencies.
@@ -81,21 +81,21 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
-              <b role="cell">Ruby</b
+              <b role="rowheader">Ruby</b
               ><span role="cell"
                 ><code>Gemfile</code> and <code>.bundle/config</code> alternate sources or mirrors and inline Git/path gems. <code>Gemfile.lock</code> has
                 generic text checks, not a resolved-source audit. <a href="https://bundler.io/guides/gemfile.html">Bundler Gemfile</a></span
               >
             </div>
             <div role="row">
-              <b role="cell">Go</b
+              <b role="rowheader">Go</b
               ><span role="cell"
                 ><code>go.mod</code>/<code>go.work</code> replacements, including block form, and <code>//go:generate</code>. <code>go.sum</code> hashes are not
                 independently audited. <a href="https://go.dev/doc/modules/gomod-ref">Go module reference</a></span
               >
             </div>
             <div role="row">
-              <b role="cell">Rust</b
+              <b role="rowheader">Rust</b
               ><span role="cell"
                 ><code>Cargo.toml</code> declared or sibling <code>build.rs</code> execution, Git/path/registry dependencies, and overrides;
                 <code>.cargo/config.toml</code> source replacement. <code>Cargo.lock</code> is not resolved.
@@ -105,7 +105,7 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
-              <b role="cell">Java/JVM</b
+              <b role="rowheader">Java/JVM</b
               ><span role="cell"
                 >Maven and Gradle build/repository rules; Gradle/Maven wrapper distribution URLs and SHA-256 settings.
                 <a href="https://docs.gradle.org/current/userguide/wrapper_plugin.html">Gradle Wrapper</a>
@@ -114,7 +114,7 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
-              <b role="cell">PHP</b
+              <b role="rowheader">PHP</b
               ><span role="cell"
                 ><code>composer.json</code> scripts, alternate repositories, and unrestricted plugin permission. <code>composer.lock</code> has generic text
                 checks, not a resolved-source audit.
@@ -124,7 +124,7 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
-              <b role="cell">.NET</b
+              <b role="rowheader">.NET</b
               ><span role="cell"
                 ><code>NuGet.Config</code> feeds and wildcard mappings; project and centrally managed <code>Directory.Packages.props</code> dependencies;
                 MSBuild <code>Exec</code> in project, <code>.props</code>, and <code>.targets</code> files.
@@ -148,47 +148,47 @@ const guide = getGuide("coverage");
           </p>
           <div class="docs-table compact" role="table" aria-label="Precision controls">
             <div role="row">
-              <b role="cell">Match scope</b
+              <b role="rowheader">Match scope</b
               ><span role="cell"
                 ><code>raw</code> checks content, <code>code</code> separates executable tokens from common comments and literals, and structured checks parse
                 supported formats.</span
               >
             </div>
             <div role="row">
-              <b role="cell">File roles</b
+              <b role="rowheader">File roles</b
               ><span role="cell"
                 >Executable code, CI/install hooks, manifests, docs, examples, tests, evidence, generated output, dependencies, rule definitions, metadata, and
                 archive entries are distinguished.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Correlations</b
+              <b role="rowheader">Correlations</b
               ><span role="cell"
                 >Behavior chains require distinct actionable signals from executable code. Imports, generated examples, and low-confidence matches cannot create
                 a high-confidence chain alone.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Context downgrade</b
+              <b role="rowheader">Context downgrade</b
               ><span role="cell"
                 >Documentation, tests, fixtures, and signature corpora may be downgraded. Confirmed IOCs are never silenced by contextual downgrades.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Noise exclusions</b
+              <b role="rowheader">Noise exclusions</b
               ><span role="cell"
                 >Long-line and entropy checks skip lockfiles, source maps, and known generated output; entropy must be near an execution primitive.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Indicator parsing</b
+              <b role="rowheader">Indicator parsing</b
               ><span role="cell"
                 >Package names are matched only in parsed manifests. A sourced affected version can become a confirmed IOC; an uncertain range remains a review
                 signal.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Path matching</b
+              <b role="rowheader">Path matching</b
               ><span role="cell"
                 >Rule globs compare case-insensitively. Common agent instruction files receive instruction context; ordinary documentation and test fixtures
                 retain contextual downgrades.</span
@@ -230,10 +230,10 @@ const guide = getGuide("coverage");
             read error reduces coverage, the result is <code>SCAN INCOMPLETE</code>.
           </p>
           <div class="docs-table compact" role="table" aria-label="Default coverage limits">
-            <div role="row"><b role="cell">Per repository</b><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span></div>
-            <div role="row"><b role="cell">Per archive</b><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span></div>
+            <div role="row"><b role="rowheader">Per repository</b><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span></div>
+            <div role="row"><b role="rowheader">Per archive</b><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span></div>
             <div role="row">
-              <b role="cell">Dependency trees</b><span role="cell">Skipped by default; opt in with <code>--include-dependencies</code></span>
+              <b role="rowheader">Dependency trees</b><span role="cell">Skipped by default; opt in with <code>--include-dependencies</code></span>
             </div>
           </div>
           <div class="docs-command">

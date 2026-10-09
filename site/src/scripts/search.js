@@ -1,6 +1,7 @@
 const input = document.querySelector("#docs-search");
 
 if (input) {
+  const status = document.querySelector("#docs-search-status");
   const box = input.closest(".docs-search");
   const results = document.createElement("div");
   results.className = "docs-search-results";
@@ -41,6 +42,7 @@ if (input) {
     results.replaceChildren();
     results.hidden = true;
     input.setAttribute("aria-expanded", "false");
+    status.textContent = "";
     if (!query) {
       return;
     }
@@ -48,8 +50,8 @@ if (input) {
       if (input.value.trim().toLowerCase() !== query || index.length) return;
       const message = document.createElement("p");
       message.className = "docs-search-loading";
-      message.setAttribute("role", "status");
       message.textContent = "Searching documentation…";
+      status.textContent = message.textContent;
       results.replaceChildren(message);
       results.hidden = false;
       input.setAttribute("aria-expanded", "true");
@@ -60,12 +62,6 @@ if (input) {
       if (input.value.trim().toLowerCase() !== query) return;
       results.replaceChildren();
       const matches = entries.filter((item) => query.split(/\s+/).every((word) => `${item.pageTitle} ${item.title} ${item.text}`.toLowerCase().includes(word)));
-      if (!matches.length) {
-        const message = document.createElement("p");
-        message.className = "docs-search-empty";
-        message.textContent = "No documentation matches that search.";
-        results.appendChild(message);
-      }
       matches.slice(0, 30).forEach((item) => {
         const link = document.createElement("a");
         link.href = `${item.route}#${item.id}`;
@@ -77,9 +73,14 @@ if (input) {
         results.appendChild(link);
       });
       const count = document.createElement("p");
-      count.className = "docs-search-count";
-      count.textContent = matches.length > 30 ? `Showing 30 of ${matches.length} matches` : `${matches.length} ${matches.length === 1 ? "match" : "matches"}`;
+      count.className = matches.length ? "docs-search-count" : "docs-search-empty";
+      count.textContent = !matches.length
+        ? "No documentation matches that search. Try a command, guide name, or concept such as Docker."
+        : matches.length > 30
+          ? `Showing 30 of ${matches.length} matches`
+          : `${matches.length} ${matches.length === 1 ? "match" : "matches"}`;
       results.appendChild(count);
+      status.textContent = count.textContent;
     } catch {
       window.clearTimeout(loadingTimer);
       if (input.value.trim().toLowerCase() !== query) return;
@@ -88,9 +89,17 @@ if (input) {
       message.className = "docs-search-empty";
       message.textContent = "Search is temporarily unavailable. Browse the guides instead.";
       results.appendChild(message);
+      status.textContent = message.textContent;
     }
     results.hidden = false;
     input.setAttribute("aria-expanded", "true");
+  };
+
+  const dismiss = (event) => {
+    event.preventDefault();
+    input.value = "";
+    input.dispatchEvent(new Event("input"));
+    input.focus();
   };
 
   input.addEventListener("input", render);
@@ -99,6 +108,8 @@ if (input) {
     if (event.key === "ArrowDown" && !results.hidden) {
       event.preventDefault();
       results.querySelector("a")?.focus();
+    } else if (event.key === "Escape") {
+      dismiss(event);
     }
   });
   results.addEventListener("keydown", (event) => {
@@ -111,11 +122,13 @@ if (input) {
       event.preventDefault();
       position <= 0 ? input.focus() : links[position - 1]?.focus();
     } else if (event.key === "Escape") {
-      event.preventDefault();
-      input.value = "";
-      input.dispatchEvent(new Event("input"));
-      input.focus();
+      dismiss(event);
     }
+  });
+  results.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest("a")) return;
+    input.value = "";
+    input.dispatchEvent(new Event("input"));
   });
   document.addEventListener("pointerdown", (event) => {
     if (!box?.contains(event.target)) {

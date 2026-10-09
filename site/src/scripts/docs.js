@@ -2,30 +2,13 @@ const docsSearch = document.querySelector("#docs-search");
 
 if (docsSearch) {
   const sections = [...document.querySelectorAll(".docs-searchable")];
-  const localEmpty = document.querySelector("#docs-empty");
-
   document.addEventListener("keydown", (event) => {
-    if (event.key === "/" && document.activeElement !== docsSearch) {
+    const target = event.target;
+    const editing = target instanceof HTMLElement && (target.closest("input, textarea, select") || target.isContentEditable);
+    if (event.key === "/" && !editing && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       docsSearch.focus();
     }
-    if (event.key === "Escape" && document.activeElement === docsSearch) {
-      docsSearch.value = "";
-      docsSearch.dispatchEvent(new Event("input"));
-      docsSearch.blur();
-    }
-  });
-
-  docsSearch.addEventListener("input", () => {
-    const query = docsSearch.value.trim().toLowerCase();
-    let visible = 0;
-    sections.forEach((section) => {
-      const haystack = `${section.dataset.search || ""} ${section.textContent}`.toLowerCase();
-      const matches = !query || query.split(/\s+/).every((word) => haystack.includes(word));
-      section.hidden = !matches;
-      if (matches) visible += 1;
-    });
-    if (localEmpty) localEmpty.hidden = Boolean(!query || visible);
   });
 
   const links = [...document.querySelectorAll('.docs-sidebar a[href^="#"]')];
