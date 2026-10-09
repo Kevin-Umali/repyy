@@ -129,7 +129,7 @@ html:not(.has-js) .docs-search {
   width: 100%;
   min-height: 44px;
   padding: 0.65rem 1rem;
-  border: 1px solid #e1e1e5;
+  border: 1px solid #808087;
   border-radius: var(--radius-control);
   outline-offset: 2px;
   background: #ededf0;
@@ -137,7 +137,7 @@ html:not(.has-js) .docs-search {
   font-size: 0.8rem;
 }
 .docs-search input::placeholder {
-  color: #74747a;
+  color: var(--muted);
 }
 .docs-search-results {
   position: absolute;
@@ -311,7 +311,7 @@ html:not(.has-js) .docs-search {
   color: #8a8a90;
 }
 .docs-hero > p:not(.docs-kicker) {
-  max-width: 43rem;
+  max-width: 54ch;
   color: var(--muted);
   font-size: 1.08rem;
   line-height: 1.65;
@@ -409,7 +409,7 @@ html:not(.has-js) .docs-search {
   letter-spacing: -0.02em;
 }
 .docs-section > p {
-  max-width: 44rem;
+  max-width: 54ch;
   margin: 1rem 0;
   color: var(--muted);
   font-size: 0.95rem;
@@ -445,7 +445,7 @@ html:not(.has-js) .docs-search {
   justify-content: space-between;
   gap: 1rem;
   color: #b3b3bc;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
 }
 .docs-command button,
 .recipe-grid button {
@@ -455,7 +455,7 @@ html:not(.has-js) .docs-search {
   border-radius: 999px;
   background: #36363a;
   color: #e5e5eb;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   transition:
     transform var(--duration-press) var(--ease-out),
     opacity var(--duration-press) ease;
@@ -494,7 +494,7 @@ html:not(.has-js) .docs-search {
 }
 .recipe-grid article > span {
   color: var(--signal);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -558,7 +558,7 @@ html:not(.has-js) .docs-search {
   place-items: center;
   border-radius: 50%;
   background: #e7e7eb;
-  color: #68686d;
+  color: #646469;
   font-size: 0.75rem;
   font-weight: 550;
 }
@@ -737,22 +737,6 @@ ol.docs-list li {
   font-size: 0.8rem;
   line-height: 1.6;
 }
-.docs-empty {
-  margin-top: 4rem;
-  padding: 2rem;
-  border-radius: 22px;
-  background: white;
-}
-.docs-empty strong {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-.docs-empty p {
-  margin-top: 0.75rem;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
 .docs-footer {
   display: flex;
   justify-content: space-between;
@@ -903,7 +887,7 @@ ol.docs-list li {
     padding: 0.55rem;
   }
   .docs-mobile-menu-links a {
-    min-height: 42px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     padding: 0.45rem 0.6rem;
@@ -919,7 +903,7 @@ ol.docs-list li {
     grid-column: 1 / -1;
     margin: 0.55rem 0.5rem 0.1rem;
     color: var(--quiet);
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 650;
     letter-spacing: 0.05em;
     text-transform: uppercase;

@@ -5,50 +5,6 @@ const rootStyles = getComputedStyle(document.documentElement);
 const easeOut = rootStyles.getPropertyValue("--ease-out").trim() || "cubic-bezier(0.23, 1, 0.32, 1)";
 const durationValue = rootStyles.getPropertyValue("--duration-ui").trim();
 const uiDuration = durationValue.endsWith("ms") ? Number.parseFloat(durationValue) : 200;
-const activeAnimations = new Set();
-const swapAnimations = new WeakMap();
-
-const trackAnimation = (element, animation) => {
-  swapAnimations.set(element, animation);
-  activeAnimations.add(animation);
-  const cleanup = () => {
-    activeAnimations.delete(animation);
-    if (swapAnimations.get(element) === animation) swapAnimations.delete(element);
-  };
-  animation.addEventListener("finish", cleanup, { once: true });
-  animation.addEventListener("cancel", cleanup, { once: true });
-};
-
-const swapContent = (elements, update, animate) => {
-  const states = elements.map((element) => {
-    const currentAnimation = swapAnimations.get(element);
-    if (!currentAnimation) return { element, opacity: 0.58, transform: "translate3d(0, 4px, 0)" };
-
-    const styles = getComputedStyle(element);
-    const state = { element, opacity: Number.parseFloat(styles.opacity), transform: styles.transform };
-    currentAnimation.cancel();
-    return state;
-  });
-
-  update();
-  if (!animate || motionPreference.matches) return;
-
-  states.forEach(({ element, opacity, transform }) => {
-    const animation = element.animate(
-      [
-        { opacity, transform },
-        { opacity: 1, transform: "translate3d(0, 0, 0)" },
-      ],
-      { duration: uiDuration, easing: easeOut },
-    );
-    trackAnimation(element, animation);
-  });
-};
-
-motionPreference.addEventListener("change", () => {
-  if (!motionPreference.matches) return;
-  activeAnimations.forEach((animation) => animation.cancel());
-});
 
 const revealItems = document.querySelectorAll(".reveal");
 if (motionPreference.matches) {
@@ -68,34 +24,58 @@ if (motionPreference.matches) {
 }
 
 const copyFeedback = new WeakMap();
-const showCopyResult = (button, result) => {
+document.querySelectorAll("[data-copy], [data-install-copy], [data-report-copy]").forEach((button, index) => {
+  const status = document.createElement("p");
+  status.id = `copy-status-${index}`;
+  status.className = "copy-feedback visually-hidden";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-atomic", "true");
+  const container = button.closest(".docs-command, .recipe-grid article, .report-screen, .install-panel") || button.parentElement;
+  const reportBar = container.querySelector(".report-screen-bar");
+  if (reportBar) reportBar.after(status);
+  else container.appendChild(status);
+  button.setAttribute("aria-describedby", status.id);
   const label = button.querySelector("[data-copy-label]") || button;
-  const feedback = copyFeedback.get(button) || { original: label.textContent, timeout: undefined };
+  copyFeedback.set(button, { label, original: label.textContent, status, timeout: undefined });
+});
+
+const showCopyResult = (button, copied) => {
+  const feedback = copyFeedback.get(button);
   window.clearTimeout(feedback.timeout);
-  label.textContent = result;
-  button.setAttribute("aria-live", "polite");
-  feedback.timeout = window.setTimeout(() => {
-    label.textContent = feedback.original;
-    feedback.timeout = undefined;
-  }, 1600);
-  copyFeedback.set(button, feedback);
+  feedback.label.textContent = copied ? "Copied" : feedback.original;
+  feedback.status.classList.toggle("visually-hidden", copied);
+  feedback.status.textContent = copied ? "Command copied." : "Couldn't copy. Select the command and copy it manually.";
+  if (copied) {
+    feedback.timeout = window.setTimeout(() => {
+      feedback.label.textContent = feedback.original;
+      feedback.timeout = undefined;
+    }, 1600);
+  }
 };
 
 const copyText = async (button, value) => {
+  copyFeedback.get(button).status.textContent = "";
   try {
     await navigator.clipboard.writeText(value);
-    showCopyResult(button, "Copied");
+    showCopyResult(button, true);
   } catch {
     const fallback = document.createElement("textarea");
     fallback.value = value;
     fallback.setAttribute("readonly", "");
     fallback.style.position = "fixed";
     fallback.style.opacity = "0";
-    document.body.appendChild(fallback);
-    fallback.select();
-    const copied = document.execCommand("copy");
-    fallback.remove();
-    showCopyResult(button, copied ? "Copied" : "Select and copy");
+    let copied = false;
+    try {
+      document.body.appendChild(fallback);
+      fallback.select();
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    } finally {
+      fallback.remove();
+      button.focus({ preventScroll: true });
+    }
+    showCopyResult(button, copied);
   }
 };
 
@@ -106,14 +86,14 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
 const attachTabs = (tabs, select) => {
   tabs.forEach((tab, index) => {
     tab.tabIndex = tab.classList.contains("is-active") ? 0 : -1;
-    tab.addEventListener("click", (event) => select(tab, event.detail !== 0));
+    tab.addEventListener("click", () => select(tab));
     tab.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       const nextIndex =
         event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
       tabs[nextIndex].focus();
-      select(tabs[nextIndex], false);
+      select(tabs[nextIndex]);
     });
   });
 };
@@ -123,20 +103,14 @@ document.querySelectorAll("[data-install-tabs]").forEach((panel) => {
   const output = panel.querySelector("[data-install-output]");
   const copy = panel.querySelector("[data-install-copy]");
 
-  const select = (tab, animate) => {
-    swapContent(
-      [output],
-      () => {
-        tabs.forEach((item) => {
-          const active = item === tab;
-          item.classList.toggle("is-active", active);
-          item.setAttribute("aria-selected", String(active));
-          item.tabIndex = active ? 0 : -1;
-        });
-        output.textContent = tab.dataset.installCommand;
-      },
-      animate,
-    );
+  const select = (tab) => {
+    tabs.forEach((item) => {
+      const active = item === tab;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-selected", String(active));
+      item.tabIndex = active ? 0 : -1;
+    });
+    output.textContent = tab.dataset.installCommand;
   };
 
   attachTabs(tabs, select);
@@ -179,34 +153,25 @@ const reportFormats = {
 
 document.querySelectorAll("[data-report-lab]").forEach((lab) => {
   const tabs = [...lab.querySelectorAll("[data-report-format]")];
-  const screen = lab.querySelector(".report-screen");
   const title = lab.querySelector("[data-report-title]");
   const preview = lab.querySelector("[data-report-preview]");
   const use = lab.querySelector("[data-report-use]");
   const description = lab.querySelector("[data-report-description]");
   const command = lab.querySelector("[data-report-command]");
   const copy = lab.querySelector("[data-report-copy]");
-  const select = (tab, animate) => {
+  const select = (tab) => {
     const format = reportFormats[tab.dataset.reportFormat];
-    const notes = lab.querySelector(".report-notes");
-    swapContent(
-      [screen, notes],
-      () => {
-        tabs.forEach((item) => {
-          const active = item === tab;
-          item.classList.toggle("is-active", active);
-          item.setAttribute("aria-selected", String(active));
-          item.tabIndex = active ? 0 : -1;
-        });
-        title.textContent = format.title;
-        preview.textContent = format.preview;
-        use.textContent = format.use;
-        description.textContent = format.description;
-        command.textContent = format.command;
-        lab.dataset.input = animate ? "pointer" : "keyboard";
-      },
-      animate,
-    );
+    tabs.forEach((item) => {
+      const active = item === tab;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-selected", String(active));
+      item.tabIndex = active ? 0 : -1;
+    });
+    title.textContent = format.title;
+    preview.textContent = format.preview;
+    use.textContent = format.use;
+    description.textContent = format.description;
+    command.textContent = format.command;
   };
 
   attachTabs(tabs, select);

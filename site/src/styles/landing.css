@@ -286,7 +286,7 @@ button:active,
   display: inline-block;
   width: 1.6rem;
   font-style: normal;
-  color: #a0a0a5;
+  color: var(--quiet);
   user-select: none;
 }
 .source-line.flagged {
@@ -433,7 +433,7 @@ button:active,
 }
 .coverage-signal .card-meta span,
 .coverage-signal > p {
-  color: #f5d8ce;
+  color: #fff;
 }
 .coverage-secrets,
 .coverage-surface {
@@ -511,7 +511,7 @@ button:active,
 }
 .signal-code span {
   width: fit-content;
-  color: #f5d8ce;
+  color: #fff;
   font-size: 0.75rem;
 }
 .redaction {
@@ -658,6 +658,9 @@ button:active,
   color: #e5e5eb;
   background: #36363a;
 }
+.report-screen .copy-feedback:not(.visually-hidden) {
+  padding-inline: 1.6rem;
+}
 .report-screen pre {
   min-height: 24rem;
   margin: 0;
@@ -698,6 +701,11 @@ button:active,
   overflow-wrap: anywhere;
 }
 .report-notes a {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.25rem;
+  min-height: 44px;
   margin-top: auto;
   font-size: 0.8rem;
   color: var(--signal);
@@ -1017,7 +1025,7 @@ footer > div {
     gap: 0.45rem;
   }
   .source-study-footer > span {
-    font-size: 0.67rem;
+    font-size: 0.75rem;
   }
   .section-head {
     margin-bottom: 2rem;
@@ -1115,7 +1123,7 @@ footer > div {
     gap: 0.5rem;
   }
   .report-screen-bar strong {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
   }
   .report-screen pre {
     padding: 0.75rem 1rem 1.5rem;
@@ -1487,7 +1495,7 @@ footer > div {
   font-size: 0.8rem;
 }
 .limit:first-child span {
-  color: #f5d8ce;
+  color: #fff;
 }
 .limits-note {
   margin-top: 1.5rem;
