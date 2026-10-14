@@ -201,10 +201,10 @@ https://github.com/org/assignment-b</pre
         <section class="docs-section docs-searchable" id="reports" data-search="report formats terminal json sarif html output stdout offline code scanning">
           <h2>Choose a report format</h2>
           <div class="docs-table" role="table" aria-label="Scan report formats">
-            <div role="row"><b role="cell">terminal</b><span role="cell">Prioritized human review</span><code role="cell">--format terminal</code></div>
-            <div role="row"><b role="cell">json</b><span role="cell">Automation and archival input</span><code role="cell">--format json</code></div>
-            <div role="row"><b role="cell">sarif</b><span role="cell">Code-scanning integrations</span><code role="cell">--format sarif</code></div>
-            <div role="row"><b role="cell">html</b><span role="cell">Self-contained offline review</span><code role="cell">--format html</code></div>
+            <div role="row"><b role="rowheader">terminal</b><span role="cell">Prioritized human review</span><code role="cell">--format terminal</code></div>
+            <div role="row"><b role="rowheader">json</b><span role="cell">Automation and archival input</span><code role="cell">--format json</code></div>
+            <div role="row"><b role="rowheader">sarif</b><span role="cell">Code-scanning integrations</span><code role="cell">--format sarif</code></div>
+            <div role="row"><b role="rowheader">html</b><span role="cell">Self-contained offline review</span><code role="cell">--format html</code></div>
           </div>
           <p>
             Without <code>--output</code>, the selected report goes to stdout. HTML and JSON are most useful as saved files. SARIF is a portable interchange
@@ -257,23 +257,23 @@ https://github.com/org/assignment-b</pre
           <h2>Rules commands</h2>
           <div class="docs-table compact" role="table" aria-label="Rules commands">
             <div role="row">
-              <b role="cell"><code>repyy rules validate FILE</code></b
+              <b role="rowheader"><code>repyy rules validate FILE</code></b
               ><span role="cell">Validate trusted YAML, custom rules, regexes, and suppressions without scanning.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy rules check</code></b
+              <b role="rowheader"><code>repyy rules check</code></b
               ><span role="cell">Show built-in ruleset and intelligence snapshot status offline.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy rules list</code></b
+              <b role="rowheader"><code>repyy rules list</code></b
               ><span role="cell">List active indicators; add <code>--format json</code> for machine-readable output.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy rules catalog</code></b
+              <b role="rowheader"><code>repyy rules catalog</code></b
               ><span role="cell">List built-in behavioral rules; add <code>--format json</code> for the versioned catalog. <a href="/rules/">Browse the reference</a>.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy rules explain RULE-ID</code></b
+              <b role="rowheader"><code>repyy rules explain RULE-ID</code></b
               ><span role="cell">Show rationale, scope, legitimate-use context, and review guidance; supports <code>--format json</code>.</span>
             </div>
           </div>
@@ -288,15 +288,15 @@ https://github.com/org/assignment-b</pre
           <p>The scanner ships with an offline intelligence snapshot. Scans never update it automatically.</p>
           <div class="docs-table compact" role="table" aria-label="Intelligence commands">
             <div role="row">
-              <b role="cell"><code>repyy intel status</code></b
+              <b role="rowheader"><code>repyy intel status</code></b
               ><span role="cell">Show active snapshot version, age, and source; supports <code>--format json</code>.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy intel update</code></b
+              <b role="rowheader"><code>repyy intel update</code></b
               ><span role="cell">Explicitly download and verify a signed public snapshot.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>repyy intel rollback</code></b
+              <b role="rowheader"><code>repyy intel rollback</code></b
               ><span role="cell">Restore the previous verified cached snapshot.</span>
             </div>
           </div>
@@ -338,21 +338,21 @@ https://github.com/org/assignment-b</pre
           <h2>Troubleshooting</h2>
           <div class="docs-table compact" role="table" aria-label="CLI troubleshooting">
             <div role="row">
-              <b role="cell">Command not found</b
+              <b role="rowheader">Command not found</b
               ><span role="cell">Open a new terminal after installation. Check <code>command -v repyy</code> or <code>where.exe repyy</code>.</span>
             </div>
             <div role="row">
-              <b role="cell">Remote URL fails</b
+              <b role="rowheader">Remote URL fails</b
               ><span role="cell">Check <code>git --version</code>, the URL, and the matching provider token. Never put credentials in the URL.</span>
             </div>
             <div role="row">
-              <b role="cell">Docker preflight fails</b
+              <b role="rowheader">Docker preflight fails</b
               ><span role="cell"
                 >Start Docker, pull the digest from the matching release, and verify its signature. repyy does not fall back to host mode.</span
               >
             </div>
             <div role="row">
-              <b role="cell">Incomplete scan</b
+              <b role="rowheader">Incomplete scan</b
               ><span role="cell">Read the target error and check permissions, timeout, file/archive limits, and sandbox mounts before rerunning.</span>
             </div>
           </div>

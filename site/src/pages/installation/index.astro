@@ -36,12 +36,12 @@ const guide = getGuide("installation");
             remote URL in the default host mode. Local folder scans do not invoke Git.
           </p>
           <div class="docs-table compact" role="table" aria-label="Installation prerequisites">
-            <div role="row"><b role="cell">Local folder</b><span role="cell">repyy only</span></div>
+            <div role="row"><b role="rowheader">Local folder</b><span role="cell">repyy only</span></div>
             <div role="row">
-              <b role="cell">Host-mode remote</b><span role="cell">repyy plus Git on <code>PATH</code></span>
+              <b role="rowheader">Host-mode remote</b><span role="cell">repyy plus Git on <code>PATH</code></span>
             </div>
-            <div role="row"><b role="cell">Docker mode</b><span role="cell">Docker Desktop or Docker Engine, plus the release-matched image</span></div>
-            <div role="row"><b role="cell">HTML review</b><span role="cell">A current browser; the report opens as a local file</span></div>
+            <div role="row"><b role="rowheader">Docker mode</b><span role="cell">Docker Desktop or Docker Engine, plus the release-matched image</span></div>
+            <div role="row"><b role="rowheader">HTML review</b><span role="cell">A current browser; the report opens as a local file</span></div>
           </div>
           <p>
             Docker is an optional analysis backend. See the
@@ -188,20 +188,20 @@ if (($userPath -split ';') -notcontains $bin) &#123;
           <h2>Troubleshoot the first run</h2>
           <div class="docs-table compact" role="table" aria-label="Installation troubleshooting">
             <div role="row">
-              <b role="cell">Command not found</b
+              <b role="rowheader">Command not found</b
               ><span role="cell">Open a new terminal after changing <code>PATH</code>; use <code>command -v repyy</code> or <code>where.exe repyy</code>.</span>
             </div>
-            <div role="row"><b role="cell">Scoop bucket fails</b><span role="cell">Install Git and retry; local-folder scans do not need Git.</span></div>
+            <div role="row"><b role="rowheader">Scoop bucket fails</b><span role="cell">Install Git and retry; local-folder scans do not need Git.</span></div>
             <div role="row">
-              <b role="cell">Remote scan fails</b
+              <b role="rowheader">Remote scan fails</b
               ><span role="cell">Check Git, URL reachability, and the matching provider token or SSH agent. Docker accepts HTTPS only.</span>
             </div>
             <div role="row">
-              <b role="cell">HTML looks blank</b
+              <b role="rowheader">HTML looks blank</b
               ><span role="cell">Confirm the file finished writing, then open it in a current browser. A readable summary remains when JavaScript is off.</span>
             </div>
             <div role="row">
-              <b role="cell">Scan incomplete</b
+              <b role="rowheader">Scan incomplete</b
               ><span role="cell">Read the reported permission, timeout, file, archive, clone, or mount reason before relying on the result.</span>
             </div>
           </div>

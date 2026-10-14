@@ -105,19 +105,19 @@ const guide = getGuide("agent-skill");
           <h2>Understand the limits</h2>
           <div class="docs-table compact" role="table" aria-label="Agent skill boundaries">
             <div role="row">
-              <b role="cell">Target code</b
+              <b role="rowheader">Target code</b
               ><span role="cell">The agent must not run, import, evaluate, build, test, or install target dependencies before review.</span>
             </div>
             <div role="row">
-              <b role="cell">Network</b
+              <b role="rowheader">Network</b
               ><span role="cell">Local scans need no network. Remote host scans use Git; Docker separates HTTPS fetch from network-disabled analysis.</span>
             </div>
             <div role="row">
-              <b role="cell">Reports</b
+              <b role="rowheader">Reports</b
               ><span role="cell">HTML reports are local artifacts. They make no requests but still contain paths and redacted evidence.</span>
             </div>
             <div role="row">
-              <b role="cell">Intelligence</b
+              <b role="rowheader">Intelligence</b
               ><span role="cell">Updates are explicit. The agent should not run <code>repyy intel update</code> unless the user asks.</span>
             </div>
           </div>

@@ -108,21 +108,21 @@ suppressions: []</pre
           </p>
           <div class="docs-table compact" role="table" aria-label="Custom rule fields">
             <div role="row">
-              <b role="cell">Required</b
+              <b role="rowheader">Required</b
               ><span role="cell"
                 ><code>id</code>, <code>category</code>, <code>severity</code>, <code>confidence</code>, <code>description</code>, <code>pattern</code></span
               >
             </div>
             <div role="row">
-              <b role="cell">Matching</b
+              <b role="rowheader">Matching</b
               ><span role="cell"><code>globs</code> limits file paths; <code>match_scope</code> is <code>raw</code> (default) or <code>code</code>.</span>
             </div>
             <div role="row">
-              <b role="cell">Review context</b
+              <b role="rowheader">Review context</b
               ><span role="cell"><code>remediation</code>, <code>rationale</code>, <code>legitimate_use</code>, and <code>disposition</code>.</span>
             </div>
             <div role="row">
-              <b role="cell">Advanced</b><span role="cell"><code>allow_context_downgrade</code> controls whether context can lower confidence.</span>
+              <b role="rowheader">Advanced</b><span role="cell"><code>allow_context_downgrade</code> controls whether context can lower confidence.</span>
             </div>
           </div>
           <p>
@@ -172,15 +172,15 @@ rules:
           <h2>Choose the matching scope</h2>
           <div class="docs-table compact" role="table" aria-label="Rule matching scopes">
             <div role="row">
-              <b role="cell"><code>raw</code></b
+              <b role="rowheader"><code>raw</code></b
               ><span role="cell">Default for custom rules. Matches the raw file, including comments and strings.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>code</code></b
+              <b role="rowheader"><code>code</code></b
               ><span role="cell">Restricts a custom rule to executable code according to the scanner’s code extraction.</span>
             </div>
             <div role="row">
-              <b role="cell"><code>structured</code></b
+              <b role="rowheader"><code>structured</code></b
               ><span role="cell">Reserved for built-in structured detectors; rejected in custom configuration.</span>
             </div>
           </div>

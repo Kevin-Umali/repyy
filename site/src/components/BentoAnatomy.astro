@@ -1,0 +1,18 @@
+---
+import { figures } from "../illustrations/bento-figures.mjs";
+interface Props {
+  kind: keyof typeof figures;
+}
+const { kind } = Astro.props;
+const figure = figures[kind];
+---
+
+<div class="bento-anatomy iso" data-anatomy>
+  <div class="anatomy-art" aria-hidden="true" set:html={figure.svg} />
+  <div class="anatomy-caption">
+    <span>{figure.rest}</span>
+  </div>
+</div>
+<script>
+  import "../scripts/bento-anatomy.js";
+</script>

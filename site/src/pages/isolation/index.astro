@@ -118,20 +118,20 @@ const guide = getGuide("isolation");
           <h2>Know the edge cases</h2>
           <div class="docs-table compact" role="table" aria-label="Docker edge cases">
             <div role="row">
-              <b role="cell">Preflight</b><span role="cell">Missing Docker or pinned image stops before scanning; there is no host fallback.</span>
+              <b role="rowheader">Preflight</b><span role="cell">Missing Docker or pinned image stops before scanning; there is no host fallback.</span>
             </div>
             <div role="row">
-              <b role="cell">Incomplete target</b
+              <b role="rowheader">Incomplete target</b
               ><span role="cell"
                 >Timeouts, denied mounts, failed fetches, malformed or oversized JSON, and container exits reduce coverage and are reported.</span
               >
             </div>
-            <div role="row"><b role="cell">SSH</b><span role="cell">SSH URLs are rejected in Docker mode.</span></div>
+            <div role="row"><b role="rowheader">SSH</b><span role="cell">SSH URLs are rejected in Docker mode.</span></div>
             <div role="row">
-              <b role="cell">Keep workdir</b><span role="cell"><code>--keep-workdir</code> is rejected to preserve the checkout and credential boundary.</span>
+              <b role="rowheader">Keep workdir</b><span role="cell"><code>--keep-workdir</code> is rejected to preserve the checkout and credential boundary.</span>
             </div>
             <div role="row">
-              <b role="cell">Future backends</b
+              <b role="rowheader">Future backends</b
               ><span role="cell"><code>--sandbox=vm</code> and <code>--sandbox=auto</code> are reserved for a later release.</span>
             </div>
           </div>
