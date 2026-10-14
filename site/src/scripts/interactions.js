@@ -1,27 +1,8 @@
-const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-document.documentElement.classList.add("has-js");
+import { terminalPreview } from "./terminal-preview.js";
+import { motionPreference, motionToken, motionDuration, revealUpdate } from "./motion.js";
 
-const rootStyles = getComputedStyle(document.documentElement);
-const easeOut = rootStyles.getPropertyValue("--ease-out").trim() || "cubic-bezier(0.23, 1, 0.32, 1)";
-const durationValue = rootStyles.getPropertyValue("--duration-ui").trim();
-const uiDuration = durationValue.endsWith("ms") ? Number.parseFloat(durationValue) : 200;
-
-const revealItems = document.querySelectorAll(".reveal");
-if (motionPreference.matches) {
-  revealItems.forEach((item) => item.classList.add("is-visible"));
-} else {
-  const revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        revealObserver.unobserve(entry.target);
-      });
-    },
-    { threshold: 0.14 },
-  );
-  revealItems.forEach((item) => revealObserver.observe(item));
-}
+const easeOut = motionToken("--ease-smooth-out");
+const uiDuration = motionDuration("--duration-fast");
 
 const copyFeedback = new WeakMap();
 document.querySelectorAll("[data-copy], [data-install-copy], [data-report-copy]").forEach((button, index) => {
@@ -43,11 +24,14 @@ const showCopyResult = (button, copied) => {
   const feedback = copyFeedback.get(button);
   window.clearTimeout(feedback.timeout);
   feedback.label.textContent = copied ? "Copied" : feedback.original;
+  button.dataset.copied = String(copied);
+  revealUpdate(feedback.label);
   feedback.status.classList.toggle("visually-hidden", copied);
   feedback.status.textContent = copied ? "Command copied." : "Couldn't copy. Select the command and copy it manually.";
   if (copied) {
     feedback.timeout = window.setTimeout(() => {
       feedback.label.textContent = feedback.original;
+      button.dataset.copied = "false";
       feedback.timeout = undefined;
     }, 1600);
   }
@@ -86,12 +70,15 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
 const attachTabs = (tabs, select) => {
   tabs.forEach((tab, index) => {
     tab.tabIndex = tab.classList.contains("is-active") ? 0 : -1;
-    tab.addEventListener("click", () => select(tab));
+    tab.addEventListener("click", (event) => select(tab, event.detail > 0));
     tab.addEventListener("keydown", (event) => {
-      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      const vertical = tab.closest('[role="tablist"]')?.getAttribute("aria-orientation") === "vertical";
+      const previous = vertical ? "ArrowUp" : "ArrowLeft";
+      const next = vertical ? "ArrowDown" : "ArrowRight";
+      if (![previous, next, "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       const nextIndex =
-        event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+        event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === previous ? -1 : 1) + tabs.length) % tabs.length;
       tabs[nextIndex].focus();
       select(tabs[nextIndex]);
     });
@@ -104,6 +91,7 @@ document.querySelectorAll("[data-install-tabs]").forEach((panel) => {
   const copy = panel.querySelector("[data-install-copy]");
 
   const select = (tab) => {
+    if (tab.getAttribute("aria-selected") === "true") return;
     tabs.forEach((item) => {
       const active = item === tab;
       item.classList.toggle("is-active", active);
@@ -111,6 +99,7 @@ document.querySelectorAll("[data-install-tabs]").forEach((panel) => {
       item.tabIndex = active ? 0 : -1;
     });
     output.textContent = tab.dataset.installCommand;
+    revealUpdate(output);
   };
 
   attachTabs(tabs, select);
@@ -155,11 +144,13 @@ document.querySelectorAll("[data-report-lab]").forEach((lab) => {
   const tabs = [...lab.querySelectorAll("[data-report-format]")];
   const title = lab.querySelector("[data-report-title]");
   const preview = lab.querySelector("[data-report-preview]");
+  const updatePreview = terminalPreview(preview);
   const use = lab.querySelector("[data-report-use]");
   const description = lab.querySelector("[data-report-description]");
   const command = lab.querySelector("[data-report-command]");
   const copy = lab.querySelector("[data-report-copy]");
-  const select = (tab) => {
+  const select = (tab, animate = false) => {
+    if (tab.getAttribute("aria-selected") === "true") return;
     const format = reportFormats[tab.dataset.reportFormat];
     tabs.forEach((item) => {
       const active = item === tab;
@@ -168,10 +159,11 @@ document.querySelectorAll("[data-report-lab]").forEach((lab) => {
       item.tabIndex = active ? 0 : -1;
     });
     title.textContent = format.title;
-    preview.textContent = format.preview;
     use.textContent = format.use;
+    updatePreview(format.preview, { isTerminal: tab.dataset.reportFormat === "terminal", animate });
     description.textContent = format.description;
     command.textContent = format.command;
+    if (animate) revealUpdate(description);
   };
 
   attachTabs(tabs, select);
@@ -181,69 +173,22 @@ document.querySelectorAll("[data-report-lab]").forEach((lab) => {
 document.querySelectorAll(".faq-list details").forEach((details) => {
   const summary = details.querySelector("summary");
   const content = details.querySelector("p");
-  let expanded = details.open;
-  let heightAnimation;
-  let contentAnimation;
-
+  let animation;
   motionPreference.addEventListener("change", () => {
-    if (!motionPreference.matches) return;
-    heightAnimation?.cancel();
-    contentAnimation?.cancel();
-    details.open = expanded;
-    details.style.height = "";
-    details.style.overflow = "";
+    if (motionPreference.matches) animation?.cancel();
   });
-
   summary.addEventListener("click", (event) => {
     event.preventDefault();
-    expanded = !expanded;
-
-    if (motionPreference.matches) {
-      heightAnimation?.cancel();
-      contentAnimation?.cancel();
-      details.open = expanded;
-      details.style.height = "";
-      details.style.overflow = "";
-      return;
-    }
-
-    const startHeight = details.getBoundingClientRect().height;
-    const interruptedContent = contentAnimation ? getComputedStyle(content) : undefined;
-    heightAnimation?.cancel();
-    contentAnimation?.cancel();
-    details.style.height = `${startHeight}px`;
-    details.style.overflow = "hidden";
-    if (expanded) details.open = true;
-
-    const endHeight = summary.getBoundingClientRect().height + (expanded ? content.getBoundingClientRect().height : 0);
-    heightAnimation = details.animate([{ height: `${startHeight}px` }, { height: `${endHeight}px` }], {
-      duration: uiDuration,
-      easing: easeOut,
-    });
-    contentAnimation = content.animate(
+    animation?.cancel();
+    details.open = !details.open;
+    details.dataset.expanded = String(details.open);
+    if (!details.open || motionPreference.matches || event.detail === 0) return;
+    animation = content.animate(
       [
-        {
-          opacity: interruptedContent ? Number.parseFloat(interruptedContent.opacity) : expanded ? 0 : 1,
-          transform: interruptedContent?.transform || (expanded ? "translate3d(0, -4px, 0)" : "translate3d(0, 0, 0)"),
-        },
-        {
-          opacity: expanded ? 1 : 0,
-          transform: expanded ? "translate3d(0, 0, 0)" : "translate3d(0, -4px, 0)",
-        },
+        { opacity: 0, transform: "translateY(-4px)" },
+        { opacity: 1, transform: "translateY(0)" },
       ],
       { duration: uiDuration, easing: easeOut },
-    );
-
-    heightAnimation.addEventListener(
-      "finish",
-      () => {
-        details.open = expanded;
-        details.style.height = "";
-        details.style.overflow = "";
-        heightAnimation = undefined;
-        contentAnimation = undefined;
-      },
-      { once: true },
     );
   });
 });

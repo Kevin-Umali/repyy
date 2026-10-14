@@ -1,0 +1,30 @@
+---
+import { workflowFigures } from "../illustrations/bento-figures.mjs";
+const steps = [
+  {
+    title: "Read the files.",
+    text: "Start with a folder or Git URL. Repyy reads scripts and configuration as data, without intentionally running assignment code.",
+  },
+  { title: "Trace the evidence.", text: "Checks connect suspicious patterns to source locations, with severity, confidence, and coverage kept visible." },
+  { title: "Make the call.", text: "Review the report. Inspect the source, ask for context, use stronger isolation, or stop." },
+];
+---
+
+<figure class="workflow-figure iso" data-workflow-animation aria-label="From repository files to an evidence report">
+  <div class="workflow-stations">
+    {steps.map((step, i) => (
+      <div class="workflow-station">
+        <div class="workflow-art" aria-hidden="true" set:html={workflowFigures[i]} />
+        <div class="workflow-step">
+          <span aria-hidden="true">0{i + 1}</span>
+          <h3>{step.title}</h3>
+        </div>
+        <p>{step.text}</p>
+      </div>
+    ))}
+  </div>
+  <figcaption>Illustrative workflow. Static analysis helps you review; it cannot prove a repository is safe.</figcaption>
+</figure>
+<script>
+  import "../scripts/workflow-animation.js";
+</script>
