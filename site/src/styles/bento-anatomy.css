@@ -1,0 +1,172 @@
+.iso {
+  --anatomy-paper: white;
+  --anatomy-top: #fafafa;
+  --anatomy-face: #fff;
+  --anatomy-shade-0: #b9b9c2;
+  --anatomy-shade-1: #cdcdd5;
+  --anatomy-shade-2: #dddde3;
+  --anatomy-shade-3: #eaeaf0;
+  --anatomy-lit-top: #f9ece1;
+  --anatomy-lit-shade: #d8b6a0;
+  --anatomy-hi: #424247;
+  --anatomy-mid: #73737b;
+  --anatomy-lo: #a1a1a9;
+  --anatomy-faint: #c2c2cb;
+  --anatomy-lit: var(--signal);
+  --anatomy-halo: #5c6150;
+  --anatomy-dot: #454d3e;
+  --anatomy-weight: 0.65px;
+}
+.coverage-primary .iso {
+  --anatomy-top: #49494e;
+  --anatomy-face: #505056;
+  --anatomy-shade-0: #29292e;
+  --anatomy-shade-1: #303036;
+  --anatomy-shade-2: #38383e;
+  --anatomy-shade-3: #414147;
+  --anatomy-lit-top: #594032;
+  --anatomy-lit-shade: #45332a;
+  --anatomy-hi: #dedee5;
+  --anatomy-mid: #b2b2bb;
+  --anatomy-lo: #85858f;
+  --anatomy-faint: #60606a;
+  --anatomy-halo: #000;
+  --anatomy-dot: #dddde4;
+}
+.iso-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.iso-svg path,
+.iso-svg circle {
+  vector-effect: non-scaling-stroke;
+}
+.iso-fill {
+  fill: var(--anatomy-paper);
+  stroke: none;
+}
+.iso-solid[data-lit] > .iso-fill {
+  fill: var(--anatomy-face);
+}
+.iso-shade,
+.iso-top {
+  stroke: none;
+}
+.iso-shade[data-shade="0"] {
+  fill: var(--anatomy-shade-0);
+}
+.iso-shade[data-shade="1"] {
+  fill: var(--anatomy-shade-1);
+}
+.iso-shade[data-shade="2"] {
+  fill: var(--anatomy-shade-2);
+}
+.iso-shade[data-shade="3"] {
+  fill: var(--anatomy-shade-3);
+}
+.iso-top {
+  fill: var(--anatomy-top);
+}
+.iso-solid[data-lit] > .iso-top {
+  fill: var(--anatomy-lit-top);
+}
+.iso-solid[data-lit] > .iso-shade {
+  fill: var(--anatomy-lit-shade);
+}
+.iso-solid[data-lit] > .iso-edge {
+  stroke: var(--anatomy-lit);
+}
+.iso-halo {
+  fill: var(--anatomy-halo);
+  stroke: none;
+  filter: blur(9px);
+  opacity: 0.22;
+  transform: translateY(3px);
+}
+.iso-line {
+  fill: none;
+  stroke: var(--anatomy-lo);
+  stroke-width: var(--anatomy-weight);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iso-line[data-tone="hi"] {
+  stroke: var(--anatomy-hi);
+}
+.iso-line[data-tone="mid"] {
+  stroke: var(--anatomy-mid);
+}
+.iso-line[data-tone="faint"] {
+  stroke: var(--anatomy-faint);
+}
+.iso-line[data-tone="lit"] {
+  stroke: var(--anatomy-lit);
+}
+.iso-dots circle {
+  fill: var(--anatomy-dot);
+  stroke: none;
+  opacity: 0.65;
+}
+.iso-face-text {
+  fill: var(--anatomy-mid);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.bento-anatomy {
+  width: 100%;
+  min-width: 0;
+  margin-block: auto;
+}
+.anatomy-art {
+  width: 100%;
+}
+.anatomy-art .iso-svg {
+  height: 220px;
+  overflow: visible;
+}
+.coverage-primary .anatomy-art .iso-svg {
+  height: 270px;
+}
+.anatomy-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 44px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.coverage-primary .anatomy-caption {
+  color: #b3b3bc;
+}
+.coverage-signal .iso {
+  --anatomy-paper: #f4d8ce;
+  --anatomy-lit: #77240f;
+  --anatomy-lit-top: #ffcfb9;
+  --anatomy-lit-shade: #cb8a6f;
+}
+.coverage-signal .anatomy-caption {
+  color: white;
+}
+.coverage-primary .iso {
+  --anatomy-paper: #34343a;
+  --anatomy-lit: #efb29d;
+}
+
+@media (forced-colors: active) {
+  .coverage-card .iso {
+    --anatomy-paper: Canvas;
+    --anatomy-top: Canvas;
+    --anatomy-shade-0: Canvas;
+    --anatomy-shade-1: Canvas;
+    --anatomy-shade-2: Canvas;
+    --anatomy-shade-3: Canvas;
+    --anatomy-hi: CanvasText;
+    --anatomy-mid: CanvasText;
+    --anatomy-lo: CanvasText;
+    --anatomy-lit: Highlight;
+  }
+}

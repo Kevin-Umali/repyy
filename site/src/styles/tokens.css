@@ -1,12 +1,17 @@
 :root {
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  --duration-press: 160ms;
-  --duration-ui: 200ms;
-  --duration-reveal: 600ms;
-  --stagger-step: 50ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: var(--ease-smooth-out);
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-stagger: 40ms;
+  --duration-press: var(--duration-quick);
+  --duration-ui: var(--duration-fast);
+  --stagger-step: var(--duration-stagger);
+  --blur-small: 2px;
+  --scale-dropdown-open: 0.97;
+  --scale-dropdown-close: 0.99;
   --ink: #1d1d1f;
   --muted: #68686d;
   --quiet: #6d6d73;
