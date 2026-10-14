@@ -1,6 +1,9 @@
+import { animate, motionPreference, motionToken } from "./motion.js";
+
 const input = document.querySelector("#docs-search");
 
 if (input) {
+  document.documentElement.classList.add("has-js");
   const status = document.querySelector("#docs-search-status");
   const box = input.closest(".docs-search");
   const results = document.createElement("div");
@@ -15,6 +18,43 @@ if (input) {
   let index = [];
   let indexPromise;
   let loadingTimer;
+  let revision = 0;
+  let surfaceAnimation;
+
+  const showResults = () => {
+    const opening = results.hidden || results.inert;
+    surfaceAnimation?.cancel();
+    results.hidden = false;
+    results.inert = false;
+    input.setAttribute("aria-expanded", "true");
+    if (opening) {
+      surfaceAnimation = animate(results, [
+        { opacity: 0, transform: `scale(${motionToken("--scale-dropdown-open")})` },
+        { opacity: 1, transform: "scale(1)" },
+      ]);
+    }
+  };
+  const hideResults = () => {
+    revision++;
+    clearTimeout(loadingTimer);
+    surfaceAnimation?.cancel();
+    input.setAttribute("aria-expanded", "false");
+    results.inert = true;
+    if (results.hidden) return;
+    surfaceAnimation = animate(
+      results,
+      [
+        { opacity: 1, transform: "scale(1)" },
+        { opacity: 0, transform: `scale(${motionToken("--scale-dropdown-close")})` },
+      ],
+      "--duration-quick",
+    );
+    if (!surfaceAnimation) results.hidden = true;
+    else surfaceAnimation.addEventListener("finish", () => (results.hidden = true), { once: true });
+  };
+  motionPreference.addEventListener("change", () => {
+    if (motionPreference.matches && results.inert) results.hidden = true;
+  });
 
   const loadIndex = async () => {
     if (index.length) return index;
@@ -38,28 +78,26 @@ if (input) {
 
   const render = async () => {
     const query = input.value.trim().toLowerCase();
+    const current = ++revision;
     window.clearTimeout(loadingTimer);
-    results.replaceChildren();
-    results.hidden = true;
-    input.setAttribute("aria-expanded", "false");
     status.textContent = "";
     if (!query) {
+      hideResults();
       return;
     }
     loadingTimer = window.setTimeout(() => {
-      if (input.value.trim().toLowerCase() !== query || index.length) return;
+      if (current !== revision || index.length) return;
       const message = document.createElement("p");
       message.className = "docs-search-loading";
       message.textContent = "Searching documentation…";
       status.textContent = message.textContent;
       results.replaceChildren(message);
-      results.hidden = false;
-      input.setAttribute("aria-expanded", "true");
+      showResults();
     }, 150);
     try {
       const entries = await loadIndex();
       window.clearTimeout(loadingTimer);
-      if (input.value.trim().toLowerCase() !== query) return;
+      if (current !== revision) return;
       results.replaceChildren();
       const matches = entries.filter((item) => query.split(/\s+/).every((word) => `${item.pageTitle} ${item.title} ${item.text}`.toLowerCase().includes(word)));
       matches.slice(0, 30).forEach((item) => {
@@ -83,7 +121,7 @@ if (input) {
       status.textContent = count.textContent;
     } catch {
       window.clearTimeout(loadingTimer);
-      if (input.value.trim().toLowerCase() !== query) return;
+      if (current !== revision) return;
       results.replaceChildren();
       const message = document.createElement("p");
       message.className = "docs-search-empty";
@@ -91,8 +129,7 @@ if (input) {
       results.appendChild(message);
       status.textContent = message.textContent;
     }
-    results.hidden = false;
-    input.setAttribute("aria-expanded", "true");
+    showResults();
   };
 
   const dismiss = (event) => {
@@ -132,8 +169,18 @@ if (input) {
   });
   document.addEventListener("pointerdown", (event) => {
     if (!box?.contains(event.target)) {
-      results.hidden = true;
-      input.setAttribute("aria-expanded", "false");
+      hideResults();
     }
+  });
+  box.addEventListener("focusout", (event) => {
+    if (!box.contains(event.relatedTarget)) hideResults();
+  });
+  window.addEventListener("pagehide", () => {
+    revision++;
+    clearTimeout(loadingTimer);
+    surfaceAnimation?.cancel();
+    results.hidden = true;
+    results.inert = true;
+    input.setAttribute("aria-expanded", "false");
   });
 }
