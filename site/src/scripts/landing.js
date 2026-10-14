@@ -1,7 +1,6 @@
 // Index-only enhancement. Native scrolling owns touch, trackpad, and interruption.
 (() => {
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (!motion.matches) document.documentElement.classList.add("landing-motion");
 
   document.addEventListener("click", (event) => {
     if (event.defaultPrevented || event.detail === 0 || motion.matches) return;
@@ -40,9 +39,5 @@
       attributeFilter: ["aria-selected"],
     });
     label();
-  });
-
-  motion.addEventListener("change", () => {
-    document.documentElement.classList.toggle("landing-motion", !motion.matches);
   });
 })();

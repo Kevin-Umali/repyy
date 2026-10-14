@@ -140,6 +140,7 @@ html:not(.has-js) .docs-search {
   color: var(--muted);
 }
 .docs-search-results {
+  transform-origin: top center;
   position: absolute;
   top: calc(100% + 0.45rem);
   right: 0;
