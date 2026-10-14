@@ -10,9 +10,7 @@ const P = k.fitProjection(k.boxCorners(base, -22, 84), 760, 440, { pad: 44, azim
 const at = (p) => k.iso(p, P);
 const line = (d, tone = "lo", free) => k.lineSvg(d, { tone, free });
 const dots = (points, tone = "mid", size = 0.5) => k.dotsSvg(points.map(at), { tone, size });
-let parts = 0;
 const slab = (plan, z, h, tone = "mid", extra = {}) => {
-  parts++;
   return k.solidSvg(k.slabOf(plan, z, h, P, 5, Math.min(0.8, h / 3)), { tone, ...extra });
 };
 const screws = (plan, z, inset = 4) => {
@@ -137,4 +135,3 @@ export const benchSvg = k.figureSvg({
   label: "An illustrative inspection bench: three source documents lie on a fixed platen beneath a movable reading head. A side tray holds review evidence.",
   body: [foundation(), rail(-56), specimen(), rail(46), evidence(), `<g data-bench-head transform="${k.translateAlong(P, [-78, 0, 0])}">${gantry()}</g>`],
 });
-export const benchPartCount = parts;

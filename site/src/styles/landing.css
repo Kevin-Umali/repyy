@@ -134,8 +134,7 @@ main > section {
   text-align: center;
 }
 .context-line,
-.section-label,
-.panel-label {
+.section-label {
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 600;

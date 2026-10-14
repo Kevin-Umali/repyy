@@ -369,28 +369,6 @@ html:not(.has-js) .docs-search {
   font-size: 0.85rem;
   line-height: 1.65;
 }
-.guide-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-.guide-links a {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.55rem 0.9rem;
-  border: 1px solid #dedee2;
-  border-radius: 999px;
-  background: white;
-  color: #4a4a50;
-  font-size: 0.78rem;
-  font-weight: 550;
-}
-.guide-links a span {
-  color: var(--signal);
-}
 .docs-section {
   padding: 4rem 0;
   border-top: 1px solid var(--line);
@@ -665,23 +643,6 @@ ol.docs-list {
 ol.docs-list li {
   padding-left: 0.35rem;
 }
-.coverage-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin: 1.75rem 0;
-}
-.coverage-columns ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.coverage-columns li {
-  padding: 0.85rem 0;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 0.85rem;
-}
 .docs-inline-link {
   min-height: 44px;
   display: inline-flex;
@@ -768,10 +729,6 @@ ol.docs-list li {
   }
   .docs-command button:hover {
     opacity: 0.8;
-  }
-  .guide-links a:hover {
-    border-color: #cda99b;
-    color: var(--signal);
   }
 }
 @media (max-width: 1050px) {
@@ -967,9 +924,6 @@ ol.docs-list li {
   }
   .flag-grid span {
     font-size: 0.8rem;
-  }
-  .coverage-columns {
-    gap: 1.25rem;
   }
   .recipe-grid {
     grid-template-columns: 1fr;
