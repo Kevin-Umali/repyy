@@ -1,48 +1,28 @@
 name: Security evidence
+
 on:
-  pull_request:
-  push:
-    branches: [main]
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
+
+concurrency:
+  group: security-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
-  benchmark:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: true
-      - run: go build -o /tmp/repyy ./cmd/repyy
-      - run: python3 scripts/benchmark.py --binary /tmp/repyy --output /tmp/benchmark --check
-      - name: Check bounded intelligence ingestion
-        run: python3 -m unittest scripts/test_ingest_intelligence.py
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: benchmark
-          path: /tmp/benchmark
   fuzz:
+    name: Extended fuzzing
+    uses: ./.github/workflows/fuzz.yml
+    with:
+      source_ref: ${{ github.sha }}
+      extended: true
+
+  vulnerabilities:
+    name: Check current vulnerability data
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { package: scan, target: FuzzArchiveInspection }
-          - { package: scan, target: FuzzArchivePaths }
-          - { package: scan, target: FuzzGitMetadata }
-          - { package: scan, target: FuzzSymlinkConfinement }
-          - { package: config, target: FuzzConfiguration }
-          - { package: manifest, target: FuzzManifests }
-          - { package: output, target: FuzzHumanOutput }
-          - { package: output, target: FuzzJSONReports }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,16 +31,4 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Fuzz hostile input
-        env:
-          FUZZ_PACKAGE: ${{ matrix.package }}
-          FUZZ_TARGET: ${{ matrix.target }}
-          FUZZ_TIME: ${{ github.event_name == 'schedule' && '120s' || '10s' }}
-        run: go test "./internal/$FUZZ_PACKAGE" -run '^$' -fuzz "^${FUZZ_TARGET}$" -fuzztime
-          "$FUZZ_TIME" -parallel 2
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
-        with:
-          name: fuzz-failure-${{ matrix.target }}
-          path: internal/**/testdata/fuzz/**
-          if-no-files-found: ignore
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...

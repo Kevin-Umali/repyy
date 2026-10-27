@@ -4,19 +4,23 @@
 import argparse
 import base64
 import json
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
 
-def validate_manifest(source, version):
-    content = source.read_bytes()
-    if source.suffix == ".json":
+def manifest_version(content, suffix):
+    if suffix == ".json":
         actual = json.loads(content).get("version")
     else:
         match = re.search(rb'^\s*version "([^"\n]+)"\s*$', content, re.MULTILINE)
         actual = match.group(1).decode("utf-8") if match else None
-    if actual != version or b"SNAPSHOT" in content:
+    return actual
+
+
+def validate_manifest(source, version):
+    content = source.read_bytes()
+    if manifest_version(content, source.suffix) != version or b"SNAPSHOT" in content:
         raise ValueError(f"Generated manifest does not describe {version}: {source}")
     return content
 
@@ -25,17 +29,24 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tag")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--target", choices=("homebrew", "scoop"))
+    parser.add_argument("--directory", type=Path, default=Path("dist"))
     args = parser.parse_args()
     if not re.fullmatch(r"v\d+\.\d+\.\d+", args.tag):
         parser.error("expected a stable release tag")
-    targets = (
-        (
+    targets = {
+        "homebrew": (
             "Kevin-Umali/homebrew-tap",
             "Casks/repyy.rb",
-            Path("dist/homebrew/Casks/repyy.rb"),
+            args.directory / "homebrew/Casks/repyy.rb",
         ),
-        ("Kevin-Umali/scoop-bucket", "repyy.json", Path("dist/scoop/repyy.json")),
-    )
+        "scoop": (
+            "Kevin-Umali/scoop-bucket",
+            "repyy.json",
+            args.directory / "scoop/repyy.json",
+        ),
+    }
+    selected = [targets[args.target]] if args.target else targets.values()
     if not args.dry_run:
         release = json.loads(
             subprocess.check_output(
@@ -57,7 +68,7 @@ def main():
     # Validate both manifests before updating either distribution repository.
     validated = [
         (repository, destination, source, validate_manifest(source, args.tag[1:]))
-        for repository, destination, source in targets
+        for repository, destination, source in selected
     ]
     for repository, destination, source, content in validated:
         if args.dry_run:
@@ -69,6 +80,23 @@ def main():
         current = json.loads(
             subprocess.check_output(["gh", "api", endpoint], text=True)
         )
+        remote = base64.b64decode(current["content"], validate=False)
+        if remote == content:
+            print(f"Already published {repository}/{destination}")
+            continue
+        remote_version = manifest_version(remote, source.suffix)
+        if not isinstance(remote_version, str) or not re.fullmatch(
+            r"\d+\.\d+\.\d+", remote_version
+        ):
+            raise ValueError(
+                f"Cannot determine stable version of {repository}/{destination}"
+            )
+        old = tuple(map(int, remote_version.split(".")))
+        new = tuple(map(int, args.tag[1:].split(".")))
+        if old >= new:
+            raise ValueError(
+                f"Refusing to replace {repository}/{destination} at version {remote_version} with {args.tag[1:]}"
+            )
         payload = {
             "message": f"Update repyy to {args.tag}",
             "sha": current["sha"],
