@@ -50,6 +50,12 @@ const guide = getGuide("security-testing");
       <code>internal/intel/update_test.go</code> covers signed updates and failure behavior.
     </p>
     <p>
+      Python startup fixtures cover executable <code>.pth</code> import lines, benign path entries and comments, customization modules, local wheel entries,
+      context downgrades, and undecodable startup files. Python remote-response fixtures check connected execution paths, direct nested calls, overwritten
+      values, unrelated functions and benign comments. Package indicators distinguish exact compromised releases from other resolved versions and unlocked
+      ranges.
+    </p>
+    <p>
       Tests use fixed inert examples with expected findings and benign controls. A test that derives its expected match from the production regex can pass when
       the regex changes incorrectly. Catalog ID lists and snapshots can catch edits but do not prove detection. New bug tests must cover a behavior that
       existing tests miss; expand an existing test when it already covers that path.
@@ -139,8 +145,9 @@ go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 30s 
   <section class="docs-section docs-searchable" id="public-benchmark">
     <h2>Public benchmark</h2>
     <p>
-      The <a href="../demo/sample/results.json">inert sample benchmark</a> and its versioned paired controls are a separate behavioral check. Per-release results are attached by the release
-      workflow. Known misses and all observed rules remain public; a synthetic benchmark does not establish general accuracy.
+      The <a href="../demo/sample/results.json">inert sample benchmark</a> and its versioned paired controls are a separate behavioral check. Per-release
+      results are attached by the release workflow. Known misses and all observed rules remain public; a synthetic benchmark does not establish general
+      accuracy.
     </p>
   </section>
   <section class="docs-section docs-searchable" id="known-gaps-and-independent-review">

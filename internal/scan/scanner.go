@@ -446,6 +446,9 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		s.scanJSDecoded(path, data, add, coverage)
 		s.scanJSAxiosFlow(path, data, add, coverage)
 	}
+	if ext := strings.ToLower(filepath.Ext(innerPath(path))); ext == ".py" || ext == ".pyw" {
+		s.scanPythonRemoteFlow(path, data, add, coverage)
+	}
 	if dependencies, supported := manifest.Parse(path, data); supported {
 		for _, dependency := range dependencies {
 			confirmed := false
@@ -493,6 +496,22 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 		matchLines := lines
 		matchData := data
+		evidenceData := data
+		originalLines := lines
+		if rule.ID == "PY-004" && rule.MatchScope != "code" {
+			// Python decodes .pth files with utf-8-sig and uses splitlines.
+			text := strings.TrimPrefix(string(data), "\ufeff")
+			text = strings.NewReplacer("\r\n", "\n", "\r", "\n", "\v", "\n", "\f", "\n", "\x1c", "\n", "\x1d", "\n", "\x1e", "\n", "\u0085", "\n", "\u2028", "\n", "\u2029", "\n").Replace(text)
+			if strings.Count(text, "\n") > maxRuleLines {
+				coverage.Complete = false
+				coverage.Skipped = append(coverage.Skipped, path+" (line-count limit)")
+				continue
+			}
+			matchData = []byte(text)
+			evidenceData = matchData
+			matchLines = splitLines(matchData)
+			originalLines = matchLines
+		}
 		if rule.MatchScope == "code" {
 			matchLines = codeLines
 			matchData = codeData
@@ -504,7 +523,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 				continue
 			}
 			matched = true
-			originalLine := lines[i]
+			originalLine := originalLines[i]
 			if rule.ID == "GITHOOK-001" && disabledHooksPath(originalLine) {
 				continue
 			}
@@ -540,7 +559,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 					continue
 				}
 				severity, confidence = contextualize(rule, findingContext, severity, confidence)
-				evidence := safeEvidence(data[loc[0]:loc[1]])
+				evidence := safeEvidence(evidenceData[loc[0]:loc[1]])
 				finding := s.findingRange(rule.ID, rule.Category, severity, confidence, path, line, endLine, rule.Description, evidence, rule.Remediation)
 				finding.Context = findingContext
 				finding.Disposition = rule.Disposition
@@ -745,7 +764,7 @@ func scanRelevantText(path string, data []byte, mode os.FileMode) bool {
 		return true
 	}
 	switch strings.ToLower(filepath.Ext(base)) {
-	case ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".php", ".c", ".h", ".cc", ".cpp", ".html", ".htm", ".css", ".sql", ".yml", ".yaml", ".toml", ".json", ".jsonc", ".ipynb", ".xml", ".ini", ".cfg", ".conf", ".props", ".targets":
+	case ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".pyw", ".pth", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".php", ".c", ".h", ".cc", ".cpp", ".html", ".htm", ".css", ".sql", ".yml", ".yaml", ".toml", ".json", ".jsonc", ".ipynb", ".xml", ".ini", ".cfg", ".conf", ".props", ".targets":
 		return true
 	}
 	return false
@@ -1002,7 +1021,7 @@ func isAgentInstructionPath(slashed, base string) bool {
 	if base == ".cursorrules" || base == ".clinerules" || base == ".windsurfrules" || base == "copilot-instructions.md" {
 		return true
 	}
-	if base == "skill.md" && strings.Contains(slashed, "/skills/") {
+	if base == "skill.md" {
 		return true
 	}
 	if strings.Contains(slashed, "/.cursor/rules/") {

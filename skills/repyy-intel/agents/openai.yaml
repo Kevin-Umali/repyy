@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repyy Intel"
+  short_description: "Check Repyy package and file-hash indicators"
+  default_prompt: "Use $repyy-intel to check this package or file-hash finding against the exact affected scope and its source advisory."

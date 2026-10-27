@@ -64,3 +64,33 @@ func TestAffectedExactAndAllVersions(t *testing.T) {
 		t.Fatal("ordered range matching failed")
 	}
 }
+
+func TestOctoberExactPackageVersions(t *testing.T) {
+	d := Builtin()
+	for _, tc := range []struct {
+		ecosystem, name, compromised, safe string
+	}{
+		{"npm", "@subql/common", "5.8.3", "5.8.2"},
+		{"pip", "litellm", "1.107.0", "1.106.2"},
+		{"npm", "tensorlake", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-darwin-arm64", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-linux-arm64-gnu", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-linux-arm64-musl", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-linux-x64-gnu", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-linux-x64-musl", "0.5.144", "0.5.143"},
+		{"npm", "tensorlake-native-win32-x64", "0.5.144", "0.5.143"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := d.MatchPackage(tc.ecosystem, tc.name, tc.compromised)
+			if len(got) != 1 || !got[0].VersionMatched {
+				t.Fatalf("compromised version not matched: %+v", got)
+			}
+			got = d.MatchPackage(tc.ecosystem, tc.name, tc.safe)
+			for _, match := range got {
+				if match.VersionMatched {
+					t.Fatalf("safe version confirmed: %+v", got)
+				}
+			}
+		})
+	}
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repyy Explain"
+  short_description: "Explain Repyy findings and check their evidence"
+  default_prompt: "Use $repyy-explain to explain this Repyy report and check whether its findings are supported by the matching source."

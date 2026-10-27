@@ -7,8 +7,8 @@ heuristics can produce both false positives and false negatives.
 | Detection area                | Representative coverage                                                                                                                                                                                                                                                                            | Rule IDs or scanner checks                                                                                                                                                            |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Dynamic execution             | `eval`, Function constructors, VM execution, string timers, browser execution APIs, OS process spawning                                                                                                                                                                                            | `EXEC-*`, `COMBO-002`                                                                                                                                                                 |
-| Axios response to execution   | Same-function Axios response data flowing through simple aliases into `eval`, Function, or qualified `child_process` execution; source and sink lines retained                                                                                                                                    | `FLOW-001`                                                                                                                                                                           |
-| Decoded literal indicators    | Bounded JavaScript escape, Base64/hex literal, character-code, byte-array, and constant string-table lookup recovery rescanned for selected strong indicators                                                                                                                                  | `DECODE-001`                                                                                                                                                                         |
+| Axios response to execution   | Same-function Axios response data flowing through simple aliases into `eval`, Function, or qualified `child_process` execution; source and sink lines retained                                                                                                                                     | `FLOW-001`                                                                                                                                                                            |
+| Decoded literal indicators    | Bounded JavaScript escape, Base64/hex literal, character-code, byte-array, and constant string-table lookup recovery rescanned for selected strong indicators                                                                                                                                      | `DECODE-001`                                                                                                                                                                          |
 | Obfuscation                   | Base64/hex/Unicode decoding, dense escapes, string reversal, computed globals, character shufflers, long/high-entropy lines                                                                                                                                                                        | `OBFS-*`, `UNICODE-001`                                                                                                                                                               |
 | Package lifecycle             | npm and Composer hooks; Python, Cargo, Go, JVM, and MSBuild build-time execution                                                                                                                                                                                                                   | `PKG-001`, `PY-001`, `PHP-001`, `RUST-001`, `RUST-002`, `GO-001`, `JVM-001`, `DOTNET-001`                                                                                             |
 | Malicious dependencies        | Attributed package/version IOCs across eight ecosystems, typosquat review signals, unusual versions, URL/VCS dependencies                                                                                                                                                                          | `IOC-PKG-*`, `TYPOSQUAT-001`, `PKG-002`, `PKG-003`, `PKG-005`                                                                                                                         |
@@ -54,6 +54,13 @@ it.
 
 ## Precision controls
 
+- Python `.pth` lines beginning with `import ` or `import` followed by a tab are
+  startup execution surfaces (`PY-004`). Ordinary path entries and comments do not
+  trigger that rule. `sitecustomize.py` and `usercustomize.py` are startup
+  customization surfaces (`PY-005`). These can be legitimate; execution depends
+  on installation in a processed site directory or placement on Python's import
+  path. Locally present wheels are inspected as bounded ZIP archives without
+  installing them. See [Python's site documentation](https://docs.python.org/3/library/site.html).
 - Every finding retains its matched locations, while bounded report-detail
   limits prevent hostile input from exhausting memory.
 - Rules declare whether they inspect raw content, executable code, or a
@@ -132,6 +139,24 @@ indicators and lockfiles for suspicious sources and integrity clues; confirm a
 dependency finding against the ecosystem's current advisory and the exact
 resolved version. The npm lockfile parser reads recorded versions but does not
 resolve packages or reconcile every declaration/lock disagreement.
+
+It does not inventory deployed runtimes, verify vendor backports, or establish
+reachability of runtime vulnerabilities. Patch the actual runtime independently.
+A source checkout also cannot
+establish the contents of a future dependency download: scan the exact wheel or
+tarball available locally, review archive-limit warnings, and verify its provenance.
+Disabling npm lifecycle scripts does not prevent malicious code from executing
+later on import.
+
+Python response-flow review (`FLOW-002`) follows simple, single-line
+`requests`/`httpx` and `urllib` calls through assignments, aliases, response
+properties and reads into `exec`, `eval` or `compile`, retaining source and sink
+locations. It is an approximate review signal: compilation alone is not execution,
+and imported API identities and control flow are not fully resolved. It does not
+trace arbitrary transformations, cross-function/cross-file flows, downloaded
+files into subprocesses, or equivalent flows in every language. Manual review
+must resolve those paths; generic download/execution rules are not a complete
+data-flow analysis.
 
 The scanner does not follow pip `-r`/`-c` references, evaluate Ruby or build
 configuration, compare dependency declarations to lockfile resolutions, or
