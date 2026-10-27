@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"os"
 	pathpkg "path"
 	"path/filepath"
@@ -104,12 +105,12 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 			return false
 		}
 		count++
-		total += size
-		if count > s.opts.Limits.MaxArchiveFiles || total > s.opts.Limits.MaxArchiveBytes || size > s.opts.Limits.MaxFileBytes {
+		if count > s.opts.Limits.MaxArchiveFiles || size < 0 || total > s.opts.Limits.MaxArchiveBytes || size > s.opts.Limits.MaxArchiveBytes-total || size > s.opts.Limits.MaxFileBytes {
 			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, parent+" (archive resource limit)")
 			return false
 		}
+		total += size
 		if unsafeArchivePath(name) {
 			flagUnsafe(name, "unsafe archive path")
 			return true
@@ -174,6 +175,11 @@ func (s *Scanner) scanArchive(ctx context.Context, parent string, data []byte, d
 				coverage.Complete = false
 				coverage.Skipped = append(coverage.Skipped, parent+"!"+f.Name+" (unsupported archive entry type)")
 				continue
+			}
+			if f.UncompressedSize64 > math.MaxInt64 {
+				coverage.Complete = false
+				coverage.Skipped = append(coverage.Skipped, parent+" (archive resource limit)")
+				return
 			}
 			r, err := f.Open()
 			if err != nil {

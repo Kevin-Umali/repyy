@@ -1,6 +1,6 @@
 # Security Testing
 
-Reviewed: 2026-09-25. Describes current source tests and bounded CI fuzzing.
+Reviewed: 2026-10-27. Describes current source tests and bounded CI fuzzing.
 
 Repyy processes hostile input. Tests exercise the scanner itself; no fixture is intentionally
 executed as an assignment. Passing tests do not establish that a repository or Repyy is free of
@@ -20,8 +20,16 @@ response-to-execution with ordinary request controls, and generated vendor
 bundle noise. The four skipped corpus paths were traced to invalid UTF-8 in
 their first 8 KiB; unsupported text remains visible as incomplete coverage.
 
+Python startup-hook fixtures cover executable `.pth` import lines, BOM and line
+ending handling, benign path
+entries and comments, customization modules, local wheel entries, context
+downgrades, and undecodable startup files. Python remote-response fixtures check
+connected execution paths, direct nested calls, overwritten values, unrelated
+functions and benign comments. Package indicators distinguish exact compromised
+releases from other resolved versions and unlocked ranges.
+
 `internal/scan/repository_test.go` covers Git metadata and symlink behavior; `archive_test.go` covers
-archive traversal and nested inspection; `active_content_test.go` covers staged execution, active document content, and VSIX packages;
+archive traversal, ZIP64 size bounds and nested inspection; `active_content_test.go` covers staged execution, active document content, and VSIX packages;
 `context_test.go` checks prompt-injection context; and `scanner_test.go` exercises cross-surface
 acceptance. `internal/output/output_test.go` checks terminal control neutralization,
 HTML escaping, source-link validation, redaction and report integrity.

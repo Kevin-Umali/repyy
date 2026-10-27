@@ -218,15 +218,13 @@ const guide = getGuide("docs");
   <section class="docs-section docs-searchable" id="privacy" data-search="privacy offline no telemetry upload network local remote tokens credentials">
     <h2>Know the boundary</h2>
     <p>
-      Local scans need no network. Remote host scans fetch the URL you request with Git; Docker separates HTTPS fetching from network-disabled analysis.
-      Intelligence updates happen only when you run the update command. Provider credentials stay in the process environment and out of URLs.
+      Local scans need no network. Remote host scans fetch the URL you request with Git; Docker separates HTTPS fetching from analysis, which requests{" "}
+      <code>--network none</code>. Intelligence updates happen only when you run the update command. Provider credentials stay in the process environment and
+      out of URLs.
     </p>
     <div class="docs-note">
-      <strong>Need a stronger boundary?</strong>
-      <p>
-        Use the built-in Docker backend, or follow the manual Windows Sandbox, macOS UTM, and Linux QEMU workflows in the isolation guide.
-        <code>--sandbox=vm</code> and <code>--sandbox=auto</code> are reserved for a later release.
-      </p>
+      <strong>Review Docker's controls</strong>
+      <p>Use the opt-in Docker backend and review its limits in the isolation guide.</p>
     </div>
     <a class="docs-inline-link" href="../isolation/">
       Read isolation details →

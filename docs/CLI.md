@@ -41,7 +41,7 @@ scans use a temporary networked fetch stage.
 | `--include-dependencies` | off                 | Scans dependency/cache trees such as `node_modules`, `.venv`, `vendor`, `target`, and `Pods`. These are skipped by default. |
 | `--history N\|all`       | `1`                 | Remote Git history depth. `all` requests the full history.                                                                  |
 | `--keep-workdir`         | off                 | Keeps host-mode remote checkouts for follow-up review. Unsupported with Docker.                                             |
-| `--sandbox`              | `host`              | Uses `host` or the opt-in `docker` analysis backend. `vm` and `auto` are not available.                                     |
+| `--sandbox`              | `host`              | Uses `host` or the opt-in `docker` analysis backend.                                                                        |
 | `--fail-on LEVEL`        | `high`              | Exit code becomes 1 when a finding at or above `low`, `medium`, `high`, or `critical` exists.                               |
 | `--timeout DURATION`     | `10m`               | Per-repository timeout, for example `30s`, `5m`, or `1h`. Must be positive.                                                 |
 | `--max-files N`          | `100000`            | Maximum files scanned per repository.                                                                                       |

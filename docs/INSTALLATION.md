@@ -109,7 +109,7 @@ available in host mode, but Docker mode rejects SSH.
 
 Use a local path when you already have a checkout. Use a remote URL when you want repyy to fetch a
 repository. Choose `--format json` for another tool or `--format sarif` for a code-scanning system.
-See [CLI.md](CLI.md) for every option and [VM-GUIDES.md](VM-GUIDES.md) for manual guest workflows.
+See [CLI.md](CLI.md) for every option and [SANDBOX.md](SANDBOX.md) for Docker scanning.
 
 ## Troubleshooting
 

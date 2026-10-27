@@ -4,7 +4,7 @@ package scan
 import "github.com/Kevin-Umali/repyy/internal/model"
 
 // BuiltinRulesVersion identifies the behavioral rule revision.
-const BuiltinRulesVersion = "2026.09.26"
+const BuiltinRulesVersion = "2026.10.27"
 
 // BuiltinRules returns a newly compiled copy of the embedded behavioral rules.
 func BuiltinRules() []Rule {
@@ -91,6 +91,8 @@ func BuiltinRules() []Rule {
 		{ID: "PATH-001", Category: "path-traversal", Severity: model.SeverityMedium, Confidence: model.ConfidenceMedium, Description: "Request-controlled path reaches a file operation", Pattern: `(?i)(path\.(join|resolve)|sendFile|readFile|readFileSync|open)\s*\([^\n]{0,180}(req\.|request\.|params\[|query\[)`, Remediation: review},
 		{ID: "PY-001", Category: "python-install-hook", Severity: model.SeverityHigh, Confidence: model.ConfidenceMedium, Description: "Python package defines installation-time command hooks", Pattern: `(?i)(cmdclass\s*=|class\s+[^\n]*(install|develop|build_ext)[^\n]*\(|setup_requires\s*=)`, Globs: []string{"setup.py", "setup.cfg", "pyproject.toml"}, Remediation: review},
 		{ID: "PY-002", Category: "python-dependency-source", Severity: model.SeverityHigh, Confidence: model.ConfidenceMedium, Description: "Python dependency is loaded from a URL or VCS source", Pattern: `(?i)(git\+https?://|https?://[^\s]+\.(whl|tar\.gz|zip)|\{\s*(git|url)\s*=)`, Globs: []string{"requirements*.txt", "pyproject.toml", "Pipfile", "setup.py", "setup.cfg"}, Remediation: review},
+		{ID: "PY-004", Category: "python-startup-hook", Severity: model.SeverityMedium, Confidence: model.ConfidenceHigh, Description: "Python .pth file contains a startup import line", Pattern: `^import[ \t]`, Globs: []string{"*.pth"}, Remediation: "Review the import and its source before installation in a Python site directory, where it runs at startup. Benign packages also use this mechanism.", Disposition: model.DispositionReview},
+		{ID: "PY-005", Category: "python-startup-hook", Severity: model.SeverityMedium, Confidence: model.ConfidenceHigh, Description: "Python startup customization module contains content", Pattern: `^[ \t]*[^# \t\r\n]`, Globs: []string{"sitecustomize.py", "usercustomize.py"}, Remediation: "Review the module before placing it on Python's search path, where it can be imported at startup. Legitimate environment customization also uses these modules.", Disposition: model.DispositionReview},
 		{ID: "RUBY-001", Category: "ruby-dependency-source", Severity: model.SeverityHigh, Confidence: model.ConfidenceMedium, Description: "Ruby dependency is loaded from a Git or path source", Pattern: `(?i)gem\s+["'][^"']+["'][^\n]*(git:|github:|path:|source:)`, Globs: []string{"Gemfile", "*.gemspec"}, Remediation: review},
 		{ID: "GO-001", Category: "go-generate", Severity: model.SeverityMedium, Confidence: model.ConfidenceHigh, Description: "Go source declares a generator command", Pattern: `(?m)^\s*//go:generate\s+.+`, Globs: []string{"*.go"}, Remediation: "Inspect the generator command before running go generate."},
 		{ID: "GO-002", Category: "go-module-replacement", Severity: model.SeverityMedium, Confidence: model.ConfidenceMedium, Description: "Go module replaces a dependency source", Pattern: `(?m)^\s*replace\s+[^\n]+=>\s+[^\n]+`, Globs: []string{"go.mod", "go.work"}, Remediation: review},

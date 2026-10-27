@@ -7,11 +7,11 @@ const guide = getGuide("agent-skill");
 
 <DocsLayout guide={guide}>
 <section class="docs-hero docs-searchable" id="overview" data-search="agent skill optional instructions codex unfamiliar repository scan read only">
-          <p class="docs-kicker">Optional agent skill</p>
+          <p class="docs-kicker">Optional agent skills</p>
           <h1>Make the safe first move.<span>Before code runs.</span></h1>
           <p>
             The repyy agent skill gives a coding agent a repeatable instruction set for preflighting unfamiliar repositories. It asks the agent to scan first,
-            preserve the target as data, explain the evidence, and stop when coverage is incomplete.
+            preserve the target as data, explain the evidence, and report unresolved coverage. When the CLI is unavailable, it continues with a limited static review.
           </p>
           <div class="docs-summary" aria-label="Agent skill summary">
             <span><b>Instructions</b>Changes agent behavior</span><span><b>Separate</b>Does not install the CLI</span
@@ -19,7 +19,7 @@ const guide = getGuide("agent-skill");
           </div>
           <div class="docs-callout">
             <strong>Install the skill and CLI separately</strong>
-            <p>The skill is guidance for an agent. You still need a repyy executable from a verified release, package, or trusted local build.</p>
+            <p>The skill is guidance for an agent. Scanner results require a trusted repyy executable; manual review remains available without one.</p>
           </div>
         </section>
         <section class="docs-section docs-searchable" id="install" data-search="install skill npx skills add codex global interactive command">
@@ -44,8 +44,26 @@ const guide = getGuide("agent-skill");
             </p>
           </div>
           <p>
-            Neither command installs dependencies from a repository you plan to scan. Install repyy separately using the
+            Neither command installs dependencies from a repository you plan to scan. To use the scanner, install repyy separately using the
             <a href="../installation/">installation guide</a>, then confirm it with <code>repyy version</code>.
+          </p>
+          <p>
+            Install a helper from the same repository with <code>npx skills add Kevin-Umali/repyy --skill NAME</code>, replacing
+            <code>NAME</code> with the skill you need. The main skill recommends helpers when useful and continues if one is missing.
+          </p>
+          <div class="docs-table compact" role="table" aria-label="Repyy helper skills">
+            <div role="row"><b role="rowheader">repyy-explain</b><span role="cell">Explain a report and check selected findings against the matching source.</span></div>
+            <div role="row"><b role="rowheader">repyy-review</b><span role="cell">Trace a suspicious path or scan gap manually, including without the CLI.</span></div>
+            <div role="row"><b role="rowheader">repyy-intel</b><span role="cell">Check a package/version or file hash against its sourced indicator.</span></div>
+          </div>
+          <p>
+            All four skills use the host's built-in question tool when available to ask for missing targets, reports, or goals.
+            They use inputs already supplied and do not install missing tools or execute the target.
+          </p>
+          <p>
+            Scanner targets are directories or supported Git URLs. For an individual artifact, the skill stages only that approved regular file in a
+            private directory and scans the directory without extracting or executing it. It does not expand the review to a broad parent folder.
+            A single skill file leaves missing scripts and references outside the review.
           </p>
         </section>
         <section
@@ -55,11 +73,13 @@ const guide = getGuide("agent-skill");
         >
           <h2>What the skill tells an agent to do</h2>
           <ol class="docs-list">
-            <li>Confirm the user is allowed to inspect every target, especially private repositories.</li>
-            <li>Check the installed scanner, intelligence snapshot age, and rule provenance offline.</li>
+            <li>Use the target and goal already supplied; ask for missing inputs with the built-in question tool when available.</li>
+            <li>Check the trusted installed scanner, intelligence snapshot age, and rule provenance offline; use limited manual review if the CLI is unavailable.</li>
             <li>Scan every requested target together where possible and save bounded JSON.</li>
             <li>Render a local HTML report from that JSON without rescanning source.</li>
-            <li>Read coverage, blocking findings, locations, context, confidence, and remediation before suggesting execution.</li>
+            <li>Validate important findings against surrounding source and trace suspicious inputs toward execution or data destinations.</li>
+            <li>Report coverage, findings, locations, context, confidence, counterevidence and remediation without granting execution permission.</li>
+            <li>Recommend a report, manual-review, or intelligence helper when useful, and continue without installing it if it is unavailable.</li>
           </ol>
           <div class="docs-command">
             <div>
@@ -75,12 +95,13 @@ const guide = getGuide("agent-skill");
             <code>repyy report repyy.scan.json --format html --output repyy.report.html</code>
           </div>
           <p>
-            The agent should treat <code>SCAN INCOMPLETE</code> as unresolved and state that <code>NO FINDINGS</code> is not proof of safety. It should not
+            The agent should treat <code>SCAN INCOMPLETE</code> as unresolved and state that <code>NO FINDINGS</code> is not proof of safety. A manual review must not
+            invent a scanner verdict. It should not
             paste credential-shaped evidence into chat.
           </p>
         </section>
         <section class="docs-section docs-searchable" id="docker" data-search="docker sandbox digest signed image remote https ssh keep workdir isolation">
-          <h2>Use Docker when you need a process boundary</h2>
+          <h2>Use the opt-in Docker backend</h2>
           <p>
             The skill includes an opt-in Docker path for local folders and HTTPS remotes. Prepare Docker and the exact signed, digest-pinned image for the
             installed repyy release before asking the agent to scan.
@@ -94,7 +115,7 @@ const guide = getGuide("agent-skill");
           </div>
           <p>
             Docker rejects SSH URLs and <code>--keep-workdir</code>. Missing Docker or a missing release-matched image is a preflight error; the skill must
-            never accept a silent host fallback. Read the <a href="../isolation/">isolation guide</a> for image verification and manual VM workflows.
+            never accept a silent host fallback. Read the <a href="../isolation/">isolation guide</a> for Docker setup and image verification.
           </p>
         </section>
         <section

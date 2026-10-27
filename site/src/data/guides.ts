@@ -219,8 +219,8 @@ export const guides = [
     route: "/isolation/",
     label: "Isolation",
     title: "repyy isolation",
-    description: "Run repyy with Docker, Windows Sandbox, UTM, or QEMU isolation.",
-    markdown: ["docs/SANDBOX.md", "docs/VM-GUIDES.md"],
+    description: "Run repyy with the opt-in Docker backend.",
+    markdown: ["docs/SANDBOX.md"],
     sections: [
       {
         id: "overview",
@@ -245,22 +245,6 @@ export const guides = [
       {
         id: "edge-cases",
         label: "Know the edge cases",
-      },
-      {
-        id: "vm",
-        label: "Manual VM workflows",
-      },
-      {
-        id: "windows-sandbox",
-        label: "Windows Sandbox",
-      },
-      {
-        id: "utm",
-        label: "macOS with UTM",
-      },
-      {
-        id: "qemu",
-        label: "Linux with QEMU/KVM",
       },
     ],
   },
@@ -361,8 +345,8 @@ export const guides = [
     route: "/agent-skill/",
     label: "Agent skill",
     title: "repyy agent skill guide",
-    description: "Install and use the optional repyy agent skill before opening unfamiliar repositories.",
-    markdown: ["skills/repyy/SKILL.md"],
+    description: "Use Repyy's scan, report explanation, manual review, and intelligence skills before executing unfamiliar code.",
+    markdown: ["skills/repyy/SKILL.md", "skills/repyy-explain/SKILL.md", "skills/repyy-review/SKILL.md", "skills/repyy-intel/SKILL.md"],
     sections: [
       {
         id: "overview",
@@ -378,7 +362,7 @@ export const guides = [
       },
       {
         id: "docker",
-        label: "Use Docker when you need a process boundary",
+        label: "Use the opt-in Docker backend",
       },
       {
         id: "limits",
@@ -567,10 +551,11 @@ export const guides = [
     route: "/changelog/",
     label: "Changelog",
     title: "Changelog · repyy documentation",
-    description: "What changed in Repyy 0.6.0 and where to find the complete release history and verification evidence.",
+    description: "What changed in Repyy 0.7.0 and where to find the complete release history and verification evidence.",
     markdown: ["CHANGELOG.md"],
     sections: [
       { id: "overview", label: "Release changes" },
+      { id: "version-0-7-0", label: "Version 0.7.0" },
       { id: "version-0-6-0", label: "Version 0.6.0" },
       { id: "history", label: "Earlier releases" },
     ],

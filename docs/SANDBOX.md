@@ -30,15 +30,13 @@ JSON, and container exits are reported as incomplete or preflight errors as appr
 paths and tokens are never copied into the final report.
 
 Docker mode accepts local paths and HTTPS remotes. It rejects SSH URLs and `--keep-workdir` because
-the temporary checkout and credential boundary must remain intact. `--sandbox=vm` and
-`--sandbox=auto` are reserved for a later release. See [VM-GUIDES.md](VM-GUIDES.md) for manual
-alternatives.
+the temporary checkout and credential boundary must remain intact.
 
-For a local path, repyy mounts the input read-only into a temporary analysis container, disables
-networking, and writes bounded JSON back to the host. For an HTTPS remote, a disposable
-bridge-networked fetch stage performs a shallow clone; the separate analysis stage has no Git
-credentials and no network. The host validates the bounded result, then writes HTML atomically with
-normal user permissions. HTML opens directly as a local `file://` page; clicking a source link can
+For a local path, repyy requests a read-only input mount and `--network none` for a temporary
+analysis container, and writes bounded JSON back to the host. For an HTTPS remote, a
+bridge-networked fetch stage performs a shallow clone; the separate analysis stage receives no Git
+credentials and requests `--network none`. The host validates the bounded result, then writes HTML
+atomically with normal user permissions. HTML opens directly as a local `file://` page; clicking a source link can
 open a provider website and use the browser network. Keep output in a narrow directory and treat it
 as sensitive local review data.
 
@@ -48,15 +46,13 @@ Git warns against running commands inside a `.git` directory received from an un
 copy. A local repyy scan treats that directory only as data; it does not run Git in it. An HTTPS
 scan makes a fresh clone instead of using a supplied `.git` directory. The fetch stage disables
 hooks, templates, submodule recursion, other protocols, and redirects, and ignores inherited Git
-configuration. It runs under a narrow container user. The analysis stage has no Git credentials or
-network.
+configuration. It runs under a narrow container user. The analysis stage receives no Git credentials and requests `--network none`.
 
-If you need to operate on a supplied local `.git` directory, follow Git's
-[security guidance](https://git-scm.com/docs/git#_security): make a clean `git clone --no-local`
-inside a disposable VM, preferably serving the source with an unprivileged user. Git's
-[upload-pack guidance](https://git-scm.com/docs/git-upload-pack#_security) explains why that extra
-user boundary matters. Host-mode remote scans run Git as your account; choose Docker mode for an
-HTTPS remote when you want the stronger process boundary.
+If you need to operate on a supplied local `.git` directory, consult Git's
+[security guidance](https://git-scm.com/docs/git#_security) and
+[upload-pack guidance](https://git-scm.com/docs/git-upload-pack#_security). Use a separate
+disposable environment appropriate to your risk. Host-mode remote scans run Git as your account;
+Docker mode runs HTTPS fetches in a separate container.
 
 Failed temporary checkout deletion marks the scan incomplete while preserving its findings.
 Credential-file deletion and forced container removal failures also surface as errors. Abrupt

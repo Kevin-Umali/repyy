@@ -14,7 +14,38 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/model"
 )
 
-func TestUnsupportedTarBodyObeysExpandedByteLimit(t *testing.T) {
+func TestArchiveDeclaredSizesRespectExpandedByteLimit(t *testing.T) {
+	t.Run("ZIP64 declared size", func(t *testing.T) {
+		var archive bytes.Buffer
+		writer := zip.NewWriter(&archive)
+		entry, err := writer.CreateRaw(&zip.FileHeader{Name: "oversized.txt", Method: zip.Store, CompressedSize64: 1, UncompressedSize64: 1 << 63})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte("x")); err != nil {
+			t.Fatal(err)
+		}
+		entry, err = writer.Create("sitecustomize.py")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte("setting = True\n" + strings.Repeat("#", 64))); err != nil {
+			t.Fatal(err)
+		}
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+		root := t.TempDir()
+		if err := os.WriteFile(filepath.Join(root, "fixture.zip"), archive.Bytes(), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		limits := DefaultLimits()
+		limits.MaxArchiveBytes = 16
+		coverage, findings := New(Options{Limits: limits}).Scan(context.Background(), root)
+		if coverage.Complete || !strings.Contains(strings.Join(coverage.Skipped, " "), "archive resource limit") || hasRule(findings, "PY-005") {
+			t.Fatalf("ZIP64 entry escaped archive byte limit: coverage=%+v findings=%+v", coverage, findings)
+		}
+	})
 	var archive bytes.Buffer
 	compressed := gzip.NewWriter(&archive)
 	writer := tar.NewWriter(compressed)

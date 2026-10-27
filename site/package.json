@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.11.1"
+    "node": "24.22.1"
   },
   "scripts": {
     "dev": "astro dev",
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "astro": "7.3.2",
+    "astro": "7.4.2",
     "prettier": "3.9.6",
     "prettier-plugin-astro": "1.0.0",
     "typescript": "5.9.3"

@@ -9,8 +9,8 @@ import (
 
 // SnapshotVersion and SnapshotDate identify the embedded intelligence revision.
 const (
-	SnapshotVersion = "2026-09-26.1"
-	SnapshotDate    = "2026-09-26"
+	SnapshotVersion = "2026-10-27.1"
+	SnapshotDate    = "2026-10-27"
 )
 
 // Package is an attributable malicious-package intelligence record.
@@ -98,6 +98,14 @@ var Packages = []Package{
 	{Ecosystem: "npm", Name: "bcrypts-js", AdvisoryID: "GHSA-h6cw-hrwc-f4wm"},
 	{Ecosystem: "npm", Name: "mongose", AdvisoryID: "GHSA-894f-rw44-qrw5"},
 	{Ecosystem: "npm", Name: "axios", Severity: "critical", Source: "microsoft-threat-intelligence", SourceURL: microsoftAxiosSource, AdvisoryID: "MSFT-2026-04-01-AXIOS", Description: "Compromised Axios npm releases identified by Microsoft", Added: "2026-04-01", Affected: []string{"= 1.14.1", "= 0.30.4"}, Campaign: "Sapphire Sleet Axios supply-chain compromise", References: []string{microsoftAxiosSource}},
+	{Ecosystem: "npm", Name: "@subql/common", Severity: "critical", Source: "gmo-flatt-security", SourceURL: subqlSource, AdvisoryID: "FLATT-2026-10-05-SUBQL-COMMON", Description: "Compromised npm release identified by GMO Flatt Security", Added: "2026-10-06", Affected: []string{"= 5.8.3"}, References: []string{subqlSource}},
+	{Ecosystem: "npm", Name: "tensorlake", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-darwin-arm64", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-linux-arm64-gnu", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-linux-arm64-musl", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-linux-x64-gnu", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-linux-x64-musl", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
+	{Ecosystem: "npm", Name: "tensorlake-native-win32-x64", Severity: "critical", Source: "github-advisory-database", SourceURL: tensorlakeSource, AdvisoryID: "GHSA-8g63-53c9-65j2", Description: "Compromised Tensorlake npm release", Added: "2026-10-08", Affected: []string{"= 0.5.144"}, References: []string{tensorlakeSource}},
 	{Ecosystem: "npm", Name: "process-log", AdvisoryID: "GHSA-rqwx-v86m-wwff"},
 	{Ecosystem: "npm", Name: "cdn-icon-fetch", AdvisoryID: "GHSA-gmvp-cqg5-vgvh"},
 	{Ecosystem: "npm", Name: "vite-tsconsole-log", Severity: "high", Source: "osv", SourceURL: "https://osv.dev/vulnerability/MAL-2025-4289", AdvisoryID: "MAL-2025-4289", Aliases: []string{"GHSA-x78w-rcq7-hrmr"}, Description: "Malicious code in vite-tsconsole-log (npm)", Added: "2025-05-22", Modified: "2025-05-23", Affected: []string{">= 0"}, References: []string{"https://osv.dev/vulnerability/MAL-2025-4289"}},
@@ -107,6 +115,7 @@ var Packages = []Package{
 	{Ecosystem: "npm", Name: "greensaver", AdvisoryID: "GHSA-jfw2-6254-9cwg"},
 	{Ecosystem: "npm", Name: "tracker-cloudflare", AdvisoryID: "GHSA-f874-m83r-9vqh"},
 	{Ecosystem: "npm", Name: "@nimbusedge/auth", AdvisoryID: "GHSA-gr7r-8wrc-f3mw"},
+	{Ecosystem: "pip", Name: "litellm", Severity: "critical", Source: "github-advisory-database", SourceURL: litellmSource, AdvisoryID: "GHSA-92x9-889m-jgmw", Description: "Compromised LiteLLM PyPI releases", Added: "2026-07-21", Modified: "2026-10-22", Affected: []string{"= 1.82.7", "= 1.82.8", "= 1.107.0"}, References: []string{litellmSource, "https://research.jfrog.com/post/litellm-hijacked-again/"}},
 	{Ecosystem: "pip", Name: "platform-telemetry-client", AdvisoryID: "GHSA-7767-763c-fxp3"},
 	{Ecosystem: "pip", Name: "transfomers", AdvisoryID: "GHSA-2p95-qvc5-6rjq"},
 	{Ecosystem: "pip", Name: "langgrap", AdvisoryID: "GHSA-crjm-2g45-pq97"},
@@ -174,6 +183,11 @@ func init() {
 		}
 	}
 }
+
+// These sources were reviewed on 2026-10-27; record dates retain advisory publication and update dates.
+const tensorlakeSource = "https://github.com/tensorlakeai/tensorlake/security/advisories/GHSA-8g63-53c9-65j2"
+const subqlSource = "https://flatt.tech/research/posts/subql-common-npm-supply-chain-attack/"
+const litellmSource = "https://github.com/advisories/GHSA-92x9-889m-jgmw"
 
 const unit42Source = "https://unit42.paloaltonetworks.com/north-korean-threat-actors-lure-tech-job-seekers-as-fake-recruiters/"
 const microsoftAxiosSource = "https://www.microsoft.com/en-us/security/blog/2026/04/01/mitigating-the-axios-npm-supply-chain-compromise/"

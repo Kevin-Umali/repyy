@@ -711,7 +711,7 @@ func parseScanArgs(args []string) (scanArgs, error) {
 		return o, errors.New("--jobs must be between 1 and 128")
 	}
 	if o.sandbox != "host" && o.sandbox != "docker" {
-		return o, errors.New("--sandbox must be host or docker; vm and auto are reserved for a later release")
+		return o, errors.New("--sandbox must be host or docker")
 	}
 	if o.sandbox == "docker" {
 		if o.keep {

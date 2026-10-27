@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repyy Review"
+  short_description: "Review suspicious paths beyond a Repyy scan"
+  default_prompt: "Use $repyy-review to trace this suspicious behavior or scan gap without executing the repository's code."

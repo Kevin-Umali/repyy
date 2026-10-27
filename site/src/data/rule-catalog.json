@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "rules_version": "2026.09.26",
+  "rules_version": "2026.10.27",
   "rules": [
     {
       "id": "AGENT-001",
@@ -743,6 +743,20 @@
       "match_scope": "structured",
       "applicable_paths": ["*.js", "*.cjs", "*.mjs", "*.jsx", "*.ts", "*.tsx"],
       "allow_context_downgrade": false
+    },
+    {
+      "id": "FLOW-002",
+      "category": "remote-response-execution",
+      "severity": "high",
+      "confidence": "medium",
+      "disposition": "review",
+      "description": "Python remote response may reach dynamic code execution or compilation",
+      "rationale": "This rule identifies remote response execution behavior that can affect repository trust or execution safety.",
+      "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
+      "remediation": "Review the request and execution path; do not execute untrusted remote response data.",
+      "match_scope": "structured",
+      "applicable_paths": ["*.py", "*.pyw"],
+      "allow_context_downgrade": true
     },
     {
       "id": "FONT-001",
@@ -1711,6 +1725,34 @@
       "remediation": "Verify the source and avoid mixing public and private indexes for the same package names.",
       "match_scope": "structured",
       "applicable_paths": ["**"],
+      "allow_context_downgrade": true
+    },
+    {
+      "id": "PY-004",
+      "category": "python-startup-hook",
+      "severity": "medium",
+      "confidence": "high",
+      "disposition": "review",
+      "description": "Python .pth file contains a startup import line",
+      "rationale": "This rule identifies python startup hook behavior that can affect repository trust or execution safety.",
+      "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
+      "remediation": "Review the import and its source before installation in a Python site directory, where it runs at startup. Benign packages also use this mechanism.",
+      "match_scope": "raw",
+      "applicable_paths": ["*.pth"],
+      "allow_context_downgrade": true
+    },
+    {
+      "id": "PY-005",
+      "category": "python-startup-hook",
+      "severity": "medium",
+      "confidence": "high",
+      "disposition": "review",
+      "description": "Python startup customization module contains content",
+      "rationale": "This rule identifies python startup hook behavior that can affect repository trust or execution safety.",
+      "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
+      "remediation": "Review the module before placing it on Python's search path, where it can be imported at startup. Legitimate environment customization also uses these modules.",
+      "match_scope": "raw",
+      "applicable_paths": ["sitecustomize.py", "usercustomize.py"],
       "allow_context_downgrade": true
     },
     {

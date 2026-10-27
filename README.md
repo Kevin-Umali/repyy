@@ -55,7 +55,7 @@ Use [repyy.dev/docs](https://repyy.dev/docs/) for the rendered documentation. In
 - [Install and run a first scan](docs/INSTALLATION.md)
 - [CLI commands and flags](docs/CLI.md)
 - [Trusted configuration](docs/CONFIGURATION.md)
-- [Docker and manual VM isolation](docs/SANDBOX.md)
+- [Docker scanning](docs/SANDBOX.md)
 - [Detection coverage and limits](docs/COVERAGE.md)
 - [Trust and limitations](docs/TRUST.md)
 - [Release verification](docs/VERIFICATION.md)
@@ -82,6 +82,26 @@ npx skills add Kevin-Umali/repyy --skill repyy
 This optional installer needs Node/npm, Git, and network access. The skill contains instructions;
 install the `repyy` CLI separately. See the [web skill guide](https://repyy.dev/agent-skill/) for the
 full workflow.
+
+The related helpers keep each review focused:
+
+| Skill                                          | Use it for                                                                   |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| [repyy-explain](skills/repyy-explain/SKILL.md) | Explain a report and check selected findings against matching source.        |
+| [repyy-review](skills/repyy-review/SKILL.md)   | Trace suspicious behavior or a scan gap manually, including without the CLI. |
+| [repyy-intel](skills/repyy-intel/SKILL.md)     | Check a package/version or file hash against its sourced indicator.          |
+
+Install the helper you need:
+
+```sh
+npx skills add Kevin-Umali/repyy --skill repyy-explain
+npx skills add Kevin-Umali/repyy --skill repyy-review
+npx skills add Kevin-Umali/repyy --skill repyy-intel
+```
+
+The main skill recommends these helpers when useful and continues if one is
+missing. All four use the host's question tool for missing inputs when available.
+They inspect supplied evidence without executing the target or auto-installing tools.
 
 ## Contributing
 

@@ -99,7 +99,7 @@ const guide = getGuide("trust");
             <td>Docker scan stage</td>
             <td>Every Docker scan</td>
             <td>
-              None through container network; <code>--network none</code>
+              <code>--network none</code> requested; enforcement depends on Docker
             </td>
             <td>No provider token passed to scan worker</td>
             <td>Worker errors, oversized/malformed reports and inconsistent exit codes are rejected</td>
@@ -167,8 +167,8 @@ const guide = getGuide("trust");
       telemetry client or report-upload path is implemented in the normal scanner.
     </p>
     <p>
-      Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid or older cached intelligence falls back to embedded data with a warning.
-      Updates require a valid signature and schema; rollback uses previously verified local snapshots. See the
+      Intelligence snapshots and active/previous pointers are stored in the local cache. Invalid or older cached intelligence falls back to embedded data with a
+      warning. Updates require a valid signature and schema; rollback uses previously verified local snapshots. See the
       <a href="../intelligence/">intelligence guide</a>.
     </p>
   </section>
@@ -180,8 +180,8 @@ const guide = getGuide("trust");
       Otherwise cleanup is deferred; clone/revision failures also attempt removal.
     </p>
     <p>
-      Git acquisition has a timeout but no byte, pack, file-count, or disk quota before checkout. Scanner file limits begin after retrieval and do not
-      protect temporary checkout storage. Clone failures are reported as incomplete targets.
+      Git acquisition has a timeout but no byte, pack, file-count, or disk quota before checkout. Scanner file limits begin after retrieval and do not protect
+      temporary checkout storage. Clone failures are reported as incomplete targets.
     </p>
     <p>
       Docker remotes use a private <code>repyy-sandbox-*</code> parent with a writable fetch child, followed by a read-only scan mount. Provider tokens use a
@@ -205,7 +205,7 @@ const guide = getGuide("trust");
   <section class="docs-section docs-searchable" id="docker-mode-boundaries">
     <h2>Docker-mode boundaries</h2>
     <p>
-      The image must be digest-pinned and explicitly available locally. The worker uses read-only input/root filesystem, dropped capabilities,
+      The image must be digest-pinned and explicitly available locally. Repyy requests read-only input/root filesystems, dropped capabilities,
       no-new-privileges, process/memory/CPU limits and bounded temporary storage. Remote fetch and scan are separate stages. Docker daemon access itself is a
       powerful host capability. Containers share a kernel and are not equivalent to a dedicated virtual machine. See
       <a href="../isolation/">isolation</a>.
@@ -307,12 +307,14 @@ const guide = getGuide("trust");
             <td>Self-contained HTML; deliberate clicks open external providers</td>
           </tr>
           <tr>
-            <td>Docker scan network is disabled</td>
+            <td>
+              Docker scan requests <code>--network none</code>
+            </td>
             <td>
               <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/sandbox/docker.go">internal/sandbox/docker.go</a>,
               <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/sandbox/docker_test.go">internal/sandbox/docker_test.go</a>
             </td>
-            <td>Fetch stage has bridge access; daemon boundary remains</td>
+            <td>Fake-client tests check invocation, not daemon enforcement or escape protection; fetch uses bridge networking</td>
           </tr>
           <tr>
             <td>Incomplete scans stay visible</td>

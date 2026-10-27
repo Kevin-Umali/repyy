@@ -182,6 +182,7 @@ func structuredRuleCatalog() []RuleInfo {
 		{"FONT-004", "font-active-content", "OpenType SVG glyph contains active content", "Remove active SVG content or replace the font with a trusted copy.", model.SeverityMedium, model.ConfidenceMedium},
 		{"FONT-005", "font-program", "Font contains TrueType instructions", "Verify provenance before passing the instruction stream to a font engine.", model.SeverityLow, model.ConfidenceHigh},
 		{"FLOW-001", "remote-response-execution", "Axios response data reaches dynamic or process execution in the same function", "Do not execute remote response data. Review the request and execution path.", model.SeverityCritical, model.ConfidenceHigh},
+		{"FLOW-002", "remote-response-execution", "Python remote response may reach dynamic code execution or compilation", "Review the request and execution path; do not execute untrusted remote response data.", model.SeverityHigh, model.ConfidenceMedium},
 		{"GITHOOK-002", "git-hook", "Active Git hook contains execution or remote-fetch behavior", "Disable the hook and review it before running Git commands.", model.SeverityCritical, model.ConfidenceHigh},
 		{"IMAGE-001", "image-active-content", "SVG contains active content", "Review the SVG source and remove unneeded scripts, event handlers, or JavaScript links.", model.SeverityMedium, model.ConfidenceMedium},
 		{"IDE-007", "editor-extension-package", "Packaged VSIX editor extension is present", "Verify the extension publisher, signature, package contents, and hash before installing it.", model.SeverityMedium, model.ConfidenceHigh},
@@ -242,6 +243,8 @@ func structuredApplicablePaths(id string) []string {
 		return []string{"executable source files"}
 	case id == "DECODE-001" || id == "FLOW-001":
 		return []string{"*.js", "*.cjs", "*.mjs", "*.jsx", "*.ts", "*.tsx"}
+	case id == "FLOW-002":
+		return []string{"*.py", "*.pyw"}
 	case id == "ARCHIVE-001":
 		return []string{"archive entries"}
 	case id == "GITHOOK-002":

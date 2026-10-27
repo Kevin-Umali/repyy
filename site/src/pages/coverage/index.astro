@@ -75,9 +75,11 @@ const guide = getGuide("coverage");
               <b role="rowheader">Python</b
               ><span role="cell"
                 ><code>requirements*.txt</code>, pip config, <code>Pipfile</code>, <code>pyproject.toml</code>, and <code>uv.toml</code> alternate indexes or
-                unsafe uv strategy; setup hooks and direct URL/VCS dependencies.
+                unsafe uv strategy; setup hooks and direct URL/VCS dependencies. Executable <code>.pth</code> import lines use Python BOM and line-ending handling, and
+                <code>sitecustomize.py</code>/<code>usercustomize.py</code> startup modules are review signals, including in locally present wheels.
                 <a href="https://pip.pypa.io/en/stable/reference/requirements-file-format/">pip format</a>
-                · <a href="https://docs.astral.sh/uv/concepts/indexes/">uv indexes</a></span
+                · <a href="https://docs.astral.sh/uv/concepts/indexes/">uv indexes</a>
+                · <a href="https://docs.python.org/3/library/site.html">Python startup</a></span
               >
             </div>
             <div role="row">
@@ -263,6 +265,17 @@ const guide = getGuide("coverage");
             PDF and Office checks are static: explicit PDF actions, embedded macro projects, Office external relationships, and DDE fields are reported without
             opening the document. Encrypted content and arbitrary compressed PDF object streams are not evaluated. VSIX archives are inspected for activation and
             execution contributions, lifecycle scripts, and bundled executable signatures, but extension behavior is not executed.
+          </p>
+          <p>
+            Repyy does not inventory deployed runtimes or confirm runtime vulnerability exposure. Patch deployed runtimes independently of a source scan. A checkout
+            cannot establish the contents of a future dependency download: inspect the exact locally available wheel or tarball and review archive-limit warnings.
+            Disabling npm lifecycle scripts does not prevent later import-time execution.
+          </p>
+          <p>
+            Python response-flow review (<code>FLOW-002</code>) follows simple requests/httpx/urllib calls, assignments and response reads into
+            <code>exec</code>, <code>eval</code> or <code>compile</code>, retaining source and sink locations. Compilation alone is not execution. API identities and
+            control flow are approximate; arbitrary transforms, cross-function or cross-file flows, downloaded files launched as subprocesses, and equivalent flows in
+            every language require manual review.
           </p>
         </section>
 

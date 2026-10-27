@@ -4,6 +4,48 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-27
+
+### Added
+
+- Detect executable Python `.pth` startup lines and startup customization modules,
+  including entries in locally available wheels, with contextual review findings.
+- Add exact-version indicators for the October `@subql/common`, LiteLLM, and
+  Tensorlake compromises, including Tensorlake's native packages.
+- Add `repyy-explain` to explain saved reports and verify selected findings against
+  matching source, `repyy-review` for a manual second opinion on scan gaps, and
+  `repyy-intel` for exact package/version and file-hash indicator checks.
+- Improve the main `repyy` skill with built-in questions for missing targets/goals,
+  helper recommendations and a manual fallback when the CLI or a helper is absent.
+- Treat standalone `SKILL.md` files as agent instructions during scans.
+- Add bounded Python remote-response review through simple aliases and response
+  reads into dynamic execution or compilation, with source and sink locations.
+
+### Changed
+
+- Revise behavioral rules to `2026.10.27` and embedded intelligence to `2026-10-27.1`.
+- Remove unverified Windows Sandbox, UTM, and QEMU recipes and future VM-backend
+  claims; describe Docker controls and test evidence without implying proven isolation.
+
+### Fixed
+
+- Reject oversized ZIP64 size declarations before signed conversion and check
+  remaining expansion budget before adding archive entry sizes.
+- Preserve Python response-flow tracking across equality expressions, and mark
+  undecodable `.pyw` files as incomplete coverage.
+- Detect `.pth` startup imports after a UTF-8 BOM and across Python-supported line
+  endings, while preserving raw bytes for other checks and file hashes.
+- Stage individual approved artifacts in a narrow directory before scanning,
+  instead of passing unsupported file targets directly to the CLI.
+- Pin the website build to Node 24.22.1 for the
+  [Brotli decoder security fix](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases).
+- Require Go 1.26.10 and update the digest-pinned Docker builder for the
+  [compromised-intermediate-certificate fix](https://pkg.go.dev/vuln/GO-2026-6809).
+- Update Vite to 8.3.5 for the
+  [Windows editor-command check fix](https://github.com/vitejs/launch-editor/security/advisories/GHSA-587h-7wmj-h5pm).
+- Update Astro to 7.4.2 and resolve npm audit findings with fast-uri 3.1.9,
+  Undici 8.12.3 and Zod 4.6.7.
+
 ## [0.6.0] - 2026-09-26
 
 ### Added
