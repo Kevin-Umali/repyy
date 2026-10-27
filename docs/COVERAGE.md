@@ -54,7 +54,8 @@ it.
 
 ## Precision controls
 
-- Python `.pth` lines beginning with `import ` or `import` followed by a tab are
+- Python `.pth` lines beginning with `import ` or `import` followed by a tab, after
+  UTF-8 BOM removal and Python line splitting, are
   startup execution surfaces (`PY-004`). Ordinary path entries and comments do not
   trigger that rule. `sitecustomize.py` and `usercustomize.py` are startup
   customization surfaces (`PY-005`). These can be legitimate; execution depends

@@ -75,7 +75,7 @@ const guide = getGuide("coverage");
               <b role="rowheader">Python</b
               ><span role="cell"
                 ><code>requirements*.txt</code>, pip config, <code>Pipfile</code>, <code>pyproject.toml</code>, and <code>uv.toml</code> alternate indexes or
-                unsafe uv strategy; setup hooks and direct URL/VCS dependencies. Executable <code>.pth</code> import lines and
+                unsafe uv strategy; setup hooks and direct URL/VCS dependencies. Executable <code>.pth</code> import lines use Python BOM and line-ending handling, and
                 <code>sitecustomize.py</code>/<code>usercustomize.py</code> startup modules are review signals, including in locally present wheels.
                 <a href="https://pip.pypa.io/en/stable/reference/requirements-file-format/">pip format</a>
                 · <a href="https://docs.astral.sh/uv/concepts/indexes/">uv indexes</a>
