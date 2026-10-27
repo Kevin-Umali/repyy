@@ -83,14 +83,18 @@ const guide = getGuide("verification");
         <section class="docs-section docs-searchable" id="checksums-and-existing-signatures">
           <h2>Checksums and existing signatures</h2>
           <p>
-            A checksum detects changed bytes only after the checksum list itself is authenticated. Existing releases use Cosign keyless signatures; this work
-            retains that existing path rather than adding a second signing system.
+            A checksum detects changed bytes only after the checksum list itself is authenticated. Releases from v0.7.1 use Cosign 3 keyless signatures in
+            <code>checksums.txt.sigstore.json</code>, which includes the signature, certificate, and transparency-log evidence.
           </p>
           <pre
             class="docs-example"
-          ><code>cosign verify-blob checksums.txt --signature checksums.txt.sig --certificate checksums.txt.pem --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          ><code>cosign verify-blob checksums.txt --bundle checksums.txt.sigstore.json --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
 sha256sum --check checksums.txt
 </code></pre>
+          <p>
+            For older releases, replace <code>--bundle checksums.txt.sigstore.json</code> with
+            <code>--signature checksums.txt.sig --certificate checksums.txt.pem</code> and download both files. Keep the same expected workflow identity and OIDC issuer.
+          </p>
           <p>
             On macOS, use <code>shasum -a 256 --check checksums.txt</code>. Windows users can verify individual hashes with <code>Get-FileHash</code>, after
             authenticating the checksum list. Do not treat a filename or download location alone as verification.

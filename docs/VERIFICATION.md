@@ -67,14 +67,18 @@ explains verification and available policy controls.
 
 ## Checksums and existing signatures
 
-A checksum detects changed bytes only after the checksum list itself is authenticated. Existing
-releases use Cosign keyless signatures; this work retains that existing path rather than adding a
-second signing system.
+A checksum detects changed bytes only after the checksum list itself is authenticated. Releases
+from v0.7.1 use Cosign 3 keyless signatures in `checksums.txt.sigstore.json`, which includes the
+signature, certificate, and transparency-log evidence.
 
 ```sh
-cosign verify-blob checksums.txt --signature checksums.txt.sig --certificate checksums.txt.pem --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
+cosign verify-blob checksums.txt --bundle checksums.txt.sigstore.json --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
 sha256sum --check checksums.txt
 ```
+
+For older releases, replace `--bundle checksums.txt.sigstore.json` with
+`--signature checksums.txt.sig --certificate checksums.txt.pem` and download both files.
+Keep the same expected workflow identity and OIDC issuer.
 
 On macOS, use `shasum -a 256 --check checksums.txt`. Windows users can verify individual hashes with
 `Get-FileHash`, after authenticating the checksum list. Do not treat a filename or download location

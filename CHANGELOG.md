@@ -4,6 +4,19 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-27
+
+### Fixed
+
+- Write a Sigstore bundle when signing release checksums with Cosign 3, and
+  verify the bundle before checking downloaded artifacts. Retain verification
+  support for older releases with detached signatures and certificates.
+- Render the website changelog and its version navigation from this file so
+  release additions and fixes stay in sync with the documentation design.
+- Publish the scanner and skill improvements prepared as v0.7.0 under v0.7.1;
+  the v0.7.0 tag failed checksum signing before publishing a GitHub release or
+  downloadable release assets. Its sandbox container was already pushed and signed.
+
 ## [0.7.0] - 2026-10-27
 
 ### Added

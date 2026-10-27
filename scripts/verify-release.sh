@@ -14,8 +14,13 @@ verify_attestation() {
     --signer-workflow "$repo/.github/workflows/release.yml" \
     --source-ref "refs/tags/$release_tag"
 }
-cosign verify-blob checksums.txt \
-  --signature checksums.txt.sig --certificate checksums.txt.pem \
+signature_artifacts=(checksums.txt.sigstore.json)
+signature_args=(--bundle checksums.txt.sigstore.json)
+if [[ ! -f checksums.txt.sigstore.json ]]; then
+  signature_artifacts=(checksums.txt.sig checksums.txt.pem)
+  signature_args=(--signature checksums.txt.sig --certificate checksums.txt.pem)
+fi
+cosign verify-blob checksums.txt "${signature_args[@]}" \
   --certificate-identity "$identity" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 sha256sum --check checksums.txt
@@ -25,7 +30,7 @@ artifacts=(
   repyy-sandbox-image.txt repyy-release.spdx.json
   repyy-container-linux-{amd64,arm64}.spdx.json
   repyy-container-linux-{amd64,arm64}.txt
-  results.json results.md checksums.txt checksums.txt.sig checksums.txt.pem
+  results.json results.md checksums.txt "${signature_artifacts[@]}"
 )
 for artifact in "${artifacts[@]}"; do
   test -f "$artifact"

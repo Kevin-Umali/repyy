@@ -551,14 +551,9 @@ export const guides = [
     route: "/changelog/",
     label: "Changelog",
     title: "Changelog · repyy documentation",
-    description: "What changed in Repyy 0.7.0 and where to find the complete release history and verification evidence.",
+    description: "Repyy release notes and verification evidence.",
     markdown: ["CHANGELOG.md"],
-    sections: [
-      { id: "overview", label: "Release changes" },
-      { id: "version-0-7-0", label: "Version 0.7.0" },
-      { id: "version-0-6-0", label: "Version 0.6.0" },
-      { id: "history", label: "Earlier releases" },
-    ],
+    sections: [{ id: "overview", label: "Release changes" }],
   },
   {
     slug: "about",

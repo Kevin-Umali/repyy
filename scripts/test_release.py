@@ -21,6 +21,7 @@ class ReleaseGateTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        self.download_index = 0
         self.assets = self.root / "assets"
         self.assets.mkdir()
         names = [
@@ -35,6 +36,7 @@ class ReleaseGateTests(unittest.TestCase):
             "repyy-release.spdx.json",
             "results.json",
             "results.md",
+            "checksums.txt.sigstore.json",
             "checksums.txt.sig",
             "checksums.txt.pem",
         ]
@@ -91,12 +93,14 @@ exit "${COSIGN_FAIL:-0}"
         path.chmod(0o755)
 
     def gate(self, **env):
+        self.download_index += 1
+        (self.root / "calls").unlink(missing_ok=True)
         result = subprocess.run(
             [
                 "bash",
                 str(SCRIPTS / "verify-release.sh"),
                 "v1.2.3",
-                str(self.root / "download"),
+                str(self.root / f"download-{self.download_index}"),
             ],
             env=dict(self.env, **env),
             capture_output=True,
@@ -105,20 +109,40 @@ exit "${COSIGN_FAIL:-0}"
         return result, (self.root / "calls").read_text()
 
     def test_success_checks_both_container_platforms(self):
-        result, calls = self.gate()
-        self.assertEqual(result.returncode, 0, result.stderr)
-        for digest in ("a" * 64, "b" * 64):
-            self.assertIn(
-                f"gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:{digest} "
-                "--predicate-type https://spdx.dev/Document",
-                calls,
-            )
-        self.assertIn("Verified checksums", result.stdout)
+        for bundle in (True, False):
+            with self.subTest(bundle=bundle):
+                result, calls = self.gate()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                for digest in ("a" * 64, "b" * 64):
+                    self.assertIn(
+                        f"gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:{digest} "
+                        "--predicate-type https://spdx.dev/Document",
+                        calls,
+                    )
+                if bundle:
+                    self.assertIn(
+                        "cosign verify-blob checksums.txt --bundle checksums.txt.sigstore.json",
+                        calls,
+                    )
+                    self.assertIn(
+                        "gh attestation verify checksums.txt.sigstore.json ", calls
+                    )
+                    self.assertNotIn("--signature checksums.txt.sig", calls)
+                else:
+                    self.assertIn(
+                        "--signature checksums.txt.sig --certificate checksums.txt.pem",
+                        calls,
+                    )
+                    self.assertIn("gh attestation verify checksums.txt.pem ", calls)
+                self.assertIn("Verified checksums", result.stdout)
+                if bundle:
+                    (self.assets / "checksums.txt.sigstore.json").unlink()
 
     def test_signature_failure_stops_before_attestations(self):
         result, calls = self.gate(COSIGN_FAIL="1")
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("attestation verify", calls)
+        self.assertNotIn("--signature checksums.txt.sig", calls)
 
     def test_checksum_mismatch_stops_before_attestations(self):
         (self.assets / "repyy.tar.gz").write_text("tampered")
