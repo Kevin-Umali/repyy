@@ -184,6 +184,7 @@ func init() {
 	}
 }
 
+// These sources were reviewed on 2026-10-27; record dates retain advisory publication and update dates.
 const tensorlakeSource = "https://github.com/tensorlakeai/tensorlake/security/advisories/GHSA-8g63-53c9-65j2"
 const subqlSource = "https://flatt.tech/research/posts/subql-common-npm-supply-chain-attack/"
 const litellmSource = "https://github.com/advisories/GHSA-92x9-889m-jgmw"
