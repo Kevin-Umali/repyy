@@ -1,12 +1,21 @@
 name: CI
 
+# Pull requests run affected checks. Main and release validation run the full suite.
+# Add "CI passed" to branch protection after its first run, retaining existing checks.
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
+    inputs:
+      source_ref:
+        description: Immutable source commit to validate for a release retry
+        required: true
+        type: string
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ inputs.source_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -14,16 +23,18 @@ permissions:
 
 jobs:
   changes:
-    name: 1 · Identify changes
+    name: Identify changed areas
     runs-on: ubuntu-latest
     outputs:
       go: ${{ steps.paths.outputs.go }}
       site: ${{ steps.paths.outputs.site }}
       sandbox: ${{ steps.paths.outputs.sandbox }}
       release: ${{ steps.paths.outputs.release }}
+      security: ${{ steps.paths.outputs.security }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Classify changed files
@@ -31,10 +42,11 @@ jobs:
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FULL_CHECK: ${{ github.event_name != 'pull_request' || inputs.source_ref != '' }}
         run: |
           set -euo pipefail
-          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
-            for area in go site sandbox release; do
+          if [[ "$FULL_CHECK" == true ]] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            for area in go site sandbox release security; do
               echo "$area=true" >> "$GITHUB_OUTPUT"
             done
             exit 0
@@ -42,15 +54,17 @@ jobs:
           changed() {
             if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- "$@"; then echo false; else echo true; fi
           }
-          go="$(changed ':(glob)**/*.go' go.mod go.sum Makefile .github/workflows/ci.yml)"
-          site="$(changed site docs demo README.md CHANGELOG.md .github/workflows/ci.yml)"
+          go="$(changed ':(glob)**/*.go' go.mod go.sum Makefile .github/workflows)"
+          site="$(changed site docs demo README.md CHANGELOG.md internal/scan/builtin.go .github/workflows/ci.yml)"
           sandbox="$(changed Dockerfile.sandbox .dockerignore ':(glob)**/*.go' go.mod go.sum .github/workflows/ci.yml)"
-          release="$(changed ':(glob)**/*.go' go.mod go.sum scripts .goreleaser.yaml Dockerfile.sandbox .dockerignore .github/workflows/ci.yml .github/workflows/release.yml .github/workflows/prepare-release.yml)"
+          release="$(changed go.mod go.sum Makefile CHANGELOG.md scripts .goreleaser.yaml Dockerfile.sandbox .dockerignore .github/workflows)"
+          security="$(changed ':(glob)**/*.go' go.mod go.sum scripts demo keys test .github/workflows)"
           {
             echo "go=$go"
             echo "site=$site"
             echo "sandbox=$sandbox"
             echo "release=$release"
+            echo "security=$security"
           } >> "$GITHUB_OUTPUT"
           {
             echo '### Changed areas'
@@ -60,13 +74,14 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   site:
-    name: 2 · Check site and docs
+    name: Check site and docs
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -107,6 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -117,11 +133,12 @@ jobs:
       - run: go test -race ./...
 
   workflow-lint:
-    name: 2 · Lint workflows
+    name: Check workflows and release helpers
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -131,12 +148,13 @@ jobs:
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
   vulnerability-scan:
-    needs: [changes, test, workflow-lint]
+    needs: changes
     if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -145,11 +163,7 @@ jobs:
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
   build:
-    needs: [changes, test, workflow-lint]
-    # Main protection requires each platform check, including on documentation-only PRs.
-    if: >-
-      !cancelled() && needs.changes.result == 'success' && needs.workflow-lint.result == 'success'
-      && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
@@ -157,13 +171,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true'
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true'
         with:
           go-version-file: go.mod
           cache: true
       - name: Build and run CLI
+        if: needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -171,17 +189,30 @@ jobs:
           if [[ "$RUNNER_OS" == Windows ]]; then suffix='.exe'; fi
           go build -o "$RUNNER_TEMP/repyy$suffix" ./cmd/repyy
           "$RUNNER_TEMP/repyy$suffix" version
+      - name: Check detection benchmark and intelligence export
+        if: runner.os == 'Linux' && (needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true')
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/benchmark.py --binary "$RUNNER_TEMP/repyy" --output "$RUNNER_TEMP/benchmark" --check
+          test "$("$RUNNER_TEMP/repyy" intel export | wc -c)" -le $((16 * 1024 * 1024))
+      - name: Save benchmark results
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: benchmark-${{ inputs.source_ref || github.sha }}
+          path: ${{ runner.temp }}/benchmark
+          if-no-files-found: ignore
 
   sandbox-image:
-    name: 3 · Build sandbox image
-    needs: [changes, test, workflow-lint]
-    if: >-
-      always() && needs.changes.outputs.sandbox == 'true' && needs.workflow-lint.result == 'success'
-      && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    name: Check sandbox image
+    needs: changes
+    if: needs.changes.outputs.sandbox == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -196,14 +227,13 @@ jobs:
       - run: docker run --rm --network none repyy-sandbox:ci version
 
   release-config:
-    needs: [changes, test, workflow-lint]
-    if: >-
-      always() && needs.changes.outputs.release == 'true' && needs.workflow-lint.result == 'success'
-      && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: changes
+    if: needs.changes.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_ref || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -215,11 +245,70 @@ jobs:
           distribution: goreleaser
           version: "v2.18.0"
           args: check
-      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        if: github.event_name == 'push'
+
+  fuzz:
+    name: Fuzz smoke checks
+    needs: changes
+    if: needs.changes.outputs.security == 'true'
+    uses: ./.github/workflows/fuzz.yml
+    with:
+      source_ref: ${{ inputs.source_ref || github.sha }}
+
+  analyze:
+    needs: changes
+    if: needs.changes.outputs.go == 'true' || needs.changes.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          distribution: goreleaser
-          version: "v2.18.0"
-          args: release --snapshot --clean --skip=sign,sbom,publish
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
+      - uses: github/codeql-action/init@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+        with:
+          languages: go
+      - uses: github/codeql-action/analyze@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+        with:
+          category: /language:go
+
+  analyze-actions:
+    needs: changes
+    if: needs.changes.outputs.go == 'true' || needs.changes.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
+      - uses: github/codeql-action/init@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+        with:
+          languages: actions
+      - uses: github/codeql-action/analyze@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+        with:
+          category: /language:actions
+
+  passed:
+    name: CI passed
+    needs: [changes, site, test, workflow-lint, vulnerability-scan, build, sandbox-image, release-config, fuzz, analyze, analyze-actions]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all applicable checks
         env:
-          REPYY_SANDBOX_IMAGE_DIGEST: ""
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          failed = [name for name, job in results.items() if job['result'] not in ('success', 'skipped')]
+          if results['changes']['result'] != 'success' or results['workflow-lint']['result'] != 'success':
+              raise SystemExit('Change classification and workflow checks must pass')
+          if failed:
+              raise SystemExit('Checks did not pass: ' + ', '.join(failed))
+          print('All applicable validation and security checks passed.')
+          PY

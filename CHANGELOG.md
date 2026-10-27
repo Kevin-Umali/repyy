@@ -4,6 +4,15 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+### Changed
+
+- Run CI checks in parallel, reuse the Linux smoke binary for benchmarks, and gate
+  releases on fuzzing and CodeQL. Give fuzz targets fixed execution budgets and
+  preserve their logs and corpus cache.
+- Save release builds before publication so failed signing, verification, or
+  package updates can resume the same version without moving tags or replacing
+  published files. Start release preparation after successful main CI.
+
 ## [0.7.1] - 2026-10-27
 
 ### Fixed

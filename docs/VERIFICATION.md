@@ -52,8 +52,18 @@ the original scanner identity rather than substituting the converter's version.
 
 ## Verify provenance
 
-Use a recent GitHub CLI with the `gh attestation` command. For a downloaded archive or extracted
-binary, replace the placeholders with the exact release and filename:
+The configured release workflow runs from protected `main` after full CI passes and builds the
+immutable tagged source. For releases containing `release.json`, use the
+[fresh-download gate](#fresh-download-release-gate). It first verifies the record's attestation
+against the `release.yml@refs/heads/main` identity, resolves the tag to its actual source commit,
+and checks the record's tag, source commit and complete public-file inventory before verifying the
+artifacts. The record also names the controller commit, allowing pipeline repairs without retagging
+the source. Standard GitHub attestations identify the main workflow; the verified record binds the
+files to the tagged source. This is configured policy, not evidence that a later release passed.
+
+For legacy releases without `release.json`, use a recent GitHub CLI with the `gh attestation`
+command. For a downloaded archive or extracted binary, replace the placeholders with the exact
+release and filename:
 
 ```sh
 gh attestation verify ARTIFACT --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z
@@ -68,8 +78,10 @@ explains verification and available policy controls.
 ## Checksums and existing signatures
 
 A checksum detects changed bytes only after the checksum list itself is authenticated. Releases
-from v0.7.1 use Cosign 3 keyless signatures in `checksums.txt.sigstore.json`, which includes the
-signature, certificate, and transparency-log evidence.
+configured from v0.7.1 use Cosign 3 keyless signatures in `checksums.txt.sigstore.json`, which
+includes the signature, certificate, and transparency-log evidence.
+
+For a legacy release with a Cosign 3 bundle, use its tag-based identity:
 
 ```sh
 cosign verify-blob checksums.txt --bundle checksums.txt.sigstore.json --certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/tags/vX.Y.Z --certificate-oidc-issuer https://token.actions.githubusercontent.com
@@ -96,6 +108,8 @@ per-platform dependency assertion. The workflow binds that set inventory to each
 binary/archive/package digest using an SPDX attestation. Read its package inventory and
 relationships rather than interpreting an SBOM as a vulnerability scan.
 
+For a legacy release, verify an SPDX attestation with the tag-based identity:
+
 ```sh
 gh attestation verify ARTIFACT --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z --predicate-type https://spdx.dev/Document
 ```
@@ -103,7 +117,7 @@ gh attestation verify ARTIFACT --repo Kevin-Umali/repyy --signer-workflow Kevin-
 ## Container verification
 
 Read the exact image digest from the verified `repyy-sandbox-image.txt` asset. Replace `DIGEST` and
-the version below:
+the version below for a legacy release without `release.json`:
 
 ```sh
 gh attestation verify oci://ghcr.io/kevin-umali/repyy-sandbox@sha256:DIGEST --repo Kevin-Umali/repyy --signer-workflow Kevin-Umali/repyy/.github/workflows/release.yml --source-ref refs/tags/vX.Y.Z
@@ -123,16 +137,28 @@ bash scripts/verify-release.sh vX.Y.Z /tmp/repyy-verification-vX.Y.Z
 ```
 
 This needs GitHub CLI with attestation support, Cosign and SHA-256 tooling; GitHub Actions supplies
-the tools for maintainers who do not want local installations. It downloads release assets into the
-fresh directory and checks checksum signatures, hashes, artifact provenance, SBOM attestations and
+the tools for maintainers who do not want local installations. It handles both release formats,
+downloads release assets into the fresh directory and checks checksum signatures, hashes, artifact
+provenance, SBOM attestations and
 container signatures/provenance. A nonzero result blocks publication. The v0.5.3 workflow passed this gate before publication. Every subsequent release must pass it again.
+
+## Maintainer retries
+
+Run Release from main after its CI passes. For a build failure before the saved artifact exists,
+set `tag` to the existing version. For a later failure, rerun the failed job. To use repaired
+workflow code, set both `tag` and `resume_run_id` to the original build run. The workflow restores
+that run's files and refuses conflicting uploads. Build artifacts remain available for 90 days.
+
+Homebrew and Scoop update in separate jobs. They skip identical manifests and refuse to replace
+newer or conflicting versions. Published release files and existing tags remain unchanged.
 
 ## Repository security signals
 
 CodeQL is configured for Go and [GitHub Actions workflow security analysis](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-queries/actions-built-in-queries).
 Go and Actions analysis [passed on the v0.5.3 source commit](https://github.com/Kevin-Umali/repyy/actions/runs/35443775664).
 
-Inspect [CodeQL runs](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml),
+Inspect [CI runs with Go and Actions CodeQL](https://github.com/Kevin-Umali/repyy/actions/workflows/ci.yml),
+[weekly CodeQL runs](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml),
 [Scorecard workflow](https://github.com/Kevin-Umali/repyy/actions/workflows/scorecard.yml), the
 [Scorecard breakdown](https://scorecard.dev/viewer/?uri=github.com/Kevin-Umali/repyy), and
 [artifact attestations](https://github.com/Kevin-Umali/repyy/attestations). The [first Scorecard run](https://github.com/Kevin-Umali/repyy/actions/runs/34873941392)

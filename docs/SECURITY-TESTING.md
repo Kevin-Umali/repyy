@@ -56,7 +56,7 @@ that existing tests miss; expand an existing test when it already covers that pa
 Archive seeds include valid ZIP, TAR and TAR.GZ files, nested ZIPs, traversal paths, expansion
 limits and entry-count limits, alongside malformed inputs. These are bounded starting targets, not
 exhaustive coverage. Context cancellation is cooperative,
-not a hard CPU/memory guarantee. CI supplies a 10-minute job timeout and two workers. Concurrent
+not a hard CPU/memory guarantee. CI supplies a 30-minute package-job timeout and two workers per target. Concurrent
 symlink replacement, full Git transport/SSH behavior, live Docker isolation and every report field
 still need broader testing and independent review.
 
@@ -65,13 +65,14 @@ still need broader testing and independent review.
 ```sh
 make check
 make security
-go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 30s -parallel 2
+go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 50000x -parallel 2
 ```
 
 Use the corresponding package and target name for the remaining targets. Ordinary `go test` runs the
-seed corpus. The Security evidence workflow runs each target for 10 seconds on changes and 120
-seconds on a daily schedule. Read the workflow run rather than assuming a scheduled run happened.
-Fuzz failures are uploaded as artifacts when available.
+seed corpus. CI uses fixed execution counts per target on relevant changes and all main pushes. The daily
+Security evidence workflow runs ten times those counts. The [fuzz workflow](../.github/workflows/fuzz.yml) defines the budgets. Fixed execution budgets avoid a
+possible Go fuzz-coordinator duration deadline race. The archive limits remain unchanged. Read the workflow run rather than assuming a scheduled run happened.
+Fuzz logs and available failing inputs are uploaded even if a target fails.
 
 For a failure, preserve the generated corpus input under the package's `testdata/fuzz/TARGET/` and
 minimize it. Fix the violated property and rerun both the seed and fuzz target. Add a named

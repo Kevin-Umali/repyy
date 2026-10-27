@@ -3,10 +3,10 @@
 import hashlib
 import importlib.util
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location(
@@ -61,14 +61,25 @@ class ReleaseGateTests(unittest.TestCase):
         self.fake(
             "gh",
             """#!/usr/bin/env python3
-import os, pathlib, shutil, sys
+import json, os, pathlib, shutil, sys
 args = sys.argv[1:]
 with open(os.environ["CALL_LOG"], "a") as log:
     log.write("gh " + " ".join(args) + "\\n")
 if args[:2] == ["release", "download"]:
     shutil.copytree(os.environ["ASSETS"], args[args.index("--dir") + 1], dirs_exist_ok=True)
 elif args[:2] == ["attestation", "verify"]:
+    if args[2] == "release.json":
+        required = ("--source-ref", "refs/heads/main", "--cert-identity", "https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/heads/main", "--signer-repo", "Kevin-Umali/repyy")
+        if not all(value in args for value in required):
+            sys.exit(1)
     sys.exit(int(os.environ.get("ATTEST_FAIL", "0")))
+elif args[:2] == ["api", "repos/Kevin-Umali/repyy/git/ref/tags/v1.2.3"]:
+    if os.environ.get("ANNOTATED"):
+        print(json.dumps({"object": {"type": "tag", "sha": "d" * 40}}))
+    else:
+        print(json.dumps({"object": {"type": "commit", "sha": os.environ.get("TAG_SHA", "a" * 40)}}))
+elif args[:2] == ["api", "repos/Kevin-Umali/repyy/git/tags/" + "d" * 40]:
+    print(json.dumps({"object": {"type": "commit", "sha": "a" * 40}}))
 else:
     sys.exit(99)
 """,
@@ -105,6 +116,7 @@ exit "${COSIGN_FAIL:-0}"
             env=dict(self.env, **env),
             capture_output=True,
             text=True,
+            check=False,
         )
         return result, (self.root / "calls").read_text()
 
@@ -154,6 +166,55 @@ exit "${COSIGN_FAIL:-0}"
         result, _ = self.gate(ATTEST_FAIL="1")
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("Verified checksums", result.stdout)
+
+    def make_release_record(self):
+        for filename in ("repyy-homebrew.rb", "repyy-scoop.json"):
+            (self.assets / filename).write_text("package manifest\n")
+        subprocess.run(
+            [
+                "python3",
+                str(SCRIPTS / "release.py"),
+                "create",
+                "v1.2.3",
+                "a" * 40,
+                "b" * 40,
+                str(self.assets),
+            ],
+            check=True,
+        )
+
+    def test_new_release_record_is_attested_and_matches_tag_and_assets(self):
+        self.make_release_record()
+        result, calls = self.gate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("gh attestation verify release.json", calls)
+        self.assertIn("gh attestation verify repyy-homebrew.rb", calls)
+        self.assertIn("gh attestation verify repyy-scoop.json", calls)
+        self.assertLess(
+            calls.index("gh attestation verify release.json"),
+            calls.index("cosign verify-blob"),
+        )
+        result, calls = self.gate(ANNOTATED="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("git/tags/" + "d" * 40, calls)
+        self.assertIn(
+            "--certificate-identity https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/heads/main",
+            calls,
+        )
+        for env, tamper in (
+            ({"TAG_SHA": "c" * 40}, False),
+            ({}, True),
+            ({"ATTEST_FAIL": "1"}, False),
+        ):
+            with self.subTest(env=env, tamper=tamper):
+                if tamper:
+                    (self.assets / "repyy-homebrew.rb").write_text("tampered")
+                result, calls = self.gate(**env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("gh attestation verify release.json", calls)
+                self.assertNotIn("gh attestation verify repyy-homebrew.rb", calls)
+                if tamper:
+                    (self.assets / "repyy-homebrew.rb").write_text("package manifest\n")
 
     def test_manifest_version_must_match_exactly(self):
         for filename, content in [
