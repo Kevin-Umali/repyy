@@ -68,7 +68,7 @@ jobs:
             echo "sha=$sha"
             echo "exists=$exists"
           } >> "$GITHUB_OUTPUT"
-          printf '### %s\nSource: `%s`\n' "$tag" "$sha" >> "$GITHUB_STEP_SUMMARY"
+          printf '### %s\nSource: %s\n' "$tag" "$sha" >> "$GITHUB_STEP_SUMMARY"
       - name: Require main CI and check whether source validation can be reused
         id: validation
         env:
