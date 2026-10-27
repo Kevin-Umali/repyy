@@ -60,6 +60,11 @@ const guide = getGuide("agent-skill");
             All four skills use the host's built-in question tool when available to ask for missing targets, reports, or goals.
             They use inputs already supplied and do not install missing tools or execute the target.
           </p>
+          <p>
+            Scanner targets are directories or supported Git URLs. For an individual artifact, the skill stages only that approved regular file in a
+            private directory and scans the directory without extracting or executing it. It does not expand the review to a broad parent folder.
+            A single skill file leaves missing scripts and references outside the review.
+          </p>
         </section>
         <section
           class="docs-section docs-searchable"

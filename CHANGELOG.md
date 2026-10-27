@@ -16,7 +16,8 @@ All notable changes are documented here. The project follows Semantic Versioning
   matching source, `repyy-review` for a manual second opinion on scan gaps, and
   `repyy-intel` for exact package/version and file-hash indicator checks.
 - Improve the main `repyy` skill with built-in questions for missing targets/goals,
-  helper recommendations, and a manual fallback when the CLI or a helper is absent.
+  helper recommendations, narrow staging for individual artifacts, and a manual
+  fallback when the CLI or a helper is absent.
 - Treat standalone `SKILL.md` files as agent instructions during scans.
 - Add bounded Python remote-response review through simple aliases and response
   reads into dynamic execution or compilation, with source and sink locations.

@@ -48,8 +48,14 @@ not the Repyy CLI. Offer installation only when the user wants it.
    If the CLI is absent, continue with the manual review below. Build Repyy only
    from a separately trusted checkout when that build is authorized.
 2. Use quoted, explicit target paths. Save output in a private directory outside
-   the target, without overwriting unrelated files. For example, after replacing
-   the placeholders:
+   the target, without overwriting unrelated files. The CLI scans directories or
+   supported Git URLs, not individual files. For a supplied wheel, tarball or
+   single skill file, copy only that approved regular file as bytes into a private
+   staging directory and scan the directory. Do not extract or execute it. Use
+   an existing enclosing directory only when that wider scope is already approved;
+   do not default to scanning its broad parent. A lone `SKILL.md` cannot establish
+   the contents of missing referenced scripts or sibling files. Record that gap.
+   For a directory target, after replacing the placeholders:
 
    ```sh
    repyy scan --format json --output /TRUSTED-OUTPUT/scan.json /TARGET
