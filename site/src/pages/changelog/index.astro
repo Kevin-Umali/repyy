@@ -1,8 +1,29 @@
 ---
+import { createSatteriMarkdownProcessor } from "@astrojs/markdown-satteri";
+import changelog from "../../../../CHANGELOG.md?raw";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { getGuide } from "../../data/guides";
 
-const guide = getGuide("changelog");
+const headings = [...changelog.matchAll(/^## \[([^\]]+)\](?: - ([^\r\n]+))?\s*$/gm)];
+const renderer = await createSatteriMarkdownProcessor();
+const releases = await Promise.all(headings.map(async (heading, index) => {
+  const body = changelog.slice(heading.index! + heading[0].length, headings[index + 1]?.index).trim();
+  const version = heading[1];
+  const id = version === "Unreleased" ? "unreleased" : `version-${version.replaceAll(".", "-")}`;
+  const rendered = await renderer.render(body);
+  return {
+    id,
+    label: version === "Unreleased" ? version : `Version ${version}`,
+    title: heading[2] ? `${version} · ${heading[2]}` : version,
+    body,
+    html: rendered.code.replace(/(<h[3-6]) id="[^"]*"/g, "$1"),
+  };
+}));
+const entries = releases.filter((release) => release.body);
+const guide = {
+  ...getGuide("changelog"),
+  sections: [{ id: "overview", label: "Release changes" }, ...entries.map(({ id, label }) => ({ id, label }))],
+};
 ---
 
 <DocsLayout guide={guide}>
@@ -10,46 +31,37 @@ const guide = getGuide("changelog");
     <p class="docs-kicker">Release changes</p>
     <h1>What changed.<span>And where to verify it.</span></h1>
     <p>
-      This page highlights the current version. The repository <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">CHANGELOG.md</a>
-      is the complete record, including earlier releases and fixes. Use the <a href="/verification/">verification guide</a> for signed release artifacts.
+      Release notes come from the repository <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">CHANGELOG.md</a>.
+      Use the <a href="/verification/">verification guide</a> for signed release artifacts.
     </p>
   </section>
 
-  <section class="docs-section docs-searchable" id="version-0-7-0">
-    <h2>0.7.0 · 27 October 2026</h2>
-    <p>Repyy 0.7.0 adds focused review skills, Python startup and response-flow checks, and updated package indicators.</p>
-    <ul class="docs-list">
-      <li><code>repyy-explain</code>, <code>repyy-review</code>, and <code>repyy-intel</code> check reports, scan gaps, and indicators. The main skill routes these tasks and asks for missing inputs.</li>
-      <li>Python checks cover startup imports and simple remote responses reaching execution or compilation, with source locations and review limits.</li>
-      <li>Archive size accounting rejects oversized ZIP64 declarations before conversion; Python equality, encoding and line-ending gaps are fixed.</li>
-      <li>Node and Go build pins include security fixes. Unverified manual VM recipes are removed, and Docker claims describe the available evidence.</li>
-    </ul>
-    <p>Read the <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md#070---2026-10-27">full 0.7.0 entry</a>, <a href="/agent-skill/">skill guide</a>, and <a href="/coverage/">coverage limits</a>.</p>
-  </section>
-
-  <section class="docs-section docs-searchable" id="version-0-6-0">
-    <h2>0.6.0 · 26 September 2026</h2>
-    <p>Repyy 0.6.0 adds narrow static checks for malicious package advisories, literal JavaScript decoding, and supported Axios response flows into execution.</p>
-    <div class="docs-table-scroll" role="region" aria-label="Repyy 0.6.0 changes" tabindex="0">
-      <table class="docs-data-table">
-        <thead><tr><th>Area</th><th>Change</th><th>Read more</th></tr></thead>
-        <tbody>
-          <tr><td>Intelligence</td><td>Sourced records for three malicious npm packages; clearer exact-version and unlocked-range results.</td><td><a href="/intelligence/">Intelligence guide</a></td></tr>
-          <tr><td>Behavior</td><td>Bounded data-only literal recovery and same-function Axios-to-execution correlation with source locations.</td><td><a href="/rules/">Rule reference</a></td></tr>
-          <tr><td>Coverage</td><td>Explicit incomplete status for unsupported decoding and resource limits; less weak noise in vendor bundles.</td><td><a href="/coverage/">Coverage guide</a></td></tr>
-          <tr><td>Review workflow</td><td>A refreshed 11-pair inert demo and a bounded maintainer path for advisory ingestion.</td><td><a href="/demo/">Demo report</a></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p>The <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md#060---2026-09-26">full 0.6.0 entry</a> lists the smaller fixes and release details.</p>
-  </section>
-
-  <section class="docs-section docs-searchable" id="history">
-    <h2>Earlier releases</h2>
-    <p>
-      Browse <a href="https://github.com/Kevin-Umali/repyy/releases">published releases</a> for assets and release notes, or read the
-      <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">complete changelog</a> for the chronological change history.
-      A version heading on this page describes code changes; it does not replace the release verification record.
-    </p>
-  </section>
+  {entries.map((entry) => (
+    <section class="docs-section docs-searchable changelog-entry" id={entry.id}>
+      <h2>{entry.title}</h2>
+      <div set:html={entry.html} />
+    </section>
+  ))}
 </DocsLayout>
+
+<style>
+  .changelog-entry :global(li a),
+  .changelog-entry :global(p a) {
+    color: #a1381c;
+    text-decoration: underline;
+    text-decoration-color: #cda99b;
+    text-underline-offset: 0.18em;
+  }
+  .changelog-entry :global(code) {
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    background: #ececef;
+    color: #55555a;
+    font-size: 0.85em;
+    overflow-wrap: anywhere;
+  }
+  .changelog-entry :global(p) {
+    color: var(--muted);
+    line-height: 1.75;
+  }
+</style>
