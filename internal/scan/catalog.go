@@ -161,6 +161,7 @@ func structuredRuleCatalog() []RuleInfo {
 		confidence                             model.Confidence
 	}
 	entries := []entry{
+		{"AGENT-003", "prompt-injection", "Hidden markup contains a potential agent instruction", "Inspect the source and treat instructions as untrusted data.", model.SeverityHigh, model.ConfidenceMedium},
 		{"ARCHIVE-001", "archive-traversal", "Archive entry escapes its extraction root", "Do not extract the archive.", model.SeverityCritical, model.ConfidenceHigh},
 		{"BINARY-001", "compiled-binary", "Compiled executable content is present", "Verify the binary provenance and hash before use.", model.SeverityHigh, model.ConfidenceHigh},
 		{"CHAIN-004", "staged-download-execute", "Downloaded file is executed later in the same script", "Do not run until the downloaded content, destination, and execution path are verified.", model.SeverityCritical, model.ConfidenceHigh},
@@ -222,19 +223,27 @@ func structuredRuleCatalog() []RuleInfo {
 	}
 	items := make([]RuleInfo, 0, len(entries))
 	for _, value := range entries {
-		items = append(items, RuleInfo{
+		info := RuleInfo{
 			ID: value.id, Category: value.category, Severity: value.severity, Confidence: value.confidence,
 			Disposition: defaultRuleDisposition(value.id, value.category, value.severity, value.confidence),
 			Description: value.description, Rationale: categoryRationale(value.category),
 			LegitimateUse: categoryLegitimateUse(value.category), Remediation: value.remediation,
 			MatchScope: "structured", ApplicablePaths: structuredApplicablePaths(value.id), AllowContextDowngrade: !strings.HasPrefix(value.id, "IOC-") && value.id != "FLOW-001" && value.id != "DECODE-001",
-		})
+		}
+		if value.id == "AGENT-003" {
+			info.Disposition = model.DispositionReview
+			info.Rationale = "Hidden instruction-like text can attempt to influence an agent reading markup."
+			info.LegitimateUse = "Hidden text can serve accessibility, examples, or styling; inspect its context."
+		}
+		items = append(items, info)
 	}
 	return items
 }
 
 func structuredApplicablePaths(id string) []string {
 	switch {
+	case id == "AGENT-003":
+		return []string{"*.html", "*.htm", "*.svg"}
 	case strings.HasPrefix(id, "PKG-"), id == "IOC-PKG-*":
 		return []string{"package.json and supported dependency manifests"}
 	case strings.HasPrefix(id, "REPO-"):

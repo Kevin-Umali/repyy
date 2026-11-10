@@ -442,6 +442,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		return
 	}
 	media.ScanSVG(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
+	s.scanHiddenInstructions(path, data, add, coverage)
 	if isJavaScriptPath(path) {
 		s.scanJSDecoded(path, data, add, coverage)
 		s.scanJSAxiosFlow(path, data, add, coverage)
