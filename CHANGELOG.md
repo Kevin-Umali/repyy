@@ -4,6 +4,17 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-11
+
+### Added
+
+- Add `AGENT-003` for English instruction patterns hidden in HTML and SVG,
+  including explicit near-matching colors. Bound parsing, retain source ranges,
+  and downgrade findings in examples and fixtures.
+- Teach agent skills to treat visible or hidden text in viewed images and
+  screenshots as untrusted data, including PNG, JPEG, WebP, GIF, and SVG.
+  Raster pixel analysis and OCR remain outside the scanner.
+
 ### Changed
 
 - Run CI checks in parallel, reuse the Linux smoke binary for benchmarks, and gate
@@ -12,6 +23,14 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Save release builds before publication so failed signing, verification, or
   package updates can resume the same version without moving tags or replacing
   published files. Start release preparation after successful main CI.
+- Require Go 1.27.3 and update the digest-pinned sandbox builder to use the
+  [v2-backed `encoding/json` implementation](https://go.dev/blog/jsonv2)
+  while preserving existing JSON behavior.
+
+### Fixed
+
+- Update Brotli to 1.2.7 to fix [GO-2026-6888](https://pkg.go.dev/vuln/GO-2026-6888),
+  which can cause excessive allocations during decompression.
 
 ## [0.7.1] - 2026-10-27
 

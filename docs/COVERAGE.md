@@ -165,8 +165,25 @@ verify downloaded wrapper archives against their declared hashes. Those checks
 need a resolver or trusted artifact fetch; this scanner reads repository bytes
 only. Sibling `build.rs` detection applies to unpacked repository files.
 
+HTML (`.html`, `.htm`) and SVG files, including archive entries, are scanned for
+English instruction patterns in text with static hiding indicators. Indicators
+include the HTML `hidden` attribute, inline `display`, `visibility`, `opacity`,
+transparent text paint, and explicit nearly matching foreground and background
+colors. SVG presentation attributes and inline paint declarations are also
+considered, including visible strokes. A visible inline display declaration can
+override `hidden`. The color check requires explicit opaque colors and allows a
+one-level difference per RGB channel; it does not assume a canvas color.
+
+This is a source heuristic, not a rendering or semantic AI classifier. HTML
+uses tokenization rather than browser tree construction, so implicit closing
+tags and browser element nesting are not reconstructed. SVG requires well-formed XML. Comments and
+script, style, template, and noscript bodies are excluded; hidden pre and code
+text are included. Stylesheet selectors, external CSS, variables, images,
+gradients, transforms, clipping, layout, and dynamic behavior are not resolved.
+Depth, token, and hidden-text limits or malformed SVG mark coverage incomplete.
+
 Raster-image metadata and image pixels are not parsed for embedded instructions
-or scripts. Valid text SVG files are inspected for active content.
+or scripts; OCR is not performed. Valid text SVG files are also inspected for active content.
 
 Unreadable or non-regular files, undecodable source and configuration, linked
 Git metadata, resource limits, unsafe archive entries, and timeouts reduce
