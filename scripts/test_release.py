@@ -68,10 +68,13 @@ with open(os.environ["CALL_LOG"], "a") as log:
 if args[:2] == ["release", "download"]:
     shutil.copytree(os.environ["ASSETS"], args[args.index("--dir") + 1], dirs_exist_ok=True)
 elif args[:2] == ["attestation", "verify"]:
-    if args[2] == "release.json":
-        required = ("--source-ref", "refs/heads/main", "--cert-identity", "https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@refs/heads/main", "--signer-repo", "Kevin-Umali/repyy")
-        if not all(value in args for value in required):
+    source_ref = "refs/heads/main" if pathlib.Path("release.json").is_file() else "refs/tags/v1.2.3"
+    identity = f"https://github.com/Kevin-Umali/repyy/.github/workflows/release.yml@{source_ref}"
+    for flag, value in (("--repo", "Kevin-Umali/repyy"), ("--source-ref", source_ref), ("--cert-identity", identity)):
+        if args.count(flag) != 1 or args[args.index(flag) + 1] != value:
             sys.exit(1)
+    if any(flag in args for flag in ("--signer-repo", "--signer-workflow", "--cert-identity-regex")):
+        sys.exit(1)
     sys.exit(int(os.environ.get("ATTEST_FAIL", "0")))
 elif args[:2] == ["api", "repos/Kevin-Umali/repyy/git/ref/tags/v1.2.3"]:
     if os.environ.get("ANNOTATED"):

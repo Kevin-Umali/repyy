@@ -8,6 +8,7 @@ to print the same top-level summary.
 ```text
 repyy scan [options] <path-or-git-url>...
 repyy report [options] <report.json|->
+repyy report --format tui
 repyy rules validate <rules.yaml>
 repyy rules check
 repyy rules list [--format terminal|json]
@@ -34,7 +35,7 @@ scans use a temporary networked fetch stage.
 | Option                   | Values/default      | What it does                                                                                                                |
 | ------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `--file PATH`            | one target per line | Appends targets from a text file after command-line targets. Blank and `#` comment lines are ignored.                       |
-| `--format`               | `terminal`          | Selects `terminal`, `json`, `sarif`, or `html` output.                                                                      |
+| `--format`               | `terminal`          | Selects `terminal`, `json`, `sarif`, `html`, or opt-in `tui` output.                                                                      |
 | `--output PATH`          | stdout              | Writes the report to a file. HTML and JSON are useful for saving; SARIF is suitable for code scanning tools.                |
 | `--jobs N`               | `4`                 | Maximum concurrent repositories; must be 1–128.                                                                             |
 | `--config PATH`          | none                | Loads a trusted version-1 YAML file containing extra rules and suppressions.                                                |
@@ -95,6 +96,54 @@ repyy scan ./large-repo --timeout 20m --max-file-size 104857600
 repyy scan ./repo --detail all --group-by file --fail-on high
 ```
 
+### Interactive review
+
+On an interactive terminal, `repyy` opens a Home audience chooser, `repyy scan` prompts for a target, and
+`repyy report` opens the saved report picker. Supplying targets or a saved report path opens its
+interactive review. An explicit `--format` takes precedence. `--output`, piped report input (`-`),
+redirected stdin/stdout, and CI keep the existing noninteractive defaults. `CI=false` and `CI=0`
+allow interactive defaults. `--format tui` explicitly requests the interface even in CI.
+
+Home offers **User Experience**, **Developer Experience**, and **Agent Experience** workspaces.
+Press `1`, `2`, or `3` to open them directly.
+Each workspace can scan a repository or open a saved JSON report using Charm forms and report
+controls. User Experience starts export with HTML selected, Developer Experience with SARIF,
+and Agent Experience with JSON; you can choose another format before saving. Developer and
+Agent workspaces also offer a workflow guide. The developer guide covers local review, CI artifacts,
+and exit codes. The agent guide covers a local JSON handoff, coverage, and treating repository
+evidence as untrusted data. Changing workspaces does not change scanner behavior or exit policy.
+
+You can also request the Bubble Tea interface explicitly:
+
+```sh
+repyy scan ./checkout --format tui
+repyy report scan.json --format tui
+repyy report --format tui
+```
+
+The last command opens a JSON report picker. Saved reports use the same size and verdict
+validation as other report formats. TUI mode requires terminal stdin and stdout, rejects
+`--output`, and cannot read a report from `-`. To save a report, use `--format json --output scan.json`
+and then open it with `repyy report scan.json --format tui`.
+
+Use `1`, `2`, and `3` to switch between findings, repositories, and coverage. Search with
+`/`, open a finding with Enter, and press `l` for related evidence locations. Press `f`
+to adjust the minimum displayed severity, `?` for the report guide, `n` for session notes,
+`t` for a five-minute review reminder, Escape to go back, or `q` to exit. The Updates & fixes
+banner summarizes suggested fixes and verified intelligence notices. Display filters and
+grouping flags affect the review queue.
+
+In Developer Experience, **Scan current directory** starts a scan of `.` immediately.
+
+Press `e` in review to export the full report as HTML, JSON, or SARIF. Choose a format and
+enter a destination. Repyy asks for another path if a file already exists there. You can export
+again from the same review.
+
+When launched from Home, Escape at the findings view returns to the active workspace. Press
+Escape again to switch workspaces. Cancelling an active scan waits for cleanup before returning
+to the workspace. A direct command returns `130` on cancellation
+and its normal result code after review.
+
 ### Exit codes and verdicts
 
 `0` means no finding reached `--fail-on`. `1` means the threshold was reached. `2` means a target
@@ -113,10 +162,10 @@ repyy report scan.json --format terminal --detail summary
 cat scan.json | repyy report - --format sarif --output results.sarif
 ```
 
-It accepts `--format terminal|html|sarif`, `--output PATH`, `--detail summary|review|all`,
+It accepts `--format terminal|html|sarif|tui`, `--output PATH`, `--detail summary|review|all`,
 `--color auto|always|never`, `--min-severity`, `--min-confidence`, and `--group-by`. The filters
 affect presentation only; they do not change the scan's recorded verdict or exit policy. The default
-format is HTML. The input must be a valid repyy JSON scan of at most 64 MiB. repyy rejects a verdict
+format is HTML outside an interactive terminal or when you specify `--output`. The input must be a valid repyy JSON scan of at most 64 MiB. repyy rejects a verdict
 that conflicts with the findings or coverage. For a valid saved report, rendering returns `2` for
 incomplete coverage, `1` when a high or critical finding exists, and `0` otherwise. Invalid input
 returns `3`. Display filters do not change these codes. Only render JSON produced by a scan you

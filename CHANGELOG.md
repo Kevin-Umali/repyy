@@ -4,6 +4,25 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-20
+
+### Added
+
+- Open the interactive terminal interface by default, with workspaces for users,
+  developers, and agents. Prompt for a repository or saved report when needed.
+- Review findings with search, severity filters, evidence locations, and coverage.
+  Export the full report to HTML, JSON, or SARIF from the same session.
+
+### Changed
+
+- Preserve explicit output formats and noninteractive behavior for scripts and CI.
+- Build the CLI and sandbox with Go 1.27.4.
+
+### Fixed
+
+- Verify release attestations with the exact workflow identity and source ref
+  using compatible GitHub CLI flags.
+
 ## [0.7.2] - 2026-11-11
 
 ### Added
