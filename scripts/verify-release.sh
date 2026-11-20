@@ -11,12 +11,14 @@ gh release download "$release_tag" --repo "$repo" --dir "$verify_dir"
 cd "$verify_dir"
 source_ref="refs/tags/$release_tag"
 identity="https://github.com/$repo/.github/workflows/release.yml@$source_ref"
+verify_attestation() {
+  gh attestation verify "$@" --repo "$repo" \
+    --source-ref "$source_ref" --cert-identity "$identity"
+}
 if [[ -f release.json ]]; then
   source_ref="refs/heads/main"
   identity="https://github.com/$repo/.github/workflows/release.yml@$source_ref"
-  gh attestation verify release.json --repo "$repo" --signer-repo "$repo" \
-    --signer-workflow "$repo/.github/workflows/release.yml" \
-    --source-ref "$source_ref" --cert-identity "$identity"
+  verify_attestation release.json
   object="$(gh api "repos/$repo/git/ref/tags/$release_tag")"
   for ((depth = 0; depth < 10; depth++)); do
     read -r type sha < <(printf '%s' "$object" | python3 -c 'import json,sys; o=json.load(sys.stdin)["object"]; print(o["type"], o["sha"])')
@@ -28,15 +30,6 @@ if [[ -f release.json ]]; then
   [[ "$type" == commit ]]
   python3 "$script_dir/release.py" validate "$release_tag" "$sha" "$PWD" >/dev/null
 fi
-verify_attestation() {
-  local identity_args=()
-  if [[ "$source_ref" == refs/heads/main ]]; then
-    identity_args=(--cert-identity "$identity" --signer-repo "$repo")
-  fi
-  gh attestation verify "$@" --repo "$repo" \
-    --signer-workflow "$repo/.github/workflows/release.yml" \
-    --source-ref "$source_ref" ${identity_args[@]+"${identity_args[@]}"}
-}
 signature_artifacts=(checksums.txt.sigstore.json)
 signature_args=(--bundle checksums.txt.sigstore.json)
 if [[ ! -f checksums.txt.sigstore.json ]]; then
