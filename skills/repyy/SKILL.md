@@ -64,14 +64,13 @@ not the Repyy CLI. Offer installation only when the user wants it.
 
    Save the scan's exit status before rendering. Report rendering does not
    rescan source. Local HTML reports contain sensitive paths and evidence;
-   keep them local. See the [CLI guide](https://github.com/Kevin-Umali/repyy/blob/main/docs/CLI.md)
-   for supported options and exit codes.
+   keep them local. See the [CLI options and exit codes](https://repyy.dev/cli/).
 
 3. Docker is opt-in. Require the signed, digest-pinned image for the installed
    release, prepared by the user before scanning. Missing Docker or an image
    fails preflight; do not substitute host mode. Repyy's Docker invocation and
    image smoke tests do not prove isolation or escape resistance. See the
-   [Docker guide](https://github.com/Kevin-Umali/repyy/blob/main/docs/SANDBOX.md).
+   [Docker guide](https://repyy.dev/isolation/).
 4. Read coverage, errors, warnings, skipped paths and omitted locations before
    interpreting findings. Exit codes `0` and `1` reflect the severity threshold;
    `2` means incomplete work or runtime failure, and `3` means invalid use or input.

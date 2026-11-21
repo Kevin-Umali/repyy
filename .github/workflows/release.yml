@@ -353,7 +353,7 @@ jobs:
           notes = f'## [{version}]' + section.rstrip() + '\n\n'
           notes += f"Source commit: {os.environ['SOURCE_SHA']}\n\n"
           notes += f"Build workflow commit: {os.environ['GITHUB_SHA']}\n\n"
-          notes += f"Verification guide: https://github.com/{os.environ['GITHUB_REPOSITORY']}/blob/main/docs/VERIFICATION.md\n"
+          notes += "[Verify this release](https://repyy.dev/verification/)\n"
           pathlib.Path('release-notes.md').write_text(notes)
           PYNOTES
           tar -cf "$RUNNER_TEMP/release-bundle.tar" dist public release-notes.md

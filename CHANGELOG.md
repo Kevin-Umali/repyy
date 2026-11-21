@@ -4,6 +4,26 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+- Show a real findings queue in the README and docs overview. The CLI reference
+  also shows the Home workspace chooser and an opened finding.
+- Add a sticky v0.7.3 banner to the landing page and docs that links to interactive review.
+
+### Changed
+
+- Make the website the primary documentation. Correct command examples, describe
+  scan limits, and update release verification guidance.
+- Lead the docs overview with installation and a first scan, with direct links
+  for common follow-up tasks. Rank search results by relevance.
+- Separate guide navigation, article content, and the section outline in the docs layout.
+- Link the Repyy skill and future release notes directly to the website.
+- Move rule catalog updates and release retry instructions to `CONTRIBUTING.md`.
+
+### Removed
+
+- Remove ten duplicate Markdown guides from `docs/`.
+
 ## [0.7.3] - 2026-11-20
 
 ### Added

@@ -7,33 +7,21 @@ const guide = getGuide("cli");
 
 <DocsLayout guide={guide}>
 <section class="docs-hero docs-searchable" id="overview" data-search="cli command line reference scan report rules intelligence flags">
-          <p class="docs-kicker">CLI reference</p>
-          <h1>Every command.<span>A clear next move.</span></h1>
-          <p>
-            This is the practical reference for <code>repyy</code>. Start with a local scan, save JSON when you need to process results later, and use the exit
-            code to automate a review gate.
-          </p>
-          <div class="docs-summary" aria-label="CLI summary">
-            <span><b>Read-only</b> Targets are treated as data</span><span><b>Offline</b> Local scans need no network</span
-            ><span><b>Explicit</b> Remote fetch and intelligence updates are opt in</span>
-          </div>
-          <div class="docs-callout">
-            <strong>Check the installed interface</strong>
-            <p>
-              <code>repyy help</code> prints the top-level command summary. <code>repyy version</code> prints the scanner and ruleset versions, which you need
-              when selecting a matching Docker image.
-            </p>
-          </div>
+          <h1>CLI reference</h1>
+          <p>Scan repositories, review findings, and export reports. Run <code>repyy help</code> for the commands and flags in your installed version.</p>
         </section>
 
         <section class="docs-section docs-searchable" id="shape" data-search="command shape syntax subcommands targets path git url">
           <h2>Command shape</h2>
           <pre class="docs-example" aria-label="repyy command shape">
+repyy
 repyy scan [options] &lt;path-or-git-url&gt;...
 repyy report [options] &lt;report.json|-&gt;
+repyy report --format tui
 repyy rules validate &lt;rules.yaml&gt;
 repyy rules check
 repyy rules list [--format terminal|json]
+repyy rules catalog [--format terminal|json]
 repyy rules explain &lt;rule-id&gt; [--format terminal|json]
 repyy intel status [--format terminal|json]
 repyy intel update
@@ -49,14 +37,16 @@ repyy version</pre
         <section class="docs-section docs-searchable" id="first-scan" data-search="install first local scan folder path example">
           <h2>Run a first scan</h2>
           <p>
-            Run this from the directory that contains your checkout. Replace the path with a folder you are allowed to inspect. repyy does not import, build,
-            test, or execute target code.
+            Run this from the directory that contains your checkout. Replace <code>./project</code> with its path.
           </p>
           <div class="docs-command">
             <div><span>Local folder</span><button type="button" data-copy="repyy scan ./project">Copy</button></div>
             <code>repyy scan ./project</code>
           </div>
-          <p>The default report is terminal output. Use an absolute path when the target is elsewhere, and quote paths containing spaces:</p>
+          <p>
+            A scan in an interactive terminal opens the <a href="#interactive-review">interactive review</a>. Use an absolute path when the target is elsewhere
+            and quote paths containing spaces.
+          </p>
           <div class="docs-command">
             <div><span>Path with spaces</span><button type="button" data-copy="repyy scan '/Users/me/Code/Take home assignment'">Copy</button></div>
             <code>repyy scan '/Users/me/Code/Take home assignment'</code>
@@ -69,6 +59,78 @@ repyy version</pre
             <div><span>Remote repository</span><button type="button" data-copy="repyy scan https://github.com/org/repo">Copy</button></div>
             <code>repyy scan https://github.com/org/repo</code>
           </div>
+        </section>
+
+        <section class="docs-section docs-searchable" id="interactive-review" data-search="tui interactive terminal review keyboard shortcuts findings coverage">
+          <h2>Interactive review</h2>
+          <p>
+            Run <code>repyy</code> in a terminal to open Home, <code>repyy scan</code> to choose a target, or <code>repyy report</code> to pick a saved report.
+            Interactive review is available in{" "}
+            <a href="https://github.com/Kevin-Umali/repyy/releases/tag/v0.7.3">Repyy v0.7.3</a> and later.
+          </p>
+          <div class="docs-command">
+            <div><span>Scan and review</span><button type="button" data-copy="repyy scan ./checkout --format tui">Copy</button></div>
+            <code>repyy scan ./checkout --format tui</code>
+          </div>
+          <a href="/images/terminal-review.png">
+            <img
+              class="terminal-review-screenshot"
+              src="/images/terminal-review.png"
+              alt="Repyy’s terminal review of a sample checkout, showing scan coverage, a findings queue, and the recommended action for the selected finding."
+              width="1532"
+              height="846"
+              loading="lazy"
+            />
+          </a>
+          <p>
+            Press <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd> to switch between findings, repositories, and coverage. Press <kbd>Enter</kbd> to open a finding,
+            <kbd>/</kbd> to search, <kbd>f</kbd> to filter by severity, <kbd>e</kbd> to export, or <kbd>?</kbd> for the full keyboard guide.
+          </p>
+          <p>
+            <kbd>r</kbd> and <kbd>c</kbd> also open repositories and coverage. Press <kbd>l</kbd> from a finding for evidence locations, <kbd>n</kbd> for session
+            notes, and <kbd>t</kbd> for a five-minute reminder. Press <kbd>Esc</kbd> to go back or <kbd>q</kbd> to exit.
+          </p>
+          <p>
+            On Home, press <kbd>1</kbd> for User Experience, <kbd>2</kbd> for Developer Experience, or <kbd>3</kbd> for Agent Experience. These workspaces export
+            to HTML, SARIF, and JSON by default. You can select a different format. If the destination exists, Repyy asks for another path.
+          </p>
+          <div class="terminal-review-examples">
+            <figure>
+              <figcaption>Choose a workspace in Home</figcaption>
+              <a href="/images/terminal-home.png">
+                <img
+                  class="terminal-review-screenshot"
+                  src="/images/terminal-home.png"
+                  alt="Repyy Home with User Experience, Developer Experience, and Agent Experience. User Experience is selected."
+                  width="1292"
+                  height="630"
+                  loading="lazy"
+                />
+              </a>
+            </figure>
+            <figure>
+              <figcaption>Open a finding with Enter</figcaption>
+              <a href="/images/terminal-finding.png">
+                <img
+                  class="terminal-review-screenshot"
+                  src="/images/terminal-finding.png"
+                  alt="Finding detail for a package lifecycle script, with severity, confidence, source location, recommended action, and evidence."
+                  width="1292"
+                  height="774"
+                  loading="lazy"
+                />
+              </a>
+            </figure>
+          </div>
+          <div class="docs-command">
+            <div><span>Open a saved scan</span><button type="button" data-copy="repyy report scan.json --format tui">Copy</button></div>
+            <code>repyy report scan.json --format tui</code>
+          </div>
+          <p>
+            Interactive review requires terminal stdin and stdout. With those terminals, <code>scan</code> defaults to TUI when you omit <code>--format</code>
+            and <code>--output</code> and <code>CI</code> is empty, <code>false</code>, or <code>0</code>. To request TUI explicitly in CI, pass
+            <code>--format tui</code>. For redirected input or output, use a text or file format.
+          </p>
         </section>
 
         <section
@@ -110,11 +172,13 @@ https://github.com/org/assignment-b</pre
           data-search="scan flags options defaults file format output jobs config dependencies history keep workdir sandbox fail timeout max files bytes detail progress color severity confidence group"
         >
           <h2>All <code>scan</code> flags</h2>
-          <p>Defaults apply when a flag is omitted. A hit limit or read error produces incomplete coverage; do not treat an incomplete result as clean.</p>
           <div class="flag-grid">
             <code>--file PATH</code><span>Append targets from a text file. One path or URL per line; blank and <code>#</code> comment lines are skipped.</span>
-            <code>--format FORMAT</code><span><code>terminal</code> (default), <code>json</code>, <code>sarif</code>, or <code>html</code>.</span>
-            <code>--output PATH</code><span>Write the selected report to a file instead of stdout. Example: <code>--output review.html</code>.</span>
+            <code>--format FORMAT</code><span>
+              <code>tui</code>, <code>terminal</code>, <code>json</code>, <code>sarif</code>, or <code>html</code>. The default is <code>tui</code> during
+              interactive use without <code>--output</code>, and <code>terminal</code> otherwise.
+            </span>
+            <code>--output PATH</code><span>Write a text or file format to a path such as <code>review.html</code>.</span>
             <code>--jobs N</code><span>Concurrent repositories, 1–128; default <code>4</code>. Docker caps effective concurrency at 4.</span>
             <code>--config PATH</code
             ><span>Load a reviewed version-1 YAML file with custom rules and suppressions. See <a href="../configuration/">configuration</a>.</span>
@@ -153,45 +217,42 @@ https://github.com/org/assignment-b</pre
             Display filters do not hide findings from the verdict or change the exit policy. Use
             <code>--fail-on</code> for policy.
           </p>
+          <p>
+            File and archive limits apply after remote checkout. Host-mode Git cloning has a per-repository timeout but no byte or disk quota before checkout;
+            <code>--max-files</code> and <code>--max-file-size</code> do not limit clone storage.
+          </p>
         </section>
 
         <section class="docs-section docs-searchable" id="recipes" data-search="recipes html json sarif ci docker dependency detail">
           <h2>Copyable scan recipes</h2>
           <div class="recipe-grid">
             <article>
-              <span>01 · HTML</span>
               <h3>Save a private review</h3>
-              <p>Self-contained and easy to open locally.</p>
               <code>repyy scan ./checkout --format html --output review.html</code
               ><button type="button" data-copy="repyy scan ./checkout --format html --output review.html">Copy command</button>
             </article>
             <article>
-              <span>02 · JSON</span>
               <h3>Archive structured evidence</h3>
-              <p>Keep stable identifiers and coverage for later rendering.</p>
               <code>repyy scan ./checkout --format json --output scan.json</code
               ><button type="button" data-copy="repyy scan ./checkout --format json --output scan.json">Copy command</button>
             </article>
             <article>
-              <span>03 · CI</span>
-              <h3>Write SARIF quietly</h3>
-              <p>Fail at medium and keep logs readable.</p>
+              <h3>Save SARIF in CI</h3>
+              <p>Use medium severity as the failure threshold.</p>
               <code>repyy scan . --format sarif --output repyy.sarif --fail-on medium --progress quiet --color never</code
               ><button type="button" data-copy="repyy scan . --format sarif --output repyy.sarif --fail-on medium --progress quiet --color never">
                 Copy command
               </button>
             </article>
             <article>
-              <span>04 · Docker</span>
-              <h3>Use the sandbox</h3>
+              <h3>Scan with Docker</h3>
               <p>Pull and verify the matching release image first.</p>
               <code>repyy scan ./repo --sandbox docker --format html --output report.html</code
               ><button type="button" data-copy="repyy scan ./repo --sandbox docker --format html --output report.html">Copy command</button>
             </article>
             <article>
-              <span>05 · Broad review</span>
               <h3>Include dependencies</h3>
-              <p>Show every finding grouped by file.</p>
+              <p>Group findings by file.</p>
               <code>repyy scan . --include-dependencies --detail all --group-by file</code
               ><button type="button" data-copy="repyy scan . --include-dependencies --detail all --group-by file">Copy command</button>
             </article>
@@ -201,25 +262,27 @@ https://github.com/org/assignment-b</pre
         <section class="docs-section docs-searchable" id="reports" data-search="report formats terminal json sarif html output stdout offline code scanning">
           <h2>Choose a report format</h2>
           <div class="docs-table" role="table" aria-label="Scan report formats">
+            <div role="row"><b role="rowheader">tui</b><span role="cell">Interactive terminal review</span><code role="cell">--format tui</code></div>
             <div role="row"><b role="rowheader">terminal</b><span role="cell">Prioritized human review</span><code role="cell">--format terminal</code></div>
             <div role="row"><b role="rowheader">json</b><span role="cell">Automation and archival input</span><code role="cell">--format json</code></div>
             <div role="row"><b role="rowheader">sarif</b><span role="cell">Code-scanning integrations</span><code role="cell">--format sarif</code></div>
             <div role="row"><b role="rowheader">html</b><span role="cell">Self-contained offline review</span><code role="cell">--format html</code></div>
           </div>
           <p>
-            Without <code>--output</code>, the selected report goes to stdout. HTML and JSON are most useful as saved files. SARIF is a portable interchange
+            Without <code>--output</code>, text and file formats write to stdout. HTML and JSON are most useful as saved files. SARIF is a portable interchange
             format for code-scanning tools.
           </p>
           <p>
-            Reports from v0.5.1 record <code>scan_mode</code> (<code>host</code> or <code>docker</code>) per repository. HTML shows unknown for legacy reports
-            without recorded mode, or uses an existing Docker isolation record. Local scans do not invoke Git to discover a commit; their commit is marked
-            unavailable. Remote reports retain the fetched revision.
+            Reports record the scan mode for each repository. Remote reports also include the fetched revision.
+          </p>
+          <p>
+            Terminal and HTML reports use human-readable statuses; schema-1 JSON keeps machine verdict values. See the
+            <a href="../trust/#incomplete-scans-and-exit-codes">status mapping</a>.
           </p>
           <div class="docs-note">
             <strong>Report privacy</strong>
             <p>
-              Reports redact matched source lines, but paths and behavior can still reveal repository structure. Keep report files private. HTML needs no server
-              and can be opened directly in a current browser.
+              Reports redact recognized credential patterns and can still contain paths and source evidence. Review a report before sharing it.
             </p>
           </div>
         </section>
@@ -227,8 +290,9 @@ https://github.com/org/assignment-b</pre
         <section class="docs-section docs-searchable" id="report-command" data-search="report command existing json stdin render html terminal sarif filters">
           <h2>Render a saved JSON report</h2>
           <p>
-            <code>repyy report</code> reads a repyy JSON scan without rescanning source. Its input is one JSON file or <code>-</code> for standard input. The
-            default output is HTML; it also accepts terminal and SARIF. It does not produce JSON because the input is already JSON.
+            <code>repyy report</code> reads a repyy JSON scan without rescanning source. Pass a JSON file, use <code>-</code> for standard input, or run
+            <code>repyy report</code> in an interactive terminal to open the report picker. A saved file opens in the interactive review by default in a
+            terminal session. Noninteractive output defaults to HTML.
           </p>
           <div class="docs-command">
             <div><span>Render HTML</span><button type="button" data-copy="repyy report scan.json --format html --output review.html">Copy</button></div>
@@ -241,7 +305,7 @@ https://github.com/org/assignment-b</pre
             <code>cat scan.json | repyy report - --format sarif --output results.sarif</code>
           </div>
           <p>
-            Report options are <code>--format terminal|html|sarif</code>, <code>--output PATH</code>, <code>--detail summary|review|all</code>,
+            Report options are <code>--format terminal|html|sarif|tui</code>, <code>--output PATH</code>, <code>--detail summary|review|all</code>,
             <code>--color auto|always|never</code>, <code>--min-severity</code>, <code>--min-confidence</code>, and <code>--group-by severity|file|rule</code>.
             Filters affect presentation only. Input must be valid repyy JSON no larger than 64 MiB; repyy rejects a verdict that conflicts with findings or
             coverage. Rendering returns code <code>2</code> for incomplete coverage, <code>1</code> for a high or critical finding, and
@@ -285,7 +349,7 @@ https://github.com/org/assignment-b</pre
 
         <section class="docs-section docs-searchable" id="intel" data-search="intel intelligence status update rollback signed snapshot cache">
           <h2>Intelligence commands</h2>
-          <p>The scanner ships with an offline intelligence snapshot. Scans never update it automatically.</p>
+          <p>Check the active snapshot and its date. <a href="../intelligence/">Intelligence setup and update instructions</a>.</p>
           <div class="docs-table compact" role="table" aria-label="Intelligence commands">
             <div role="row">
               <b role="rowheader"><code>repyy intel status</code></b
@@ -301,14 +365,14 @@ https://github.com/org/assignment-b</pre
             </div>
           </div>
           <div class="docs-command">
-            <div><span>Inspect then update</span><button type="button" data-copy="repyy intel status; repyy intel update">Copy</button></div>
-            <code>repyy intel status repyy intel update</code>
+            <div><span>Check the active snapshot</span><button type="button" data-copy="repyy intel status">Copy</button></div>
+            <code>repyy intel status</code>
           </div>
         </section>
 
         <section class="docs-section docs-searchable" id="exit-codes" data-search="exit codes zero one two three verdict incomplete fail threshold invalid">
           <h2>Exit codes and verdicts</h2>
-          <p>Use the process exit code in scripts, then inspect the report for evidence. A zero exit is not proof that a repository is safe.</p>
+          <p>Use the exit code in scripts and check the report for findings and coverage.</p>
           <div class="exit-grid">
             <div>
               <strong>0</strong
@@ -322,6 +386,9 @@ https://github.com/org/assignment-b</pre
             </div>
             <div>
               <strong>3</strong><span>The command, flag, report input, or configuration was invalid; Docker preflight errors stop before scanning.</span>
+            </div>
+            <div>
+              <strong>130</strong><span>An interactive scan or report was canceled.</span>
             </div>
           </div>
           <p>
@@ -362,13 +429,31 @@ https://github.com/org/assignment-b</pre
             <a href="../docs/">documentation home ↗</a>.
           </p>
         </section>
-        <section class="docs-section">
-          <h2>Status and build identity</h2>
-          <p>
-            Human reports use conservative decision wording while schema-1 verdict values remain compatible. Version output now includes commit, builder,
-            source, Go version and build date. Checkout cleanup failures preserve findings and select incomplete status.
-            <a href="../trust/#incomplete-scans-and-exit-codes">Read the status mapping</a> and
-            <a href="../verification/#version-and-commit-identity">build identity guide</a>.
-          </p>
-        </section>
 </DocsLayout>
+
+<style>
+  .terminal-review-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem;
+    margin-block: 1.5rem;
+  }
+
+  .terminal-review-examples figure {
+    min-inline-size: 0;
+    margin: 0;
+  }
+
+  .terminal-review-examples figcaption {
+    margin-block-end: 0.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .terminal-review-screenshot {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+</style>

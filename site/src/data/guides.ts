@@ -9,7 +9,6 @@ export interface Guide {
   label: string;
   title: string;
   description: string;
-  markdown: string[];
   sections: GuideSection[];
 }
 
@@ -20,47 +19,18 @@ export const guides = [
     label: "Documentation",
     title: "repyy documentation",
     description: "Start here for repyy installation, reports, isolation, and detailed guides.",
-    markdown: ["README.md"],
     sections: [
       {
         id: "overview",
-        label: "Start with a scan",
-      },
-      {
-        id: "choose-your-path",
-        label: "Choose your path",
+        label: "Overview",
       },
       {
         id: "getting-started",
         label: "Run your first scan",
       },
       {
-        id: "recipes",
-        label: "Copyable starting points",
-      },
-      {
-        id: "verdicts-docs",
-        label: "Read the result",
-      },
-      {
-        id: "reports-docs",
-        label: "Choose a report",
-      },
-      {
-        id: "privacy",
-        label: "Know the boundary",
-      },
-      {
-        id: "intelligence",
-        label: "What “intel” means",
-      },
-      {
-        id: "agent-skill-docs",
-        label: "Give your coding agent a safe first step",
-      },
-      {
-        id: "limits-docs",
-        label: "When coverage is incomplete",
+        id: "choose-your-path",
+        label: "Next steps",
       },
     ],
   },
@@ -70,11 +40,10 @@ export const guides = [
     label: "Installation",
     title: "repyy installation",
     description: "Install repyy, verify the binary, and run a first repository scan.",
-    markdown: ["docs/INSTALLATION.md"],
     sections: [
       {
         id: "overview",
-        label: "Start with a first scan",
+        label: "Overview",
       },
       {
         id: "prerequisites",
@@ -112,11 +81,10 @@ export const guides = [
     label: "CLI reference",
     title: "repyy CLI reference",
     description: "Practical repyy command-line reference: scans, reports, rules, intelligence, flags, and exit codes.",
-    markdown: ["docs/CLI.md"],
     sections: [
       {
         id: "overview",
-        label: "Every command, one next move",
+        label: "Overview",
       },
       {
         id: "shape",
@@ -125,6 +93,10 @@ export const guides = [
       {
         id: "first-scan",
         label: "Run a first scan",
+      },
+      {
+        id: "interactive-review",
+        label: "Interactive review",
       },
       {
         id: "targets",
@@ -170,7 +142,6 @@ export const guides = [
     label: "Configuration",
     title: "repyy trusted configuration",
     description: "Configure reviewed custom rules and narrow finding suppressions for repyy.",
-    markdown: ["docs/CONFIGURATION.md"],
     sections: [
       {
         id: "overview",
@@ -220,7 +191,6 @@ export const guides = [
     label: "Isolation",
     title: "repyy isolation",
     description: "Run repyy with the opt-in Docker backend.",
-    markdown: ["docs/SANDBOX.md"],
     sections: [
       {
         id: "overview",
@@ -254,7 +224,6 @@ export const guides = [
     label: "Detection coverage",
     title: "Detection coverage · repyy documentation",
     description: "Detailed detection coverage, precision controls, exclusions, and rule reference for repyy.",
-    markdown: ["docs/COVERAGE.md"],
     sections: [
       {
         id: "overview",
@@ -300,7 +269,6 @@ export const guides = [
     label: "Rule reference",
     title: "Behavioral rule reference · repyy documentation",
     description: "Versioned reference for Repyy's built-in behavioral rules, separate from threat intelligence.",
-    markdown: ["docs/RULES.md"],
     sections: [
       { id: "overview", label: "Read the catalog" },
       { id: "catalog", label: "Browse rules" },
@@ -312,11 +280,10 @@ export const guides = [
     label: "Intelligence",
     title: "repyy intelligence guide",
     description: "Understand repyy intelligence snapshots, verification, updates, rollback, and rule commands.",
-    markdown: [],
     sections: [
       {
         id: "overview",
-        label: "Fresh signals, private by default",
+        label: "Overview",
       },
       {
         id: "difference",
@@ -346,7 +313,6 @@ export const guides = [
     label: "Agent skill",
     title: "repyy agent skill guide",
     description: "Use Repyy's scan, report explanation, manual review, and intelligence skills before executing unfamiliar code.",
-    markdown: ["skills/repyy/SKILL.md", "skills/repyy-explain/SKILL.md", "skills/repyy-review/SKILL.md", "skills/repyy-intel/SKILL.md"],
     sections: [
       {
         id: "overview",
@@ -376,7 +342,6 @@ export const guides = [
     label: "Trust and Limitations",
     title: "Trust and Limitations · repyy documentation",
     description: "Trust and Limitations: Repyy reviews take-home assignments before execution, with evidence and visible limitations.",
-    markdown: ["docs/TRUST.md"],
     sections: [
       {
         id: "overview",
@@ -438,7 +403,6 @@ export const guides = [
     label: "Demo and sample report",
     title: "Demo and sample report · repyy documentation",
     description: "Explore a Repyy 0.6.0 preview report with inert paired examples, source evidence, controls, and visible coverage limits.",
-    markdown: ["demo/README.md"],
     sections: [
       {
         id: "overview",
@@ -454,7 +418,7 @@ export const guides = [
       },
       {
         id: "reproduce",
-        label: "Reproduce safely",
+        label: "Run the inert cases",
       },
       {
         id: "corpus-context",
@@ -472,7 +436,6 @@ export const guides = [
     label: "Releases and Verification",
     title: "Releases and Verification · repyy documentation",
     description: "Releases and Verification: Repyy reviews take-home assignments before execution, with evidence and visible limitations.",
-    markdown: ["docs/VERIFICATION.md"],
     sections: [
       {
         id: "overview",
@@ -518,7 +481,6 @@ export const guides = [
     label: "Security Testing",
     title: "Security Testing · repyy documentation",
     description: "Security Testing: Repyy reviews take-home assignments before execution, with evidence and visible limitations.",
-    markdown: ["docs/SECURITY-TESTING.md"],
     sections: [
       {
         id: "overview",
@@ -552,7 +514,6 @@ export const guides = [
     label: "Changelog",
     title: "Changelog · repyy documentation",
     description: "Repyy release notes and verification evidence.",
-    markdown: ["CHANGELOG.md"],
     sections: [{ id: "overview", label: "Release changes" }],
   },
   {
@@ -561,7 +522,6 @@ export const guides = [
     label: "About Repyy",
     title: "About Repyy · repyy documentation",
     description: "About Repyy: Repyy reviews take-home assignments before execution, with evidence and visible limitations.",
-    markdown: ["docs/ABOUT.md"],
     sections: [
       {
         id: "overview",

@@ -4,22 +4,18 @@
 [![CodeQL](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml/badge.svg)](https://github.com/Kevin-Umali/repyy/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Inspect a take-home assignment before installing dependencies, starting the project, or opening its
-folder in your IDE. `repyy` provides a local static security review of unfamiliar source
-repositories. During a normal scan, it reads target files as data and does not intentionally import,
-build, test, or execute assignment code. Remote scans may invoke host Git, and Docker mode invokes
-the Docker client and Repyy worker; see [Trust and Limitations](docs/TRUST.md) for those boundaries.
+Scan an unfamiliar repository before installing dependencies, starting the project, or opening it
+in your IDE. Repyy reads files for static analysis and shows findings alongside their source
+locations and scan coverage. Review the result before deciding whether to run the project.
 
-**Repyy identifies risks. It cannot prove that a repository is safe.**
+[Documentation](https://repyy.dev/docs/) · [Sample HTML report](https://repyy.dev/demo/sample/sample.html) · [Trust and limitations](https://repyy.dev/trust/)
 
-[View the website](https://repyy.dev/) · [View a sample report](https://repyy.dev/demo/sample/sample.html) · [Trust and Limitations](docs/TRUST.md) ·
-[Verify releases](docs/VERIFICATION.md) · [Security testing](docs/SECURITY-TESTING.md) ·
-[About the maintainer](docs/ABOUT.md)
+![Repyy’s terminal review of a sample checkout, showing scan coverage, a findings queue, and the recommended action for the selected finding.](site/public/images/terminal-review.png)
 
 ## Quick start
 
-Install a release from [GitHub Releases](https://github.com/Kevin-Umali/repyy/releases), or use one
-of the package-manager commands below:
+Download Repyy from [GitHub Releases](https://github.com/Kevin-Umali/repyy/releases) or use a package manager.
+[Verify a downloaded release](https://repyy.dev/verification/)
 
 ```sh
 # macOS
@@ -33,75 +29,34 @@ scoop install repyy/repyy
 go install github.com/Kevin-Umali/repyy/cmd/repyy@latest
 ```
 
-Scan a local checkout and save a reviewable report:
+Scan a local checkout and review the findings in your terminal.
 
 ```sh
 repyy version
+repyy scan ./unfamiliar-repository --format tui
+```
+
+Press Enter to inspect a finding or `e` to export the report. [Interactive review controls](https://repyy.dev/cli/#interactive-review)
+
+To save an HTML report from the command line, run the scan with an output path.
+
+```sh
 repyy scan ./unfamiliar-repository --format html --output repyy-report.html
 ```
 
-Open `repyy-report.html` locally. The report is self-contained and makes no network requests while
-it is displayed; a source link can open the provider website when clicked. Treat reports as
-sensitive review data.
+Open `repyy-report.html` in a browser. Treat reports as sensitive review data. A static scan can
+miss risky behavior. If you see `SCAN INCOMPLETE`, check the reported errors and coverage limits.
 
-`NO FINDINGS` means no enabled rule matched in completed coverage. It does not prove that a
-repository is safe. Treat `SCAN INCOMPLETE` as unresolved and review its warnings before relying on
-the result.
+## Agent skill
 
-## Documentation
-
-Use [repyy.dev/docs](https://repyy.dev/docs/) for the rendered documentation. Inside GitHub, use the Markdown guides:
-
-- [Install and run a first scan](docs/INSTALLATION.md)
-- [CLI commands and flags](docs/CLI.md)
-- [Trusted configuration](docs/CONFIGURATION.md)
-- [Docker scanning](docs/SANDBOX.md)
-- [Detection coverage and limits](docs/COVERAGE.md)
-- [Trust and limitations](docs/TRUST.md)
-- [Release verification](docs/VERIFICATION.md)
-- [Security testing](docs/SECURITY-TESTING.md)
-
-### Choose a starting point
-
-- **New to repository review:** start with [Installation](docs/INSTALLATION.md), run a local scan,
-  then follow [Detection coverage and limits](docs/COVERAGE.md) to read the report.
-- **Comfortable with the command line:** use the [CLI reference](docs/CLI.md) for flags, formats,
-  and repeatable scan workflows.
-- **Reviewing the security boundary:** read [Trust and Limitations](docs/TRUST.md), then check
-  [Release verification](docs/VERIFICATION.md) and [Security testing](docs/SECURITY-TESTING.md).
-
-Development and deployment instructions for the Astro site are in [site/README.md](site/README.md).
-
-The optional [AI agent skill](skills/repyy/SKILL.md) teaches compatible agents to scan before
-execution and to report incomplete coverage. Install it with:
+The optional [Repyy skill](skills/repyy/SKILL.md) gives compatible coding agents instructions for
+scanning repositories and reviewing coverage. Install the CLI and skill separately.
 
 ```sh
 npx skills add Kevin-Umali/repyy --skill repyy
 ```
 
-This optional installer needs Node/npm, Git, and network access. The skill contains instructions;
-install the `repyy` CLI separately. See the [web skill guide](https://repyy.dev/agent-skill/) for the
-full workflow.
-
-The related helpers keep each review focused:
-
-| Skill                                          | Use it for                                                                   |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| [repyy-explain](skills/repyy-explain/SKILL.md) | Explain a report and check selected findings against matching source.        |
-| [repyy-review](skills/repyy-review/SKILL.md)   | Trace suspicious behavior or a scan gap manually, including without the CLI. |
-| [repyy-intel](skills/repyy-intel/SKILL.md)     | Check a package/version or file hash against its sourced indicator.          |
-
-Install the helper you need:
-
-```sh
-npx skills add Kevin-Umali/repyy --skill repyy-explain
-npx skills add Kevin-Umali/repyy --skill repyy-review
-npx skills add Kevin-Umali/repyy --skill repyy-intel
-```
-
-The main skill recommends these helpers when useful and continues if one is
-missing. All four use the host's question tool for missing inputs when available.
-They inspect supplied evidence without executing the target or auto-installing tools.
+The installer needs Node/npm, Git, and network access. [Agent skill setup and optional helpers](https://repyy.dev/agent-skill/)
 
 ## Contributing
 
@@ -114,6 +69,7 @@ make security
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing detections, output, network behavior, or
 report compatibility. See [SECURITY.md](SECURITY.md) for private vulnerability reports.
+For the Astro site, see [site development and deployment](site/README.md).
 
 ## License
 

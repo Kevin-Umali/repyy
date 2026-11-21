@@ -11,7 +11,6 @@ const guide = getGuide("security-testing");
     <h1>
       Test the scanner.<span>Keep the gaps visible.</span>
     </h1>
-    <p>Reviewed: 2026-09-25. Describes current source tests and bounded CI fuzzing.</p>
     <p>
       Repyy processes hostile input. Tests exercise the scanner itself; no fixture is intentionally executed as an assignment. Passing tests do not establish
       that a repository or Repyy is free of vulnerabilities.
@@ -50,10 +49,8 @@ const guide = getGuide("security-testing");
       <code>internal/intel/update_test.go</code> covers signed updates and failure behavior.
     </p>
     <p>
-      Python startup fixtures cover executable <code>.pth</code> import lines, benign path entries and comments, customization modules, local wheel entries,
-      context downgrades, and undecodable startup files. Python remote-response fixtures check connected execution paths, direct nested calls, overwritten
-      values, unrelated functions and benign comments. Package indicators distinguish exact compromised releases from other resolved versions and unlocked
-      ranges.
+      Inert fixtures pair expected findings with benign controls, including decoded content, startup hooks, remote-response execution, and package-version
+      indicators.
     </p>
     <p>
       Tests use fixed inert examples with expected findings and benign controls. A test that derives its expected match from the production regex can pass when
@@ -133,9 +130,10 @@ go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 5000
 </code></pre>
     <p>
       Use the corresponding package and target name for the remaining targets. Ordinary <code>go test</code> runs the seed corpus. CI uses fixed execution
-      counts per target on relevant changes and all main pushes. The daily Security evidence workflow runs ten times the CI counts. Fixed execution budgets
-      avoid a possible Go fuzz-coordinator duration deadline race. Archive limits remain unchanged. Read the workflow run rather than assuming a scheduled run
-      happened. Fuzz logs and available failing inputs are uploaded even if a target fails.
+      counts per target on relevant changes and all main pushes. The daily Security evidence workflow runs ten times the CI counts. The
+      <a href="https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/fuzz.yml">fuzz workflow</a> defines the budgets. Fixed execution budgets avoid a
+      possible Go fuzz-coordinator duration deadline race. Archive limits remain unchanged. Read the workflow run rather than assuming a scheduled run happened.
+      Fuzz logs and available failing inputs are uploaded even if a target fails.
     </p>
     <p>
       For a failure, preserve the generated corpus input under the package's <code>testdata/fuzz/TARGET/</code> and minimize it. Fix the violated property and

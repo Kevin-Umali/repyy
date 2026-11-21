@@ -6,6 +6,7 @@ interface Props {
   bodyClass?: string;
 }
 
+import ReleaseBanner from "../components/ReleaseBanner.astro";
 import { siteMetadata } from "../data/site";
 
 const { title, description, rootClass, bodyClass } = Astro.props;
@@ -23,6 +24,36 @@ const { title, description, rootClass, bodyClass } = Astro.props;
     <slot name="head" />
   </head>
   <body class={bodyClass}>
+    <div class="site-masthead">
+      <slot name="header" />
+      <ReleaseBanner />
+    </div>
     <slot />
   </body>
 </html>
+
+<style>
+  :global(html) {
+    --masthead-height: 9rem;
+    scroll-padding-top: calc(var(--masthead-height) + 1rem);
+  }
+
+  .site-masthead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+</style>
+
+<script>
+  const masthead = document.querySelector(".site-masthead");
+
+  if (masthead) {
+    const updateHeight = () => {
+      document.documentElement.style.setProperty("--masthead-height", `${masthead.getBoundingClientRect().height}px`);
+    };
+
+    updateHeight();
+    new ResizeObserver(updateHeight).observe(masthead);
+  }
+</script>

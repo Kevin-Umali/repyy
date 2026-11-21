@@ -1,306 +1,131 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
-import { getGuide } from "../../data/guides";
+import { getGuide, guides } from "../../data/guides";
 
 const guide = getGuide("docs");
 ---
 
 <DocsLayout guide={guide}>
-  <section class="docs-hero docs-searchable" id="overview" data-search="overview local read-only malware supply-chain scanner documentation guides">
-    <p class="docs-kicker">Documentation</p>
-    <h1>
-      Start with a scan.<span>Choose your boundary.</span>
-    </h1>
-    <p>
-      repyy reads repository files as data and gives you a review report. Start with the path that fits your task, then open a focused guide for flags,
-      configuration, isolation, or coverage details.
-    </p>
-    <div class="docs-summary" aria-label="Product summary">
-      <span>
-        <b>Static review</b>Target code is not intentionally run
-      </span>
-      <span>
-        <b>Local</b>Reports stay with you
-      </span>
-      <span>
-        <b>Explicit</b>Network and updates are opt in
-      </span>
-    </div>
-    <div class="docs-callout">
-      <strong>What repyy does not do</strong>
-      <p>
-        A normal scan does not intentionally install packages, build the target, run its tests, or execute its source. Host Git or Docker may run when you
-        request those modes.
-      </p>
+  <section class="docs-hero docs-searchable" id="overview" data-search="documentation overview install sample report">
+    <h1>Get started with Repyy</h1>
+    <p>Scan an unfamiliar checkout and review the findings before you install dependencies or run the project.</p>
+    <div class="docs-overview-actions">
+      <a class="docs-install-link" href="/installation/">Install Repyy</a>
+      <a href="/demo/sample/sample.html">Open a sample report</a>
     </div>
   </section>
-  <section class="docs-section docs-searchable" id="choose-your-path" data-search="new graduate first review command line experienced security reviewer path">
-    <h2>Choose your path</h2>
-    <div class="recipe-grid">
-      <article>
-        <span>First review</span>
-        <h3>New to repository security?</h3>
-        <p>Install Repyy, scan a local folder, and learn what the report can and cannot tell you.</p>
-        <a class="docs-inline-link" href="../installation/">
-          Follow the first scan guide →
-        </a>
-      </article>
-      <article>
-        <span>Daily workflow</span>
-        <h3>Know your way around the CLI?</h3>
-        <p>Find the right flags, report format, and commands for repeatable reviews.</p>
-        <a class="docs-inline-link" href="../cli/">
-          Open the CLI reference →
-        </a>
-      </article>
-      <article>
-        <span>Security review</span>
-        <h3>Assess the tool itself?</h3>
-        <p>Trace release evidence, test coverage, and the limits of the security boundary.</p>
-        <a class="docs-inline-link" href="../trust/">
-          Read trust and limitations →
-        </a>
-      </article>
-    </div>
-  </section>
-  <section
-    class="docs-section docs-searchable"
-    id="getting-started"
-    data-search="getting started install first scan local folder html report homebrew scoop git"
-  >
+
+  <section class="docs-section docs-searchable" id="getting-started" data-search="getting started first scan local folder terminal tui interactive">
     <h2>Run your first scan</h2>
-    <p>Install repyy on the computer where you will review the code. A local folder needs repyy only. Git is needed for a remote URL in host mode.</p>
+    <p>Replace <code>./repository</code> with the path to your checkout.</p>
     <div class="docs-command">
-      <div>
-        <span>Install with Homebrew</span>
-        <button type="button" data-copy="brew install --cask Kevin-Umali/tap/repyy">
-          Copy
-        </button>
-      </div>
-      <code>brew install --cask Kevin-Umali/tap/repyy</code>
+      <div><span>Scan and review in your terminal</span><button type="button" data-copy="repyy scan ./repository --format tui">Copy</button></div>
+      <code>repyy scan ./repository --format tui</code>
     </div>
-    <div class="docs-command">
-      <div>
-        <span>Scan and save HTML</span>
-        <button type="button" data-copy="repyy scan ./repository --format html --output report.html">
-          Copy
-        </button>
-      </div>
-      <code>repyy scan ./repository --format html --output report.html</code>
-    </div>
-    <p>
-      Open <code>report.html</code> directly from your file manager. It is self-contained and works as a local <code>file://</code> page; a remote source link
-      may open the provider website in your browser.
-    </p>
-    <a class="docs-inline-link" href="../installation/">
-      Install on macOS, Linux, or Windows →
-    </a>
+    <p>Press <kbd>Enter</kbd> to open a finding or <kbd>e</kbd> to export the report. Check coverage before relying on the result.</p>
+    <figure class="docs-overview-preview">
+      <a class="docs-overview-image" href="/images/terminal-review.png" aria-label="Open the full-size terminal screenshot">
+        <img
+          src="/images/terminal-review.png"
+          alt="Repyy's terminal review showing scan coverage, a findings queue, and the recommended action for the selected finding."
+          width="1532"
+          height="846"
+        />
+      </a>
+      <figcaption><a href="/cli/#interactive-review">Interactive review controls</a></figcaption>
+    </figure>
   </section>
-  <section class="docs-section docs-searchable" id="recipes" data-search="examples recipes local remote powershell docker json sarif multiple targets">
-    <h2>Copyable starting points</h2>
-    <p>Replace the sample path or URL with a target you are allowed to inspect. Review the result before opening the repository in a trusted workspace.</p>
-    <div class="recipe-grid">
-      <article>
-        <span>Local folder</span>
-        <h3>Review downloaded code</h3>
-        <p>No Git or network is needed.</p>
-        <code>repyy scan ./assignment</code>
-        <button type="button" data-copy="repyy scan ./assignment">
-          Copy command
-        </button>
-      </article>
-      <article>
-        <span>Remote URL</span>
-        <h3>Inspect before checkout</h3>
-        <p>
-          Host mode needs Git on <code>PATH</code>.
-        </p>
-        <code>repyy scan https://github.com/org/repo</code>
-        <button type="button" data-copy="repyy scan https://github.com/org/repo">
-          Copy command
-        </button>
-      </article>
-      <article>
-        <span>Automation</span>
-        <h3>Save structured output</h3>
-        <p>JSON and SARIF fit existing review tools.</p>
-        <code>repyy scan ./repo --format sarif --output report.sarif</code>
-        <button type="button" data-copy="repyy scan ./repo --format sarif --output report.sarif">
-          Copy command
-        </button>
-      </article>
-      <article>
-        <span>Isolation</span>
-        <h3>Use Docker</h3>
-        <p>Pull the signed, digest-pinned release image first.</p>
-        <code>repyy scan ./repo --sandbox=docker</code>
-        <button type="button" data-copy="repyy scan ./repo --sandbox=docker">
-          Copy command
-        </button>
-      </article>
-    </div>
-    <a class="docs-inline-link" href="../cli/#recipes">
-      See all CLI recipes →
-    </a>
-  </section>
-  <section
-    class="docs-section docs-searchable"
-    id="verdicts-docs"
-    data-search="verdict no findings review required do not run scan incomplete meaning exit code"
-  >
-    <h2>Read the result</h2>
-    <p>The verdict is a review decision aid, not a safety certificate. Check coverage before acting on any result.</p>
-    <div class="docs-verdict-grid">
-      <article>
-        <b>No findings</b>
-        <p>No enabled rule matched within completed coverage.</p>
-      </article>
-      <article>
-        <b>Review required</b>
-        <p>Findings need a person to inspect their context.</p>
-      </article>
-      <article>
-        <b>Do not run</b>
-        <p>High-confidence critical behavior needs a controlled decision before execution.</p>
-      </article>
-      <article>
-        <b>Scan incomplete</b>
-        <p>
-          A timeout, limit, permission, clone, archive, or read error reduced coverage. Exit code is <code>2</code>.
-        </p>
-      </article>
-    </div>
-    <a class="docs-inline-link" href="../coverage/#workflow">
-      Follow the review workflow →
-    </a>
-  </section>
-  <section class="docs-section docs-searchable" id="reports-docs" data-search="terminal json sarif html reports output render saved report file local offline">
-    <h2>Choose a report</h2>
-    <div class="docs-table" role="table" aria-label="Report formats">
-      <div role="row">
-        <b role="rowheader">Terminal</b>
-        <span role="cell">Prioritized human review</span>
-        <code role="cell">--format terminal</code>
+
+  <section class="docs-section docs-searchable" id="choose-your-path" data-search="common tasks reference guides">
+    <h2>Next steps</h2>
+    <ul class="docs-reference-links">
+      <li id="verdicts-docs"><a href="/trust/#incomplete-scans-and-exit-codes">Understand scan statuses</a></li>
+      <li id="reports-docs"><a href="/cli/#reports">Compare report formats</a></li>
+      <li><a href="/cli/#scan-flags">Look up CLI flags</a></li>
+      <li id="recipes"><a href="/cli/#recipes">Copy scan examples</a></li>
+      <li><a href="/isolation/#docker">Scan with Docker</a></li>
+      <li><a href="/verification/">Verify a download</a></li>
+      <li id="limits-docs"><a href="/coverage/#limits">Check scan limits</a></li>
+      <li id="privacy"><a href="/trust/#local-data-handling">Check how scan data is handled</a></li>
+      <li id="intelligence"><a href="/intelligence/#status">Check the intelligence snapshot</a></li>
+      <li id="agent-skill-docs"><a href="/agent-skill/#install">Install the Repyy agent skill</a></li>
+    </ul>
+    <details class="docs-overview-guides docs-section-menu">
+      <summary>All guides</summary>
+      <div class="docs-toc-links">
+        {guides
+          .filter((item) => item.slug !== "docs")
+          .map((item) => <a href={item.route}>{item.label}</a>)}
       </div>
-      <div role="row">
-        <b role="rowheader">JSON</b>
-        <span role="cell">Automation and saved input</span>
-        <code role="cell">--format json</code>
-      </div>
-      <div role="row">
-        <b role="rowheader">SARIF</b>
-        <span role="cell">Code-scanning integrations</span>
-        <code role="cell">--format sarif</code>
-      </div>
-      <div role="row">
-        <b role="rowheader">HTML</b>
-        <span role="cell">Private offline review</span>
-        <code role="cell">--format html</code>
-      </div>
-    </div>
-    <div class="docs-command">
-      <div>
-        <span>Render a saved JSON scan</span>
-        <button type="button" data-copy="repyy report report.scan.json --format html --output report.html">
-          Copy
-        </button>
-      </div>
-      <code>repyy report report.scan.json --format html --output report.html</code>
-    </div>
-    <p>
-      HTML reports are rendered by the host, including after Docker scans. Keep report files private because paths and evidence can still reveal repository
-      structure.
-    </p>
-    <a class="docs-inline-link" href="../cli/#reports">
-      Compare output formats and flags →
-    </a>
-  </section>
-  <section class="docs-section docs-searchable" id="privacy" data-search="privacy offline no telemetry upload network local remote tokens credentials">
-    <h2>Know the boundary</h2>
-    <p>
-      Local scans need no network. Remote host scans fetch the URL you request with Git; Docker separates HTTPS fetching from analysis, which requests{" "}
-      <code>--network none</code>. Intelligence updates happen only when you run the update command. Provider credentials stay in the process environment and
-      out of URLs.
-    </p>
-    <div class="docs-note">
-      <strong>Review Docker's controls</strong>
-      <p>Use the opt-in Docker backend and review its limits in the isolation guide.</p>
-    </div>
-    <a class="docs-inline-link" href="../isolation/">
-      Read isolation details →
-    </a>
-  </section>
-  <section
-    class="docs-section docs-searchable"
-    id="intelligence"
-    data-search="intel intelligence threat indicators packages hashes advisories snapshot status update rollback ed25519"
-  >
-    <h2>What “intel” means</h2>
-    <p>
-      Intel means threat intelligence: a dated, signed offline snapshot of sourced package/version advisories and exact file hashes. It is separate from repyy’s
-      built-in behavioral rules, and a match is a reason to review rather than proof by itself.
-    </p>
-    <div class="docs-table compact" role="table" aria-label="Rules and intelligence">
-      <div role="row">
-        <b role="rowheader">Built-in rules</b>
-        <span role="cell">Find suspicious behavior and context in source, manifests, automation, and metadata.</span>
-      </div>
-      <div role="row">
-        <b role="rowheader">Intel snapshot</b>
-        <span role="cell">Adds sourced package/version and exact hash indicators.</span>
-      </div>
-    </div>
-    <div class="docs-command">
-      <div>
-        <span>Check the active snapshot</span>
-        <button type="button" data-copy="repyy intel status">
-          Copy
-        </button>
-      </div>
-      <code>repyy intel status</code>
-    </div>
-    <a class="docs-inline-link" href="../intelligence/">
-      Read the complete intelligence guide →
-    </a>
-  </section>
-  <section class="docs-section docs-searchable" id="agent-skill-docs" data-search="agent skill optional instructions codex install workflow docker privacy">
-    <h2>Give your coding agent a safe first step</h2>
-    <p>
-      The optional repyy agent skill tells a coding agent to scan unfamiliar repositories before execution, keep source local, and treat incomplete coverage as
-      unresolved. It installs instructions only; the repyy CLI is installed separately.
-    </p>
-    <div class="docs-command">
-      <div>
-        <span>Install for Codex</span>
-        <button type="button" data-copy="npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y">
-          Copy
-        </button>
-      </div>
-      <code>npx skills add Kevin-Umali/repyy --skill repyy -g -a codex -y</code>
-    </div>
-    <a class="docs-inline-link" href="../agent-skill/">
-      Read the complete agent skill guide →
-    </a>
-  </section>
-  <section class="docs-section docs-searchable" id="limits-docs" data-search="limits timeout max files file size archive entries incomplete coverage">
-    <h2>When coverage is incomplete</h2>
-    <p>
-      Resource limits protect the scanner from hostile repositories and archives. A timeout, unreadable file, denied mount, failed fetch, or exceeded limit is
-      reported as
-      <code>SCAN INCOMPLETE</code>; successful targets remain visible in a mixed scan.
-    </p>
-    <div class="docs-table compact" role="table" aria-label="Default limits">
-      <div role="row">
-        <b role="rowheader">Repository</b>
-        <span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span>
-      </div>
-      <div role="row">
-        <b role="rowheader">Archive</b>
-        <span role="cell">10,000 entries · 1 GiB expanded bytes · 3 nested levels</span>
-      </div>
-    </div>
-    <a class="docs-inline-link" href="../coverage/#limits">
-      See coverage limits and exclusions →
-    </a>
+    </details>
   </section>
 </DocsLayout>
+
+<style>
+  .docs-overview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    margin-block-start: 1.25rem;
+  }
+
+  .docs-overview-actions a,
+  .docs-overview-preview a,
+  .docs-reference-links a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    color: #a1381c;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .docs-overview-actions .docs-install-link {
+    padding-inline: 1rem;
+    border-radius: var(--radius-control);
+    background: var(--ink);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .docs-install-link:hover {
+    opacity: 0.85;
+  }
+
+  .docs-overview-preview {
+    margin: 1.25rem 0 0;
+  }
+
+  .docs-overview-preview .docs-overview-image {
+    display: block;
+    border-radius: var(--radius-control);
+  }
+
+  .docs-overview-preview img {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-control);
+  }
+
+  .docs-reference-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 1rem;
+    padding-inline-start: 0;
+    list-style: none;
+  }
+
+  .docs-overview-guides {
+    display: none;
+  }
+
+  @media (max-width: 760px) {
+    .docs-overview-guides {
+      display: block;
+    }
+  }
+</style>

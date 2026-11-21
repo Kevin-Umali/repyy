@@ -7,20 +7,12 @@ const guide = getGuide("demo");
 
 <DocsLayout guide={guide}>
   <section class="docs-hero docs-searchable" id="overview">
-    <p class="docs-kicker">Report example</p>
-    <h1>Read a scan.<span>Before you run anything.</span></h1>
+    <h1>Sample scan report</h1>
     <p>
       Open the <a href="./sample/sample.html">offline HTML report</a> to see how Repyy presents findings, source locations, and coverage.
-      It was generated from 11 inert risky fixtures and 11 paired controls with a local build of the 0.6.0 code (<code>0.6.0-dev</code>).
-      The fixtures are data; the runner invoked only Repyy. The build is a prerelease preview, not an attested release binary.
+      This archived run used <code>0.6.0-dev</code> to scan 11 inert fixtures and 11 paired controls.
     </p>
-    <div class="docs-summary">
-      <span><b>11 / 11</b>Expected signals found</span><span><b>0 / 11</b>Controls flagged high or critical</span><span><b>0</b>Incomplete scans</span>
-    </div>
-    <div class="docs-callout">
-      <strong>Start with the report.</strong>
-      <p>Open the <a href="./sample/sample.html">HTML view</a>, then compare the <a href="./sample/sample.txt">terminal view</a> or <a href="./sample/sample.json">JSON</a>. The <a href="./sample/results.json">case results</a> include every observed rule and control finding.</p>
-    </div>
+    <p>Compare the <a href="./sample/sample.txt">terminal output</a>, <a href="./sample/sample.json">JSON report</a>, or <a href="./sample/results.json">paired case results</a>.</p>
   </section>
 
   <section class="docs-section docs-searchable" id="reading-the-report">
@@ -50,25 +42,25 @@ const guide = getGuide("demo");
         </tbody>
       </table>
     </div>
-    <p>Eight earlier fixture pairs still cover lifecycle scripts, startup configuration, disguised assets, editor tasks, Git hooks, download strings, credential-path references, and Docker socket mounts.</p>
+    <p>The other eight fixture pairs cover lifecycle scripts, startup configuration, disguised assets, editor tasks, Git hooks, download strings, credential-path references, and Docker socket mounts.</p>
   </section>
 
   <section class="docs-section docs-searchable" id="reproduce">
-    <h2>Reproduce the inert report</h2>
-    <p>From a Repyy source checkout, build only Repyy and run its fixture runner. The runner creates temporary text files and removes them after scanning.</p>
-    <pre class="docs-example"><code>go build -trimpath -ldflags '-X main.version=0.6.0-dev' -o /tmp/repyy-demo ./cmd/repyy
+    <h2>Run the inert cases</h2>
+    <p>Build Repyy from your current checkout and run its fixture runner. The resulting report reflects that checkout; the linked sample remains an archived 0.6.0 preview report. The runner creates temporary text files and removes them after scanning.</p>
+    <pre class="docs-example"><code>go build -trimpath -o /tmp/repyy-demo ./cmd/repyy
 python3 scripts/benchmark.py --binary /tmp/repyy-demo --output /tmp/repyy-demo-output --check
 </code></pre>
     <p>Outputs include <code>sample.html</code>, <code>sample.txt</code>, <code>sample.json</code>, <code>results.json</code>, and <code>results.md</code>. The runner does not invoke npm, Node, Git in a fixture, Docker, an IDE task, or any fixture program.</p>
   </section>
 
   <section class="docs-section docs-searchable" id="corpus-context">
-    <h2>What the real corpus adds</h2>
+    <h2>Historical corpus review</h2>
     <p>
       A separate static review of the <a href="https://github.com/xndbogdan/malicious-repositories/tree/dc82f332dae0f4e9ea6bdc1d8341c7743c59913f">pinned malicious-repositories corpus</a>
       examined 15 targets with Repyy 0.5.3-dev. Thirteen scans completed; two were incomplete with four skipped files.
       The review exposed a missing <code>process-log</code> indicator, an Axios-response-to-<code>eval</code> path that was not correlated, and noisy vendor bundles.
-      Those observations motivated the focused fixtures above. A separately reviewed, isolated run is still needed before publishing 0.6.0 corpus measurements.
+      Those observations led to the focused fixtures above.
     </p>
     <p><a href="https://github.com/ossf/malicious-packages">OpenSSF Malicious Packages</a> is a source of package advisory reports, separate from the repository corpus. Neither source proves remote payload contents or a common actor.</p>
   </section>

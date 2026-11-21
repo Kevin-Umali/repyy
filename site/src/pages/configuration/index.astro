@@ -41,7 +41,7 @@ const guide = getGuide("configuration");
 
         <section class="docs-section docs-searchable" id="minimal" data-search="minimal yaml version rules suppressions empty file">
           <h2>Start with valid YAML</h2>
-          <p>The top-level <code>version</code> must be the integer <code>1</code>. Start with both lists present, even when they are empty.</p>
+          <p>The top-level <code>version</code> must be the integer <code>1</code>. Include only the lists you need; this example includes both.</p>
           <pre class="docs-example" aria-label="Minimal repyy YAML">
 version: 1
 rules: []
@@ -52,7 +52,7 @@ suppressions: []</pre
             <code>repyy rules validate policy.yaml</code>
           </div>
           <p>
-            Validation checks YAML syntax, the version, rule fields, regular expressions, suppression fingerprints, and suppression dates. It does not scan a
+            Validation checks YAML syntax, the version, rule fields, regular expressions, required suppression fields, and suppression expiry dates. It does not scan a
             target.
           </p>
         </section>
@@ -87,12 +87,12 @@ suppressions: []</pre
               <span>Complete workflow</span
               ><button
                 type="button"
-                data-copy="repyy rules validate policy.yaml; repyy scan ./checkout --config policy.yaml --format html --output review.html"
+                data-copy="repyy rules validate policy.yaml &amp;&amp; repyy scan ./checkout --config policy.yaml --format html --output review.html"
               >
                 Copy
               </button>
             </div>
-            <code>repyy rules validate policy.yaml repyy scan ./checkout --config policy.yaml --format html --output review.html</code>
+            <code>repyy rules validate policy.yaml &amp;&amp; repyy scan ./checkout --config policy.yaml --format html --output review.html</code>
           </div>
         </section>
 
@@ -103,8 +103,7 @@ suppressions: []</pre
         >
           <h2>Custom rule fields</h2>
           <p>
-            Every custom rule requires <code>id</code>, <code>category</code>, <code>severity</code>, <code>confidence</code>, <code>description</code>, and
-            <code>pattern</code>. The remaining fields add context or narrow matching.
+            The required fields define the match. Optional fields add context or narrow matching.
           </p>
           <div class="docs-table compact" role="table" aria-label="Custom rule fields">
             <div role="row">
@@ -156,15 +155,14 @@ rules:
           >
           <p>
             <code>globs</code> applies to file names or paths using case-insensitive comparisons. <code>raw</code> checks comments and strings as well as code;
-            use <code>code</code> when only executable code should match. Custom rules cannot use <code>structured</code> scope, which is reserved for built-in
-            structured detectors.
+            see <a href="#scope">matching scopes</a> to choose how comments and literals are handled.
           </p>
           <div class="docs-command">
             <div>
               <span>Validate then use it</span
-              ><button type="button" data-copy="repyy rules validate policy.yaml; repyy scan ./repo --config policy.yaml">Copy</button>
+              ><button type="button" data-copy="repyy rules validate policy.yaml &amp;&amp; repyy scan ./repo --config policy.yaml">Copy</button>
             </div>
-            <code>repyy rules validate policy.yaml repyy scan ./repo --config policy.yaml</code>
+            <code>repyy rules validate policy.yaml &amp;&amp; repyy scan ./repo --config policy.yaml</code>
           </div>
         </section>
 

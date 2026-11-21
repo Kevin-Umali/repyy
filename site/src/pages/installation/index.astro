@@ -11,37 +11,20 @@ const guide = getGuide("installation");
           id="overview"
           data-search="installation first scan native command line binary read only untrusted repository"
         >
-          <p class="docs-kicker">Installation</p>
-          <h1>Start with a<br /><span>quiet first scan.</span></h1>
-          <p>
-            Install repyy on the computer where you will review code. The scanner reads target files as data; it does not install target packages, build the
-            target, run tests, or execute source.
-          </p>
-          <div class="docs-summary" aria-label="Installation summary">
-            <span><b>Release binary</b>No Go required</span><span><b>Local first</b>Reports stay with you</span><span><b>Verify</b>Check before review</span>
-          </div>
-          <div class="docs-callout">
-            <strong>Keep the target unexecuted</strong>
-            <p>
-              Install repyy before opening an unfamiliar repository in a trusted workspace. A local-folder scan needs repyy only; Git is needed for host-mode
-              remote scans.
-            </p>
-          </div>
+          <h1>Installation and first scan</h1>
+          <p>Install Repyy for your platform, verify manual downloads, and review a local checkout in your terminal.</p>
         </section>
 
         <section class="docs-section docs-searchable" id="prerequisites" data-search="prerequisites macos linux windows git docker browser">
           <h2>Prerequisites</h2>
-          <p>
-            You need macOS, Linux, or Windows with a supported repyy release binary and a browser for HTML reports. Install Git on the host only when scanning a
-            remote URL in the default host mode. Local folder scans do not invoke Git.
-          </p>
+          <p>Use a release binary for macOS, Linux, or Windows.</p>
           <div class="docs-table compact" role="table" aria-label="Installation prerequisites">
             <div role="row"><b role="rowheader">Local folder</b><span role="cell">repyy only</span></div>
             <div role="row">
               <b role="rowheader">Host-mode remote</b><span role="cell">repyy plus Git on <code>PATH</code></span>
             </div>
             <div role="row"><b role="rowheader">Docker mode</b><span role="cell">Docker Desktop or Docker Engine, plus the release-matched image</span></div>
-            <div role="row"><b role="rowheader">HTML review</b><span role="cell">A current browser; the report opens as a local file</span></div>
+            <div role="row"><b role="rowheader">Optional HTML report</b><span role="cell">A browser to open the report file</span></div>
           </div>
           <p>
             Docker is an optional analysis backend. See the
@@ -82,10 +65,14 @@ const guide = getGuide("installation");
           <h3>Scoop</h3>
           <div class="docs-command">
             <div>
-              <span>Scoop</span
-              ><button type="button" data-copy="scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket; scoop install repyy/repyy">Copy</button>
+              <span>Add the repyy bucket</span
+              ><button type="button" data-copy="scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket">Copy</button>
             </div>
-            <code>scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket scoop install repyy/repyy</code>
+            <code>scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket</code>
+          </div>
+          <div class="docs-command">
+            <div><span>Install repyy</span><button type="button" data-copy="scoop install repyy/repyy">Copy</button></div>
+            <code>scoop install repyy/repyy</code>
           </div>
           <p>
             Adding the Scoop bucket uses Git. That requirement belongs to Scoop setup; it is separate from the Git needed to scan an HTTPS remote in host mode.
@@ -126,23 +113,21 @@ if (($userPath -split ';') -notcontains $bin) &#123;
           </p>
         </section>
 
-        <section class="docs-section docs-searchable" id="first-scan" data-search="first scan local folder html report version help intel status">
+        <section class="docs-section docs-searchable" id="first-scan" data-search="first scan local folder tui terminal html report version help intel status">
           <h2>Run a first local scan</h2>
           <p>
             Use a local path when you already have a checkout or downloaded folder. Run this from its parent directory, or replace it with an absolute path.
           </p>
           <div class="docs-command">
             <div>
-              <span>Verify and scan</span
-              ><button type="button" data-copy="repyy version; repyy intel status; repyy scan ./unfamiliar-repository --format html --output repyy-report.html">
-                Copy
-              </button>
+              <span>Scan and review in the terminal</span
+              ><button type="button" data-copy="repyy scan ./unfamiliar-repository --format tui">Copy</button>
             </div>
-            <code>repyy version repyy intel status repyy scan ./unfamiliar-repository --format html --output repyy-report.html</code>
+            <code>repyy scan ./unfamiliar-repository --format tui</code>
           </div>
           <p>
-            Open <code>repyy-report.html</code> directly from the file manager or browser. Its CSS and JavaScript are embedded, so viewing the report requires
-            no server and makes no network requests. A source link inside the report may open a provider website.
+            To save an HTML report instead, use <code>--format html --output repyy-report.html</code>. Open it directly in a browser; its CSS and JavaScript are
+            embedded, so viewing it makes no network requests. A source link may open a provider website.
           </p>
           <div class="docs-callout">
             <strong>Read before continuing</strong>

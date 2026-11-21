@@ -11,20 +11,8 @@ const guide = getGuide("intelligence");
           id="overview"
           data-search="intel intelligence threat intelligence offline snapshot packages hashes advisories"
         >
-          <p class="docs-kicker">Intelligence guide</p>
-          <h1>Fresh signals.<span>Private by default.</span></h1>
-          <p>
-            “Intel” is repyy’s name for a dated, signed offline snapshot of sourced package and version advisories plus exact published file hashes. It
-            supplements the built-in behavioral rules; it is not AI analysis.
-          </p>
-          <div class="docs-summary" aria-label="Intelligence summary">
-            <span><b>Offline</b>Every scan uses local data</span><span><b>Signed</b>Updates are verified before activation</span
-            ><span><b>Auditable</b>Reports record the snapshot used</span>
-          </div>
-          <div class="docs-callout">
-            <strong>A signal starts review</strong>
-            <p>A package name alone does not prove that the resolved artifact is malicious. Confirm the version, source, hash, and surrounding context.</p>
-          </div>
+          <h1>Offline intelligence</h1>
+          <p>Repyy checks packages and files against a local snapshot of published advisories and hashes. Reports record the snapshot used.</p>
         </section>
         <section
           class="docs-section docs-searchable"
@@ -66,7 +54,7 @@ const guide = getGuide("intelligence");
           <div class="docs-note">
             <strong>Use the result in context</strong>
             <p>
-              A stale snapshot does not make a clean scan meaningless, and a current snapshot does not make a match conclusive. Treat both as review inputs.
+              Check the snapshot date alongside the package version, source, and hash when reviewing a match.
             </p>
           </div>
         </section>
