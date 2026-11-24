@@ -2,6 +2,8 @@
 
 The product site and documentation are an Astro static site. The production build has no server runtime, framework integration, CMS, or client-side component runtime.
 
+The [Dokploy deployment guide](../docs/security.md) covers the site build, HTTPS, and reverse proxy settings.
+
 ## Local development
 
 Use the Node version declared in `.nvmrc`, then install the locked dependencies:

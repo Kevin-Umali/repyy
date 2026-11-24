@@ -1,6 +1,6 @@
 ---
 import { createSatteriMarkdownProcessor } from "@astrojs/markdown-satteri";
-import changelog from "../../../../CHANGELOG.md?raw";
+import changelog from "../../../CHANGELOG.md?raw";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { getGuide } from "../../data/guides";
 
@@ -31,7 +31,7 @@ const guide = {
     <p class="docs-kicker">Release changes</p>
     <h1>What changed.<span>And where to verify it.</span></h1>
     <p>
-      Release notes come from the repository <a href="https://github.com/Kevin-Umali/repyy/blob/main/CHANGELOG.md">CHANGELOG.md</a>.
+      Release notes come from the repository <a href="https://github.com/Kevin-Umali/repyy/blob/main/site/CHANGELOG.md">changelog</a>.
       Use the <a href="/verification/">verification guide</a> for signed release artifacts.
     </p>
   </section>

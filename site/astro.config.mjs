@@ -62,5 +62,17 @@ export default defineConfig({
   output: "static",
   trailingSlash: "always",
   build: { format: "directory" },
+  markdown: { syntaxHighlight: false },
+  security: {
+    csp: {
+      directives: ["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-src 'none'"],
+      styleDirective: {
+        resources: [
+          { resource: "'self'", kind: "element" },
+          { resource: "'unsafe-inline'", kind: "attribute" },
+        ],
+      },
+    },
+  },
   integrations: [searchIndex()],
 });

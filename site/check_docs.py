@@ -48,9 +48,18 @@ class Page(HTMLParser):
         self.ids = []
         self.searchable = set()
         self.references = []
+        self.csp = {}
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
+        if (
+            tag == "meta"
+            and attributes.get("http-equiv", "").lower() == "content-security-policy"
+        ):
+            for directive in attributes.get("content", "").split(";"):
+                parts = directive.split()
+                if parts:
+                    self.csp[parts[0]] = parts[1:]
         ident = attributes.get("id")
         if ident:
             self.ids.append(ident)
@@ -82,8 +91,19 @@ def main():
                 errors.append(f"{path.relative_to(DIST)}: duplicate id #{ident}")
 
     for route in EXPECTED_ROUTES:
-        if not route_file(route).is_file():
+        page = pages.get(route_file(route).resolve())
+        if page is None:
             errors.append(f"missing route {route}")
+            continue
+        scripts = page.csp.get("script-src", [])
+        if "'self'" not in scripts or any(
+            source != "'self'" and not source.startswith("'sha256-")
+            for source in scripts
+        ):
+            errors.append(f"{route}: expected a same-origin, hash-based script policy")
+        for directive in ("object-src", "base-uri", "form-action"):
+            if page.csp.get(directive) != ["'none'"]:
+                errors.append(f"{route}: expected {directive} 'none'")
     for artifact in EXPECTED_ARTIFACTS:
         if not (DIST / artifact.lstrip("/")).is_file():
             errors.append(f"missing artifact {artifact}")
