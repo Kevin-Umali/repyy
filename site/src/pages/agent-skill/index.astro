@@ -7,20 +7,11 @@ const guide = getGuide("agent-skill");
 
 <DocsLayout guide={guide}>
 <section class="docs-hero docs-searchable" id="overview" data-search="agent skill optional instructions codex unfamiliar repository scan read only">
-          <p class="docs-kicker">Optional agent skills</p>
-          <h1>Make the safe first move.<span>Before code runs.</span></h1>
+          <h1>Optional agent skills</h1>
           <p>
-            The repyy agent skill gives a coding agent a repeatable instruction set for preflighting unfamiliar repositories. It asks the agent to scan first,
-            preserve the target as data, explain the evidence, and report unresolved coverage. When the CLI is unavailable, it continues with a limited static review.
+            The Repyy skill asks a coding agent to scan unfamiliar repositories before running code, explain the findings, and report incomplete coverage.
+            Install the skill and CLI separately.
           </p>
-          <div class="docs-summary" aria-label="Agent skill summary">
-            <span><b>Instructions</b>Changes agent behavior</span><span><b>Separate</b>Does not install the CLI</span
-            ><span><b>Private</b>Reports stay local</span>
-          </div>
-          <div class="docs-callout">
-            <strong>Install the skill and CLI separately</strong>
-            <p>The skill is guidance for an agent. Scanner results require a trusted repyy executable; manual review remains available without one.</p>
-          </div>
         </section>
         <section class="docs-section docs-searchable" id="install" data-search="install skill npx skills add codex global interactive command">
           <h2>Install the skill</h2>
@@ -57,8 +48,7 @@ const guide = getGuide("agent-skill");
             <div role="row"><b role="rowheader">repyy-intel</b><span role="cell">Check a package/version or file hash against its sourced indicator.</span></div>
           </div>
           <p>
-            All four skills use the host's built-in question tool when available to ask for missing targets, reports, or goals.
-            They use inputs already supplied and do not install missing tools or execute the target.
+            The skills can ask for missing targets, reports, or goals when the host provides a question tool.
           </p>
           <p>
             Scanner targets are directories or supported Git URLs. For an individual artifact, the skill stages only that approved regular file in a
@@ -135,7 +125,7 @@ const guide = getGuide("agent-skill");
             </div>
             <div role="row">
               <b role="rowheader">Reports</b
-              ><span role="cell">HTML reports are local artifacts. They make no requests but still contain paths and redacted evidence.</span>
+              ><span role="cell">Keep HTML reports local. Check repository paths and source evidence before sharing a report.</span>
             </div>
             <div role="row">
               <b role="rowheader">Intelligence</b

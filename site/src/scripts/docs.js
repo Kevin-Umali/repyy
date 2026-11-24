@@ -1,7 +1,6 @@
 const docsSearch = document.querySelector("#docs-search");
 
 if (docsSearch) {
-  const sections = [...document.querySelectorAll(".docs-searchable")];
   document.addEventListener("keydown", (event) => {
     const target = event.target;
     const editing = target instanceof HTMLElement && (target.closest("input, textarea, select") || target.isContentEditable);
@@ -11,23 +10,31 @@ if (docsSearch) {
     }
   });
 
-  const links = [...document.querySelectorAll('.docs-sidebar a[href^="#"]')];
-  const sidebarNav = document.querySelector(".docs-sidebar nav");
-  sidebarNav?.addEventListener("keydown", (event) => {
-    if (sidebarNav.scrollHeight <= sidebarNav.clientHeight || event.altKey || event.ctrlKey || event.metaKey) return;
-    const distances = {
-      ArrowUp: -40,
-      ArrowDown: 40,
-      PageUp: -sidebarNav.clientHeight,
-      PageDown: sidebarNav.clientHeight,
-      Home: -sidebarNav.scrollHeight,
-      End: sidebarNav.scrollHeight,
-    };
-    const distance = distances[event.key];
-    if (distance === undefined) return;
-    event.preventDefault();
-    sidebarNav.scrollBy({ top: distance, behavior: "instant" });
+  const links = [...document.querySelectorAll('.docs-toc-links a[href^="#"]')];
+  const sections = [...new Set(links.map((link) => document.getElementById(link.hash.slice(1))).filter(Boolean))];
+  const tocNav = document.querySelector(".docs-toc nav");
+  const sectionMenu = document.querySelector(".docs-section-menu");
+  sectionMenu?.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest("a")) sectionMenu.removeAttribute("open");
   });
+
+  for (const nav of document.querySelectorAll(".docs-sidebar nav, .docs-toc nav")) {
+    nav.addEventListener("keydown", (event) => {
+      if (nav.scrollHeight <= nav.clientHeight || event.altKey || event.ctrlKey || event.metaKey) return;
+      const distances = {
+        ArrowUp: -40,
+        ArrowDown: 40,
+        PageUp: -nav.clientHeight,
+        PageDown: nav.clientHeight,
+        Home: -nav.scrollHeight,
+        End: nav.scrollHeight,
+      };
+      const distance = distances[event.key];
+      if (distance === undefined) return;
+      event.preventDefault();
+      nav.scrollBy({ top: distance, behavior: "instant" });
+    });
+  }
 
   let currentId;
   let scrollFrame;
@@ -35,9 +42,7 @@ if (docsSearch) {
     scrollFrame = undefined;
     const visibleSections = sections.filter((section) => section.getClientRects().length);
     if (!visibleSections.length) return;
-    const headerBottom = document.querySelector(".docs-header").getBoundingClientRect().bottom;
-    const anchorOffset = parseFloat(getComputedStyle(visibleSections[0]).scrollMarginTop) || 0;
-    const readingLine = Math.max(headerBottom + 16, anchorOffset) + 1;
+    const readingLine = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) + 1;
     let current = visibleSections[0];
     for (const section of visibleSections) {
       if (section.getBoundingClientRect().top > readingLine) break;
@@ -52,12 +57,12 @@ if (docsSearch) {
       if (active) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     });
-    const activeLink = sidebarNav?.querySelector('[aria-current="location"]');
-    if (activeLink && sidebarNav.getClientRects().length) {
+    const activeLink = tocNav?.querySelector('[aria-current="location"]');
+    if (activeLink && tocNav.getClientRects().length) {
       const item = activeLink.getBoundingClientRect();
-      const container = sidebarNav.getBoundingClientRect();
-      if (item.top < container.top) sidebarNav.scrollTop += item.top - container.top;
-      else if (item.bottom > container.bottom) sidebarNav.scrollTop += item.bottom - container.bottom;
+      const container = tocNav.getBoundingClientRect();
+      if (item.top < container.top) tocNav.scrollTop += item.top - container.top;
+      else if (item.bottom > container.bottom) tocNav.scrollTop += item.bottom - container.bottom;
     }
   };
   const scheduleCurrent = () => {

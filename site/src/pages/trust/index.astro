@@ -11,7 +11,6 @@ const guide = getGuide("trust");
     <h1>
       Understand the boundary.<span>Inspect the evidence.</span>
     </h1>
-    <p>Reviewed: 2026-09-15. Describes the trust-roadmap changes; unreleased features are identified explicitly.</p>
     <p>
       Repyy reviews unfamiliar take-home assignments before installing dependencies, starting the project, or opening it in an IDE. Inspect before you execute.
     </p>
@@ -139,13 +138,13 @@ const guide = getGuide("trust");
           <tr>
             <td>Maintainer intelligence generation</td>
             <td>
-              Explicit <code>make intel</code>
+              Explicit <code>make intel</code> or <a href="https://github.com/Kevin-Umali/repyy/blob/main/scripts/ingest_intelligence.py">ingestion script</a>
             </td>
-            <td>GitHub advisory API; advisory identifiers</td>
+            <td>GitHub advisory API; ingestion can instead read local GitHub JSON and pinned OpenSSF JSON</td>
             <td>
-              Maintainer's authenticated <code>gh</code>
+              Authenticated <code>gh</code> for generation; optional explicit <code>--github-token</code> for ingestion network mode
             </td>
-            <td>Failure stops generation; never a normal scan path</td>
+            <td>Scans do not invoke these tools. Ingestion produces an unsigned candidate for review and signing.</td>
           </tr>
           <tr>
             <td>CI / release / security evidence workflows</td>
@@ -279,109 +278,18 @@ const guide = getGuide("trust");
   </section>
   <section class="docs-section docs-searchable" id="claim-to-evidence-map">
     <h2>Claim-to-evidence map</h2>
-    <div class="docs-table-scroll" role="region" aria-label="Evidence table" tabindex="0">
-      <table class="docs-data-table">
-        <thead>
-          <tr>
-            <th>Claim</th>
-            <th>Evidence</th>
-            <th>Status / limits</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Normal scans read assignment code as data</td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/scanner.go">internal/scan/scanner.go</a>,
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/source/source.go">internal/source/source.go</a>,
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/test/integration/cli_test.go">test/integration/cli_test.go</a>
-            </td>
-            <td>Implementation and regression coverage; no universal non-execution proof</td>
-          </tr>
-          <tr>
-            <td>Local report rendering needs no network</td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/output/html.go">internal/output/html.go</a>,
-              <code>TestHTMLIsSelfContainedAndEscapesFindings</code>
-            </td>
-            <td>Self-contained HTML; deliberate clicks open external providers</td>
-          </tr>
-          <tr>
-            <td>
-              Docker scan requests <code>--network none</code>
-            </td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/sandbox/docker.go">internal/sandbox/docker.go</a>,
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/sandbox/docker_test.go">internal/sandbox/docker_test.go</a>
-            </td>
-            <td>Fake-client tests check invocation, not daemon enforcement or escape protection; fetch uses bridge networking</td>
-          </tr>
-          <tr>
-            <td>Incomplete scans stay visible</td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/app/app_test.go">internal/app/app_test.go</a>,
-              <code>TestRunContainerPreservesIncompleteFindings</code>
-            </td>
-            <td>Review deliberate exclusions separately</td>
-          </tr>
-          <tr>
-            <td>Repository values are escaped</td>
-            <td>
-              <code>TestHumanReportsNeutralizeControlCharacters</code>, <code>TestSourceDerivedSecretsAreRedactedAcrossFormats</code>,
-              <code>FuzzHumanOutput</code>
-            </td>
-            <td>Pattern redaction is not a complete secret classifier</td>
-          </tr>
-          <tr>
-            <td>Releases identify source</td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/tree/main/internal/buildinfo">internal/buildinfo</a>,
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/release.yml">.github/workflows/release.yml</a>
-            </td>
-            <td>New attestations require a successful tagged run and download verification</td>
-          </tr>
-          <tr>
-            <td>Dependencies are disclosed</td>
-            <td>
-              <code>.goreleaser.yaml</code>, release SBOM assets
-            </td>
-            <td>Component inventory does not establish harmlessness</td>
-          </tr>
-          <tr>
-            <td>Detection behavior is measurable</td>
-            <td>
-              <code>demo/cases.json</code>, <code>scripts/benchmark.py</code>
-            </td>
-            <td>Eleven inert paired cases; not representative global accuracy</td>
-          </tr>
-          <tr>
-            <td>Hostile inputs receive regression/fuzz tests</td>
-            <td>
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/internal/scan/repository_test.go">internal/scan/repository_test.go</a>,
-              <a href="https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/security-evidence.yml">.github/workflows/security-evidence.yml</a>
-            </td>
-            <td>Bounded test runs; no exhaustive assurance</td>
-          </tr>
-          <tr>
-            <td>External review</td>
-            <td>
-              <code>docs/EXTERNAL-REVIEW.md</code>
-            </td>
-            <td>Prepared scope only; no independent review completed by this work</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
     <p>
-      Evidence files and named tests are browsable in the <a href="https://github.com/Kevin-Umali/repyy">public source tree</a>. Check the release tag or exact
-      commit when assessing an older binary.
+      Implementation and tests are available in the <a href="https://github.com/Kevin-Umali/repyy">public source tree</a>. Start with <code>internal/scan</code>{" "}
+      for inspection, <code>internal/source</code> for retrieval,
+      <code>internal/sandbox</code> for Docker, and <code>internal/output</code> for report handling. See <a href="../security-testing/">security testing</a>{" "}
+      for test scope and limitations. Check the release tag or exact commit when assessing a binary.
     </p>
   </section>
   <section class="docs-section docs-searchable" id="releases-security-testing-and-reviews">
     <h2>Releases, security testing and reviews</h2>
     <p>
       Read <a href="../verification/">release verification</a>, <a href="../security-testing/">security testing</a>, and the
-      <a href="https://github.com/Kevin-Umali/repyy/blob/main/docs/EXTERNAL-REVIEW.md">external-review brief</a>. See the verification guide for current CodeQL,
+      <a href="../security-testing/#independent-review">independent review brief</a>. See the verification guide for current CodeQL,
       Scorecard and attestation evidence status. No independent-audit badge is claimed.
     </p>
     <p>

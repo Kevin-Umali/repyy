@@ -108,11 +108,12 @@ document.querySelectorAll("[data-install-tabs]").forEach((panel) => {
 
 const reportFormats = {
   terminal: {
-    title: "Terminal review",
+    title: "Terminal text",
     use: "Human review",
-    description: "Prioritized findings with context and a clear verdict.",
-    command: "repyy scan ./assignment",
-    preview: "$ repyy scan ./assignment\n\nREVIEW REQUIRED\n2 findings need context\n\nHIGH  PKG-001   package.json:12\nMED   OBFS-003   src/setup.js:48",
+    description: "Findings, source locations, and scan status in plain text.",
+    command: "repyy scan ./assignment --format terminal",
+    preview:
+      "$ repyy scan ./assignment --format terminal\n\nREVIEW REQUIRED\n2 findings need context\n\nHIGH  PKG-001   package.json:12\nMED   OBFS-003   src/setup.js:48",
   },
   json: {
     title: "Structured JSON",

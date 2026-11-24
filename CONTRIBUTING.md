@@ -6,9 +6,8 @@ reduce false positives are as valuable as new detections.
 ## Before you start
 
 - Use a supported Go version from `go.mod`.
-- Read the README and `docs/COVERAGE.md`.
-- Keep the detailed Markdown guide for a topic aligned with its matching web guide when user-visible
-  behavior changes. `README.md` is the entry point; put command and configuration detail in `docs/`.
+- Read the [README](README.md) and the [coverage guide](https://repyy.dev/coverage/).
+- Update the Astro guides in [`site/src/pages/`](site/src/pages/) when user-visible behavior changes.
 - Search existing issues before proposing a large change.
 - Open an issue before changing output compatibility, verdict behavior, remote access, or ruleset
   distribution.
@@ -63,6 +62,18 @@ security tools, and signature definitions legitimately contain dangerous-looking
 silence those matches globally; classify and downgrade their context. Never use comment language or
 contributor nationality as a malicious signal.
 
+### Update the web rule catalog
+
+The Go catalog defines the built-in rules. After changing it, regenerate the Astro data and check the rendered site.
+
+```sh
+go run ./cmd/repyy rules catalog --format json > site/src/data/rule-catalog.json
+cd site
+npm exec -- prettier --write src/data/rule-catalog.json
+npm run build
+python3 check_docs.py
+```
+
 ### Intelligence changes
 
 Every package or file-hash indicator needs a stable advisory identifier, affected versions when
@@ -72,9 +83,8 @@ the authenticated `gh` CLI. The command rewrites generated metadata, so review t
 full checks afterward.
 
 For bounded GitHub malware-advisory and OpenSSF OSV feed ingestion, follow
-[`docs/INTELLIGENCE-MAINTENANCE.md`](docs/INTELLIGENCE-MAINTENANCE.md). That
-path emits an unsigned review candidate and a corrections ledger; it does not
-replace source review or sign a release snapshot.
+the [intelligence maintenance guide](https://repyy.dev/intelligence/#maintenance).
+Review the unsigned candidate and corrections ledger before signing a release snapshot.
 
 Never add an intelligence signing private key to a commit, fixture, issue, or pull request. Releases
 sign the exported snapshot in GitHub Actions; the public verification key is intentionally committed
@@ -98,6 +108,16 @@ In the pull request:
 Maintainers may ask for a narrower rule or more negative tests when a detection would create noisy
 accusations. Security-sensitive reports belong in GitHub's private vulnerability reporting flow
 described in `SECURITY.md`.
+
+## Release retries
+
+Run the Release workflow from `main` after its CI passes. If a build failed before it saved the
+release bundle, run Release with `tag` set to the existing version. For a later failure, rerun the
+failed job. To retry with updated workflow code, supply `tag` and the original build run's ID as
+`resume_run_id`. Build checkpoints are retained for 90 days.
+
+Homebrew and Scoop publish in separate jobs. They skip identical manifests and refuse to replace
+newer versions or conflicting manifests.
 
 ## Formatting
 

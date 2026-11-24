@@ -9,7 +9,7 @@
 - [ ] New fixtures are inert and contain no live malware, credentials, or private data.
 - [ ] False-positive and false-negative tradeoffs are documented.
 - [ ] Output remains deterministic and credential-redacted.
-- [ ] Markdown and matching web documentation describe the same behavior.
+- [ ] The Astro guides describe the current behavior.
 - [ ] README remains an entry point; detailed instructions live in the owning guide.
 
 ## Verification

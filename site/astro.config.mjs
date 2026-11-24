@@ -47,7 +47,8 @@ function searchIndex() {
             const id = section[1].match(/\bid="([^"]+)"/)?.[1];
             if (!id) continue;
             const title = textContent(section[2].match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1] || id);
-            index.push({ route, pageTitle, id, title, text: textContent(section[2]).slice(0, 1200) });
+            const keywords = textContent(section[1].match(/\bdata-search="([^"]*)"/)?.[1] ?? "");
+            index.push({ route, pageTitle, id, title, keywords, text: textContent(section[2]).slice(0, 1200) });
           }
         }
         index.sort((a, b) => a.route.localeCompare(b.route) || a.id.localeCompare(b.id));
@@ -61,5 +62,17 @@ export default defineConfig({
   output: "static",
   trailingSlash: "always",
   build: { format: "directory" },
+  markdown: { syntaxHighlight: false },
+  security: {
+    csp: {
+      directives: ["default-src 'self'", "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-src 'none'"],
+      styleDirective: {
+        resources: [
+          { resource: "'self'", kind: "element" },
+          { resource: "'unsafe-inline'", kind: "attribute" },
+        ],
+      },
+    },
+  },
   integrations: [searchIndex()],
 });

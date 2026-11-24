@@ -7,15 +7,8 @@ const guide = getGuide("isolation");
 
 <DocsLayout guide={guide}>
 <section class="docs-hero docs-searchable" id="overview" data-search="isolation docker sandbox untrusted repository network read only">
-          <p class="docs-kicker">Isolation</p>
-          <h1>Give the scan<br /><span>its own boundary.</span></h1>
-          <p>
-            Docker is repyy’s opt-in analysis backend. Review its limits before relying on the result.
-          </p>
-          <div class="docs-summary" aria-label="Isolation summary">
-            <span><b>Docker</b>Opt-in release image</span><span><b>Input</b>Read-only mount requested
-      </span>
-          </div>
+          <h1>Docker scanning</h1>
+          <p>Set up the Docker backend for local folders and HTTPS remotes.</p>
           <div class="docs-callout">
             <strong>Isolation changes where analysis runs</strong>
             <p>
@@ -56,8 +49,7 @@ const guide = getGuide("isolation");
             the pinned image is present locally; it does not verify signatures during a scan.
           </p>
           <p>
-            A missing daemon or pinned image is a preflight error; repyy never silently falls back to host mode. Checkout deletion failures mark scans
-            incomplete while preserving findings. Credential-file and forced-container cleanup failures also surface as errors.
+            Checkout deletion failures mark scans incomplete while preserving findings. Credential-file and forced-container cleanup failures also surface as errors.
           </p>
         </section>
         <section
@@ -84,7 +76,7 @@ const guide = getGuide("isolation");
         <section class="docs-section docs-searchable" id="https" data-search="docker https remote fetch stage shallow clone network credentials token git">
           <h2>Docker with an HTTPS remote</h2>
           <p>
-            An HTTPS remote uses a disposable networked fetch stage for a shallow clone. A separate analysis stage receives no Git credentials and requests{" "}
+            An HTTPS remote uses a disposable networked fetch stage with history depth one by default. A separate analysis stage receives no Git credentials and requests{" "}
       <code>--network none</code>. The
             host validates the bounded result before rendering the report.
           </p>
@@ -96,19 +88,17 @@ const guide = getGuide("isolation");
             <code>repyy scan https://github.com/org/repository --sandbox=docker --format html --output report.html</code>
           </div>
           <p>
-            Private HTTPS access uses <code>GITHUB_TOKEN</code>, <code>GITLAB_TOKEN</code>, or <code>BITBUCKET_TOKEN</code> from the scanner environment. Tokens
-            do not enter the clone URL or report. Docker rejects SSH URLs.
+            For private HTTPS access, Repyy passes the provider token to the fetch stage separately from the clone URL. The host removes internal checkout
+            metadata and rewrites known container paths in diagnostics. Review reports before sharing.
           </p>
           <div class="docs-note">
             <strong>Git boundary</strong>
             <p>
-              The fetch stage disables hooks, templates, submodule recursion, other protocols, and redirects, and ignores inherited Git configuration. For a
-              supplied local
-              <code>.git</code> directory, use a separate disposable environment appropriate to your risk and consult Git’s
-              <a href="https://git-scm.com/docs/git#_security">untrusted repository guidance ↗</a>
-              and
-              <a href="https://git-scm.com/docs/git-upload-pack#_security">upload-pack guidance ↗</a>
-              for the user boundary behind this advice.
+              A local scan reads supplied <code>.git</code> metadata as data without running Git on the checkout. An HTTPS scan makes a fresh clone.
+              The fetch stage disables hooks, templates, submodule recursion, other protocols, and redirects, and ignores inherited Git configuration.
+              If you run Git on a supplied checkout, use a disposable environment appropriate to your risk. See
+              <a href="https://git-scm.com/docs/git#_security">Git's untrusted repository guidance</a> and
+              <a href="https://git-scm.com/docs/git-upload-pack#_security">upload-pack guidance</a>.
             </p>
           </div>
         </section>

@@ -7,18 +7,20 @@ invokes only Repyy, and removes them. All eleven expected signals were found; no
 control received a high or critical finding, and all scans were complete. This
 is a narrow fixture result, not a general accuracy score or an attested release build.
 
-Three cases exercise the new sourced package indicator, supported Axios
-fetch-to-execution flow, and bounded literal decoding. The earlier eight cases
+Three cases exercise a sourced package indicator, supported Axios
+fetch-to-execution flow, and bounded literal decoding. The other eight cases
 remain for lifecycle, startup, disguised asset, editor, hook, download-string,
 credential-path, and Docker socket behavior. The
 [HTML report](https://repyy.dev/demo/sample/sample.html),
 [JSON report](https://repyy.dev/demo/sample/sample.json), and
 [paired results](https://repyy.dev/demo/sample/results.json) show the observable evidence.
 
-To reproduce, build Repyy itself and run the trusted runner:
+To run the cases with your current checkout, build Repyy itself and run the
+trusted runner. The resulting report reflects that checkout; the linked sample
+remains an archived 0.6.0 preview report:
 
 ```sh
-go build -trimpath -ldflags '-X main.version=0.6.0-dev' -o /tmp/repyy-demo ./cmd/repyy
+go build -trimpath -o /tmp/repyy-demo ./cmd/repyy
 python3 scripts/benchmark.py --binary /tmp/repyy-demo --output /tmp/repyy-demo-output --check
 ```
 
@@ -31,7 +33,7 @@ The demo also gives context from a static review of the
 [malicious-repositories corpus at commit dc82f332](https://github.com/xndbogdan/malicious-repositories/tree/dc82f332dae0f4e9ea6bdc1d8341c7743c59913f).
 Repyy 0.5.3-dev scanned the corpus as data with rules `2026.09.19` and intelligence
 `2026-09-12.1`. The baseline covered 15 targets: 13 complete scans and two incomplete scans
-with four skipped files. This is a pinned observation, not a measurement of Repyy 0.6.0.
+with four skipped files. This is a pinned observation, not a measurement of the current Repyy version.
 
 That review showed three paths: an omitted `process-log` package indicator, an Axios
 response passed to `eval` without fetch-to-execution correlation, and a declared

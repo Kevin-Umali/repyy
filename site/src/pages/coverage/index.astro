@@ -10,23 +10,12 @@ const guide = getGuide("coverage");
 
 <DocsLayout guide={guide}>
 <section class="docs-hero docs-searchable" id="overview" data-search="coverage detection map built in static checks acceptance map limitations">
-          <p class="docs-kicker">Detection coverage</p>
-          <h1>Know what the scan can see.<span>Know where review still matters.</span></h1>
+          <h1>Detection coverage</h1>
           <p>
             This guide maps repyy’s built-in static checks to their rule IDs, explains the controls that reduce false positives, and names the boundaries that a
             scan deliberately leaves outside its scope.
           </p>
-          <div class="docs-summary" aria-label="Coverage summary">
-            <span><b>Static</b> Source is read as data</span><span><b>Contextual</b> Findings retain file roles</span
-            ><span><b>Honest</b> Limits become incomplete results</span>
-          </div>
-          <div class="docs-callout">
-            <strong>An acceptance map, not a guarantee</strong>
-            <p>
-              Exact indicators age. Heuristics can produce false positives and false negatives.
-              <code>NO FINDINGS</code> means no enabled rule matched within completed coverage; it does not prove safety.
-            </p>
-          </div>
+          <p>Static checks can miss risks or flag legitimate code. Check the finding context and scan coverage before acting on the result.</p>
         </section>
 
         <section class="docs-section docs-searchable" id="map" data-search="versioned behavioral rule catalog categories scope severity confidence">
@@ -228,8 +217,8 @@ const guide = getGuide("coverage");
         >
           <h2>Coverage has a boundary</h2>
           <p>
-            Default resource limits prevent hostile repositories and archives from exhausting the scanner. When a timeout, limit, permission, clone, archive, or
-            read error reduces coverage, the result is <code>SCAN INCOMPLETE</code>.
+            Timeouts, resource limits, and read errors can leave coverage incomplete. Human reports show <code>SCAN INCOMPLETE</code> and the command exits
+            with code <code>2</code>. A qualifying critical finding can still produce <code>DO NOT RUN</code> in the JSON verdict.
           </p>
           <div class="docs-table compact" role="table" aria-label="Default coverage limits">
             <div role="row"><b role="rowheader">Per repository</b><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span></div>
@@ -251,7 +240,17 @@ const guide = getGuide("coverage");
             <a href="../cli/#exit-codes">the exit-code reference</a> for automation behavior.
           </p>
           <p>
-            Package-manager options such as pip <code>-r</code>/<code>-c</code> are not followed, build configuration is not evaluated, and declared
+            Rule evaluation skips text files with more than 250,000 lines. Unreadable or non-regular files, undecodable source or configuration, linked Git metadata,
+            unsafe archive entries, and hidden-markup parser limits can also make coverage incomplete. Hidden HTML and SVG inspection is limited to 250,000
+            tokens, 256 levels of nesting, and 64 KiB per hidden-text run. Malformed SVG also marks coverage incomplete. Default dependency and cache exclusions
+            can appear as skipped in a complete scan.
+          </p>
+          <p>
+            A remote clone is subject to the per-repository timeout, but host-mode Git has no byte or disk quota before checkout. The scan file and archive limits
+            apply after checkout. <a href="../cli/#scan-flags">CLI resource flags</a>
+          </p>
+          <p>
+            Package-manager options such as pip <code>-r</code>/<code>-c</code> are not followed, build configuration is not evaluated, and dependency
             declarations are not fully reconciled with resolved lockfile content; npm lockfile versions are checked as separate package records. Wrapper archive hashes are checked for presence and format, not verified against
             downloaded bytes. Sibling <code>build.rs</code> detection applies to unpacked repository files.
           </p>
@@ -330,21 +329,9 @@ const guide = getGuide("coverage");
         <section class="docs-section docs-searchable" id="explain" data-search="rules explain rationale legitimate use matching scope review guidance command">
           <h2>Explain a rule before acting</h2>
           <p>
-            Rule explanations are available offline and show the rule’s severity, confidence, disposition, category, matching scope, applicable paths,
-            rationale, legitimate-use context, and recommended action.
-          </p>
-          <p>Browse the <a href="/rules/">versioned behavioral rule reference</a> or export it with <code>repyy rules catalog --format json</code>.</p>
-          <div class="docs-command">
-            <div><span>Terminal explanation</span><button type="button" data-copy="repyy rules explain EXEC-001">Copy</button></div>
-            <code>repyy rules explain EXEC-001</code>
-          </div>
-          <div class="docs-command">
-            <div><span>Machine-readable explanation</span><button type="button" data-copy="repyy rules explain EXEC-001 --format json">Copy</button></div>
-            <code>repyy rules explain EXEC-001 --format json</code>
-          </div>
-          <p>
-            For package indicators, explanation includes the active snapshot’s advisory source and affected-version context. A package name alone is a review
-            signal; verify the resolved version and artifact before deciding.
+            Run <code>repyy rules explain RULE-ID</code> for offline rationale, legitimate-use context, and a review action.
+            Browse the <a href="/rules/">behavioral rule reference</a> for matching scopes and applicable paths.
+            For package indicators, confirm the affected version and advisory source before deciding.
           </p>
         </section>
 
@@ -355,24 +342,9 @@ const guide = getGuide("coverage");
         >
           <h2>Inspect the active intelligence</h2>
           <p>
-            Built-in behavioral rules and the dated offline intelligence snapshot are separate inputs. The snapshot adds sourced package/version advisories and
-            exact published file hashes.
-          </p>
-          <div class="docs-command">
-            <div><span>Snapshot status</span><button type="button" data-copy="repyy intel status">Copy</button></div>
-            <code>repyy intel status</code>
-          </div>
-          <div class="docs-command">
-            <div><span>Intelligence indicators and sources</span><button type="button" data-copy="repyy rules list">Copy</button></div>
-            <code>repyy rules list</code>
-          </div>
-          <div class="docs-command">
-            <div><span>JSON for tooling</span><button type="button" data-copy="repyy rules list --format json">Copy</button></div>
-            <code>repyy rules list --format json</code>
-          </div>
-          <p>
-            Every report records the ruleset and intelligence snapshot used, so a finding can be audited later. Read
-            <a href="../intelligence/">the intelligence guide</a> for update and rollback behavior.
+            Run <code>repyy intel status</code> to check the selected snapshot’s date and source.
+            Reports record the ruleset and snapshot used. See the <a href="../intelligence/">intelligence guide</a>
+            for indicator commands, updates, and rollback.
           </p>
         </section>
 

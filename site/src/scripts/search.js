@@ -1,5 +1,27 @@
 import { animate, motionPreference, motionToken } from "./motion.js";
 
+function matchSections(entries, query) {
+  const words = query.split(/\s+/);
+  const matches = [];
+  for (const item of entries) {
+    const title = item.title.toLowerCase();
+    const pageTitle = item.pageTitle.toLowerCase();
+    const keywords = (item.keywords ?? "").toLowerCase();
+    const text = `${title} ${pageTitle} ${keywords} ${item.text.toLowerCase()}`;
+    if (!words.every((word) => text.includes(word))) continue;
+
+    let relevance = 0;
+    if (title.startsWith(query)) relevance += item.id === "overview" ? 3 : 2;
+    for (const word of words) {
+      if (title.includes(word)) relevance += 4;
+      if (pageTitle.includes(word)) relevance += 2;
+      if (keywords.includes(word)) relevance += 1;
+    }
+    matches.push({ item, relevance });
+  }
+  return matches.sort((a, b) => b.relevance - a.relevance).map(({ item }) => item);
+}
+
 const input = document.querySelector("#docs-search");
 
 if (input) {
@@ -99,7 +121,7 @@ if (input) {
       window.clearTimeout(loadingTimer);
       if (current !== revision) return;
       results.replaceChildren();
-      const matches = entries.filter((item) => query.split(/\s+/).every((word) => `${item.pageTitle} ${item.title} ${item.text}`.toLowerCase().includes(word)));
+      const matches = matchSections(entries, query);
       matches.slice(0, 30).forEach((item) => {
         const link = document.createElement("a");
         link.href = `${item.route}#${item.id}`;

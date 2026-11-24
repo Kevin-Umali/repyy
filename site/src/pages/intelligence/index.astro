@@ -11,20 +11,8 @@ const guide = getGuide("intelligence");
           id="overview"
           data-search="intel intelligence threat intelligence offline snapshot packages hashes advisories"
         >
-          <p class="docs-kicker">Intelligence guide</p>
-          <h1>Fresh signals.<span>Private by default.</span></h1>
-          <p>
-            “Intel” is repyy’s name for a dated, signed offline snapshot of sourced package and version advisories plus exact published file hashes. It
-            supplements the built-in behavioral rules; it is not AI analysis.
-          </p>
-          <div class="docs-summary" aria-label="Intelligence summary">
-            <span><b>Offline</b>Every scan uses local data</span><span><b>Signed</b>Updates are verified before activation</span
-            ><span><b>Auditable</b>Reports record the snapshot used</span>
-          </div>
-          <div class="docs-callout">
-            <strong>A signal starts review</strong>
-            <p>A package name alone does not prove that the resolved artifact is malicious. Confirm the version, source, hash, and surrounding context.</p>
-          </div>
+          <h1>Offline intelligence</h1>
+          <p>Repyy checks packages and files against a local snapshot of published advisories and hashes. Reports record the snapshot used.</p>
         </section>
         <section
           class="docs-section docs-searchable"
@@ -66,7 +54,7 @@ const guide = getGuide("intelligence");
           <div class="docs-note">
             <strong>Use the result in context</strong>
             <p>
-              A stale snapshot does not make a clean scan meaningless, and a current snapshot does not make a match conclusive. Treat both as review inputs.
+              Check the snapshot date alongside the package version, source, and hash when reviewing a match.
             </p>
           </div>
         </section>
@@ -127,4 +115,41 @@ const guide = getGuide("intelligence");
             </p>
           </div>
         </section>
+  <section class="docs-section docs-searchable" id="maintenance" data-search="maintainer feed ingestion github osv openssf candidate corrections">
+    <h2>Intelligence maintenance</h2>
+    <p>
+      Maintainers build unsigned review candidates separately from scans and updates. Use reviewed GitHub malware-advisory JSON and OSV files from a pinned
+      OpenSSF malicious-packages checkout.
+    </p>
+    <pre class="docs-example"><code>go run ./cmd/repyy intel export &gt; /tmp/base-snapshot.json
+python3 scripts/ingest_intelligence.py \
+  --github-page /reviewed/github-malware-page-1.json \
+  --openssf-dir /reviewed/ossf-malicious-packages-at-PIN/osv \
+  --openssf-commit OPENSSF_40_HEX_COMMIT \
+  --base-snapshot /tmp/base-snapshot.json \
+  --snapshot-version YYYY-MM-DD.N \
+  --output /tmp/candidate.json \
+  --corrections /tmp/corrections.json
+</code></pre>
+    <p>
+      The optional <code>--github-api</code> accepts only the
+      <a href="https://docs.github.com/en/rest/security-advisories/global-advisories">HTTPS GitHub advisories endpoint</a> with <code>type=malware</code> and
+      rejects redirects. The script enforces input limits of 1,000 GitHub pages, 100,000 combined records, and 64 MiB per feed. It prints the input counts,
+      package count, and candidate size. The candidate must fit within the updater's 16 MiB limit.
+    </p>
+    <p>
+      The ingester merges GitHub and OSV aliases before matching package identity. It retains exact versions and supported open-ended ranges. An unsupported
+      bounded range leaves an unconfirmed package signal unless exact versions are available. Withdrawn, rejected, <code>not_affected</code>, and false-positive
+      records go into the corrections ledger. Active records retain their advisory IDs, source links, dates, and affected scope. The candidate preserves
+      reviewed package and file-hash records from the base snapshot, subject to the corrections ledger.
+    </p>
+    <h3>Review the candidate</h3>
+    <ul>
+      <li>Confirm the pinned commit belongs to the intended OpenSSF repository. The ingester checks each OSV file against a regular blob in that commit.</li>
+      <li>Review source pins and corrections. Keep Axios <code>1.14.1</code> and <code>0.30.4</code> as distinct exact versions.</li>
+      <li>Confirm findings against resolved versions. A manifest range alone cannot confirm that a safe lockfile resolves to a compromised release.</li>
+      <li>Require primary evidence before adding an indicator, including <code>rest-icon-orchestrator</code>. Leave out withdrawn reports and avoid inferring relationships from shared campaign context.</li>
+      <li>Validate the candidate with Repyy tests before updating the embedded snapshot. Keep the signing key in the protected release workflow.</li>
+    </ul>
+  </section>
 </DocsLayout>

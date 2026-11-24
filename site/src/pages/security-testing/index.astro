@@ -11,7 +11,6 @@ const guide = getGuide("security-testing");
     <h1>
       Test the scanner.<span>Keep the gaps visible.</span>
     </h1>
-    <p>Reviewed: 2026-09-25. Describes current source tests and bounded CI fuzzing.</p>
     <p>
       Repyy processes hostile input. Tests exercise the scanner itself; no fixture is intentionally executed as an assignment. Passing tests do not establish
       that a repository or Repyy is free of vulnerabilities.
@@ -50,10 +49,8 @@ const guide = getGuide("security-testing");
       <code>internal/intel/update_test.go</code> covers signed updates and failure behavior.
     </p>
     <p>
-      Python startup fixtures cover executable <code>.pth</code> import lines, benign path entries and comments, customization modules, local wheel entries,
-      context downgrades, and undecodable startup files. Python remote-response fixtures check connected execution paths, direct nested calls, overwritten
-      values, unrelated functions and benign comments. Package indicators distinguish exact compromised releases from other resolved versions and unlocked
-      ranges.
+      Inert fixtures pair expected findings with benign controls, including decoded content, startup hooks, remote-response execution, and package-version
+      indicators.
     </p>
     <p>
       Tests use fixed inert examples with expected findings and benign controls. A test that derives its expected match from the production regex can pass when
@@ -133,9 +130,10 @@ go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 5000
 </code></pre>
     <p>
       Use the corresponding package and target name for the remaining targets. Ordinary <code>go test</code> runs the seed corpus. CI uses fixed execution
-      counts per target on relevant changes and all main pushes. The daily Security evidence workflow runs ten times the CI counts. Fixed execution budgets
-      avoid a possible Go fuzz-coordinator duration deadline race. Archive limits remain unchanged. Read the workflow run rather than assuming a scheduled run
-      happened. Fuzz logs and available failing inputs are uploaded even if a target fails.
+      counts per target on relevant changes and all main pushes. The daily Security evidence workflow runs ten times the CI counts. The
+      <a href="https://github.com/Kevin-Umali/repyy/blob/main/.github/workflows/fuzz.yml">fuzz workflow</a> defines the budgets. Fixed execution budgets avoid a
+      possible Go fuzz-coordinator duration deadline race. Archive limits remain unchanged. Read the workflow run rather than assuming a scheduled run happened.
+      Fuzz logs and available failing inputs are uploaded even if a target fails.
     </p>
     <p>
       For a failure, preserve the generated corpus input under the package's <code>testdata/fuzz/TARGET/</code> and minimize it. Fix the violated property and
@@ -159,11 +157,37 @@ go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 5000
       after failures.
     </p>
     <p>
-      The <a href="https://github.com/Kevin-Umali/repyy/blob/main/docs/EXTERNAL-REVIEW.md">external-review brief</a> identifies the required independent scope.
-      Until a reviewer publishes their identity, exact reviewed commit, findings and retest outcome, the project must not claim an independent audit.
+      Report newly found vulnerabilities using <a href="https://github.com/Kevin-Umali/repyy/security/advisories/new">private reporting</a>.
+    </p>
+  </section>
+  <section class="docs-section docs-searchable" id="independent-review" data-search="external independent security audit review scope report retest">
+    <h2>Independent review brief</h2>
+    <p>The brief is ready for review. An independent review is pending, and the project makes no independent audit claim.</p>
+    <h3>Prepare the evidence</h3>
+    <p>
+      Give the reviewer a fixed release tag and full commit, the public trust claims, successful release verification, inert demo and benchmark results, fuzz
+      evidence, and known issue status.
+    </p>
+    <h3>Review scope</h3>
+    <ul>
+      <li>Threat-model accuracy, target-code non-execution, and host Git and SSH retrieval and credentials.</li>
+      <li>Temporary-directory and container cleanup, archive and symlink confinement, Windows and Unix file handling, and Docker fetch and scan boundaries.</li>
+      <li>Terminal and HTML escaping, source links, secret redaction, and signed intelligence update and rollback.</li>
+      <li>Release identity, signing, SBOM scope, attestations, and publication ordering.</li>
+    </ul>
+    <p>
+      Use inert inputs. Keep private assignments, active malware, real credentials, target execution, general detection completeness, and hosted private
+      scanning outside the review scope.
+    </p>
+    <h3>Choose a reviewer and publish the results</h3>
+    <p>
+      Look for public work on Go parser security, filesystem confinement, Git and SSH security, container boundaries, or supply-chain verification. Ask about
+      relevant past work, conflicts, availability, methods, and publication terms. One starting point is the
+      <a href="https://ostif.org/get-an-audit/">OSTIF audit request channel</a>.
     </p>
     <p>
-      Report newly found vulnerabilities using <a href="https://github.com/Kevin-Umali/repyy/security/advisories/new">private reporting</a>.
+      Publish the reviewer's identity, conflicts, exact release and commit, dates, methods, scope, and limitations. For each finding, record the severity,
+      affected behavior, inert reproduction, maintainer response, fix commit, and retest outcome. Keep unresolved findings in the published record.
     </p>
   </section>
 </DocsLayout>
