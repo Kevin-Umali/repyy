@@ -305,6 +305,10 @@ export const guides = [
         id: "investigate",
         label: "Investigate an indicator",
       },
+      {
+        id: "maintenance",
+        label: "Intelligence maintenance",
+      },
     ],
   },
   {
@@ -505,6 +509,10 @@ export const guides = [
       {
         id: "known-gaps-and-independent-review",
         label: "Known gaps and independent review",
+      },
+      {
+        id: "independent-review",
+        label: "Independent review brief",
       },
     ],
   },

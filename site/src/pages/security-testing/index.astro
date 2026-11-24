@@ -157,11 +157,37 @@ go test ./internal/scan -run '^$' -fuzz '^FuzzArchiveInspection$' -fuzztime 5000
       after failures.
     </p>
     <p>
-      The <a href="https://github.com/Kevin-Umali/repyy/blob/main/docs/EXTERNAL-REVIEW.md">external-review brief</a> identifies the required independent scope.
-      Until a reviewer publishes their identity, exact reviewed commit, findings and retest outcome, the project must not claim an independent audit.
+      Report newly found vulnerabilities using <a href="https://github.com/Kevin-Umali/repyy/security/advisories/new">private reporting</a>.
+    </p>
+  </section>
+  <section class="docs-section docs-searchable" id="independent-review" data-search="external independent security audit review scope report retest">
+    <h2>Independent review brief</h2>
+    <p>The brief is ready for review. An independent review is pending, and the project makes no independent audit claim.</p>
+    <h3>Prepare the evidence</h3>
+    <p>
+      Give the reviewer a fixed release tag and full commit, the public trust claims, successful release verification, inert demo and benchmark results, fuzz
+      evidence, and known issue status.
+    </p>
+    <h3>Review scope</h3>
+    <ul>
+      <li>Threat-model accuracy, target-code non-execution, and host Git and SSH retrieval and credentials.</li>
+      <li>Temporary-directory and container cleanup, archive and symlink confinement, Windows and Unix file handling, and Docker fetch and scan boundaries.</li>
+      <li>Terminal and HTML escaping, source links, secret redaction, and signed intelligence update and rollback.</li>
+      <li>Release identity, signing, SBOM scope, attestations, and publication ordering.</li>
+    </ul>
+    <p>
+      Use inert inputs. Keep private assignments, active malware, real credentials, target execution, general detection completeness, and hosted private
+      scanning outside the review scope.
+    </p>
+    <h3>Choose a reviewer and publish the results</h3>
+    <p>
+      Look for public work on Go parser security, filesystem confinement, Git and SSH security, container boundaries, or supply-chain verification. Ask about
+      relevant past work, conflicts, availability, methods, and publication terms. One starting point is the
+      <a href="https://ostif.org/get-an-audit/">OSTIF audit request channel</a>.
     </p>
     <p>
-      Report newly found vulnerabilities using <a href="https://github.com/Kevin-Umali/repyy/security/advisories/new">private reporting</a>.
+      Publish the reviewer's identity, conflicts, exact release and commit, dates, methods, scope, and limitations. For each finding, record the severity,
+      affected behavior, inert reproduction, maintainer response, fix commit, and retest outcome. Keep unresolved findings in the published record.
     </p>
   </section>
 </DocsLayout>

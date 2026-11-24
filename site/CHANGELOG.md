@@ -19,11 +19,12 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Separate guide navigation, article content, and the section outline in the docs layout.
 - Link the Repyy skill and future release notes directly to the website.
 - Move rule catalog updates and release retry instructions to `CONTRIBUTING.md`.
+- Move the independent review brief and intelligence maintenance instructions into their Astro guides.
 - Generate a Content Security Policy for the Astro pages and document the Dokploy setup.
 
 ### Removed
 
-- Remove ten duplicate Markdown guides from `docs/`.
+- Remove the old Markdown guides from `docs/`.
 
 ### Fixed
 

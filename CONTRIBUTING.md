@@ -83,9 +83,8 @@ the authenticated `gh` CLI. The command rewrites generated metadata, so review t
 full checks afterward.
 
 For bounded GitHub malware-advisory and OpenSSF OSV feed ingestion, follow
-[`docs/INTELLIGENCE-MAINTENANCE.md`](docs/INTELLIGENCE-MAINTENANCE.md). That
-path emits an unsigned review candidate and a corrections ledger; it does not
-replace source review or sign a release snapshot.
+the [intelligence maintenance guide](https://repyy.dev/intelligence/#maintenance).
+Review the unsigned candidate and corrections ledger before signing a release snapshot.
 
 Never add an intelligence signing private key to a commit, fixture, issue, or pull request. Releases
 sign the exported snapshot in GitHub Actions; the public verification key is intentionally committed
