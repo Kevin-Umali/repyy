@@ -8,6 +8,7 @@ import (
 )
 
 func TestRegistryCheckIsOptInAndHostOnly(t *testing.T) {
+	t.Parallel()
 	defaults, err := parseScanArgs([]string{"."})
 	if err != nil || defaults.registryCheck {
 		t.Fatalf("registry lookups must be off by default: %+v, %v", defaults, err)
@@ -22,6 +23,7 @@ func TestRegistryCheckIsOptInAndHostOnly(t *testing.T) {
 }
 
 func TestProfileDefaultsToBalanced(t *testing.T) {
+	t.Parallel()
 	defaults, err := parseScanArgs([]string{"."})
 	if err != nil || defaults.profile != scan.ProfileBalanced {
 		t.Fatalf("default profile = %q, %v; want balanced", defaults.profile, err)

@@ -9,6 +9,7 @@ import (
 )
 
 func TestNormalizeSkipsNonRegistrySources(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		ecosystem, name, spec string
 		want                  Package
@@ -36,6 +37,7 @@ func TestNormalizeSkipsNonRegistrySources(t *testing.T) {
 }
 
 func TestLookupEscapesScopedNPMNames(t *testing.T) {
+	t.Parallel()
 	var rawPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rawPath = r.URL.EscapedPath()
@@ -55,6 +57,7 @@ func TestLookupEscapesScopedNPMNames(t *testing.T) {
 }
 
 func TestLookupRejectsOversizedMetadata(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"readme":"`))
 		chunk := []byte(strings.Repeat("a", 1<<20))

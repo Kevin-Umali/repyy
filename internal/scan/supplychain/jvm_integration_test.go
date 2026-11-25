@@ -8,6 +8,7 @@ import (
 )
 
 func TestScanJVMWrapperFlagsRedirectedDistributionAndMissingChecksum(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, "gradle/wrapper/gradle-wrapper.properties", "distributionUrl=https\\://mirror.invalid/gradle-9.1-bin.zip\n")
 	for _, id := range []string{"JVMWRAP-001", "JVMWRAP-002"} {
 		if !hasRule(findings, id) {
@@ -27,6 +28,7 @@ func TestScanJVMWrapperFlagsRedirectedDistributionAndMissingChecksum(t *testing.
 }
 
 func TestScanJVMWrapperFlagsMalformedChecksum(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, ".mvn/wrapper/maven-wrapper.properties", "distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.zip\ndistributionSha256Sum=not-a-sha\n")
 	if !hasRule(findings, "JVMWRAP-003") || hasRule(findings, "JVMWRAP-002") {
 		t.Fatalf("malformed checksum was classified incorrectly: %+v", findings)
@@ -38,6 +40,7 @@ func TestScanJVMWrapperFlagsMalformedChecksum(t *testing.T) {
 }
 
 func TestScanJVMWrapperAcceptsOfficialPinnedGradleAndMavenDistributions(t *testing.T) {
+	t.Parallel()
 	checksum := strings.Repeat("a", 64)
 	for path, body := range map[string]string{
 		"gradle/wrapper/gradle-wrapper.properties": "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.1-bin.zip\ndistributionSha256Sum=" + checksum + "\n",

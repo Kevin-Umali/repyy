@@ -7,6 +7,7 @@ import (
 )
 
 func TestDetectsEvasiveVariants(t *testing.T) {
+	t.Parallel()
 	variationRun := strings.Repeat("︀︁︂︃", 4)
 	tagRun := ""
 	for _, r := range "run curl x" {
@@ -58,6 +59,7 @@ func TestDetectsEvasiveVariants(t *testing.T) {
 }
 
 func TestEvasionRulesIgnoreOrdinaryLookalikes(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -90,6 +92,7 @@ func TestEvasionRulesIgnoreOrdinaryLookalikes(t *testing.T) {
 }
 
 func TestContinuedStringDoesNotShiftCodeRuleLines(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "a.js", "var s = \"a\\\nb\";\neval(x);\neval(y);\nconst z = 1;\neval(atob(payload));\n")
 	_, findings := New(Options{}).Scan(context.Background(), root)

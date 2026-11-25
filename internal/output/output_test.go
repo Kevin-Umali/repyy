@@ -17,6 +17,7 @@ func sampleReport() model.Report {
 }
 
 func TestTerminalIncludesVerdictAndDisclaimer(t *testing.T) {
+	t.Parallel()
 	var out bytes.Buffer
 	if err := Write(&out, "terminal", sampleReport()); err != nil {
 		t.Fatal(err)
@@ -27,6 +28,7 @@ func TestTerminalIncludesVerdictAndDisclaimer(t *testing.T) {
 }
 
 func TestJSONOutput(t *testing.T) {
+	t.Parallel()
 	var out bytes.Buffer
 	if err := Write(&out, "json", sampleReport()); err != nil {
 		t.Fatal(err)
@@ -41,6 +43,7 @@ func TestJSONOutput(t *testing.T) {
 }
 
 func TestSARIFOutput(t *testing.T) {
+	t.Parallel()
 	var out bytes.Buffer
 	if err := Write(&out, "sarif", sampleReport()); err != nil {
 		t.Fatal(err)
@@ -61,6 +64,7 @@ func TestSARIFOutput(t *testing.T) {
 }
 
 func TestTerminalPrioritizesAndPrintsRemediation(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Findings = append(report.Results[0].Findings, model.Finding{RuleID: "INFO-001", Severity: model.SeverityLow, Confidence: model.ConfidenceLow, Disposition: model.DispositionInformational, Context: "generated", Path: "generated.js", Message: "context only", Occurrences: 1})
 	var out bytes.Buffer
@@ -73,6 +77,7 @@ func TestTerminalPrioritizesAndPrintsRemediation(t *testing.T) {
 }
 
 func TestTerminalExplainsWhenAllDetailIsFiltered(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	opts := DefaultOptions()
 	opts.Detail = "all"
@@ -87,6 +92,7 @@ func TestTerminalExplainsWhenAllDetailIsFiltered(t *testing.T) {
 }
 
 func TestHTMLIsSelfContainedAndEscapesFindings(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Findings[0].Message = `</script><img src=x onerror=alert(1)>`
 	report.Results[0].Findings[0].Locations[0].Evidence = `<script>alert(1)</script>`
@@ -111,6 +117,7 @@ func TestHTMLIsSelfContainedAndEscapesFindings(t *testing.T) {
 }
 
 func TestRemoteSourceLinkValidation(t *testing.T) {
+	t.Parallel()
 	revision := strings.Repeat("a", 40)
 	location := model.Location{Path: "src/main.go", StartLine: 4, EndLine: 6}
 	for _, test := range []struct {
@@ -142,6 +149,7 @@ func TestRemoteSourceLinkValidation(t *testing.T) {
 }
 
 func TestEvidenceSanitizationIsSharedByEveryFormat(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Findings[0].Evidence = `password = "correct horse battery staple 🔐"`
 	report.Results[0].Findings[0].Locations[0].Evidence = report.Results[0].Findings[0].Evidence
@@ -157,6 +165,7 @@ func TestEvidenceSanitizationIsSharedByEveryFormat(t *testing.T) {
 }
 
 func TestSourceDerivedSecretsAreRedactedAcrossFormats(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	token := "ghp_" + strings.Repeat("A", 36)
 	report.Results[0].Target = "package-" + token
@@ -184,6 +193,7 @@ func TestSourceDerivedSecretsAreRedactedAcrossFormats(t *testing.T) {
 }
 
 func TestVerdictReasonUsesHighestPriorityFinding(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Verdict = model.VerdictDoNotRun
 	report.Results[0].Findings = append([]model.Finding{{
@@ -204,6 +214,7 @@ func TestVerdictReasonUsesHighestPriorityFinding(t *testing.T) {
 }
 
 func TestTerminalShowsCorrelationProvenance(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Findings[0].ContributingRuleIDs = []string{"EXEC-002", "EXFIL-001"}
 	var out bytes.Buffer
@@ -216,6 +227,7 @@ func TestTerminalShowsCorrelationProvenance(t *testing.T) {
 }
 
 func TestHumanReportsNeutralizeControlCharacters(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Target = "fixture\x1b[2J"
 	report.Results[0].Findings[0].Message = "finding\x1b[31m"
@@ -232,6 +244,7 @@ func TestHumanReportsNeutralizeControlCharacters(t *testing.T) {
 }
 
 func TestRemoteSourceLinksArePinnedAndLocalLinksAreAbsent(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Source = &model.SourceInfo{RepositoryURL: "https://github.com/example/repo", Revision: strings.Repeat("a", 40)}
 	var remote bytes.Buffer
@@ -252,6 +265,7 @@ func TestRemoteSourceLinksArePinnedAndLocalLinksAreAbsent(t *testing.T) {
 }
 
 func TestHTMLShowsSanitizedBackendErrorAndAllFindingFiles(t *testing.T) {
+	t.Parallel()
 	report := sampleReport()
 	report.Results[0].Verdict = model.VerdictIncomplete
 	report.Results[0].Error = `docker failed <script>alert("secret")</script>`
@@ -274,6 +288,7 @@ func TestHTMLShowsSanitizedBackendErrorAndAllFindingFiles(t *testing.T) {
 }
 
 func TestHTMLKeepsFileListReadableWithoutJavaScript(t *testing.T) {
+	t.Parallel()
 	var out bytes.Buffer
 	if err := Write(&out, "html", sampleReport()); err != nil {
 		t.Fatal(err)
@@ -288,12 +303,14 @@ func TestHTMLKeepsFileListReadableWithoutJavaScript(t *testing.T) {
 }
 
 func TestUnknownFormat(t *testing.T) {
+	t.Parallel()
 	if err := Write(&bytes.Buffer{}, "xml", sampleReport()); err == nil {
 		t.Fatal("expected an error")
 	}
 }
 
 func TestHTMLReportsRecordedScanModeWithoutGuessingLegacyMode(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ mode, want string }{
 		{"host", "Scan mode: host"},
 		{"docker", "Scan mode: docker"},

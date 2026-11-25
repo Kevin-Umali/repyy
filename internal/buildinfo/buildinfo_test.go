@@ -7,6 +7,7 @@ import (
 )
 
 func TestDevelopmentIdentity(t *testing.T) {
+	t.Parallel()
 	var b bytes.Buffer
 	Write(&b, "0.5.0-dev", "test")
 	for _, want := range []string{"repyy 0.5.0-dev\n", "commit: unknown", "built-by: development", "source: github.com/Kevin-Umali/repyy", "go: go", "build-date: unknown"} {

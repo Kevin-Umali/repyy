@@ -9,6 +9,7 @@ import (
 )
 
 func TestFolderOpenTaskRecognizesJSONPropertyWithoutFlaggingManualTask(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, options string
 		want          bool
@@ -38,6 +39,7 @@ func TestFolderOpenTaskRecognizesJSONPropertyWithoutFlaggingManualTask(t *testin
 }
 
 func TestEditorExtensionProvisioningSurfaces(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, path, body, rule string
 		want                   bool
@@ -121,6 +123,7 @@ func TestEditorExtensionProvisioningSurfaces(t *testing.T) {
 }
 
 func TestWorkspaceCommandsAndDevcontainerFeaturesAreInventoried(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, path, body, rule string
 	}{
@@ -177,6 +180,7 @@ func TestWorkspaceCommandsAndDevcontainerFeaturesAreInventoried(t *testing.T) {
 }
 
 func TestPackagedVSIXExtensionIsInventoried(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -188,6 +192,7 @@ func TestPackagedVSIXExtensionIsInventoried(t *testing.T) {
 }
 
 func TestRepositoryManagedHookAndMultilineAgentCommands(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, path, body, rule string
 	}{
@@ -229,6 +234,7 @@ func TestRepositoryManagedHookAndMultilineAgentCommands(t *testing.T) {
 }
 
 func TestAgentHookProseIsNotConfiguration(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -240,6 +246,7 @@ func TestAgentHookProseIsNotConfiguration(t *testing.T) {
 }
 
 func TestAdditionalAutomaticExecutionAndInstallationSurfaces(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, path, body, rule string
 	}{

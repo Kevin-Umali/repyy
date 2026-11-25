@@ -13,6 +13,7 @@ import (
 )
 
 func TestPythonPTHStartupImports(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, body string
 		line       int
@@ -40,6 +41,7 @@ func TestPythonPTHStartupImports(t *testing.T) {
 }
 
 func TestPythonStartupCustomizationAndContext(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"sitecustomize.py", "usercustomize.py"} {
 		for _, dir := range []string{"", "fixtures", "docs"} {
 			t.Run(filepath.Join(dir, name), func(t *testing.T) {
@@ -66,6 +68,7 @@ func TestPythonStartupCustomizationAndContext(t *testing.T) {
 }
 
 func TestPythonPTHArchiveAndCoverage(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	var archive bytes.Buffer
 	writer := zip.NewWriter(&archive)
@@ -95,6 +98,7 @@ func TestPythonPTHArchiveAndCoverage(t *testing.T) {
 }
 
 func TestPythonPTHContextDowngrade(t *testing.T) {
+	t.Parallel()
 	for _, dir := range []string{"fixtures", "docs"} {
 		t.Run(dir, func(t *testing.T) {
 			root := t.TempDir()

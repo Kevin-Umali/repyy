@@ -103,6 +103,7 @@ func findingFor(findings []model.Finding, id, name string) (model.Finding, bool)
 }
 
 func TestRegistryCheckFlagsNewAndMissingPackages(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	fake := &fakeRegistry{
 		npm: map[string]fakePackage{
@@ -179,6 +180,7 @@ func TestRegistryCheckFlagsNewAndMissingPackages(t *testing.T) {
 }
 
 func TestRegistryCheckLooksUpEachPackageOnceAndSkipsWorkspaces(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	fake := &fakeRegistry{npm: map[string]fakePackage{"shared-new-lib": {created: now.Add(-2 * 24 * time.Hour), versions: 1, downloads: 3}}}
 	root := t.TempDir()
@@ -212,6 +214,7 @@ func TestRegistryCheckLooksUpEachPackageOnceAndSkipsWorkspaces(t *testing.T) {
 }
 
 func TestRegistryFailureMarksCoverageIncomplete(t *testing.T) {
+	t.Parallel()
 	now := time.Now().UTC()
 	fake := &fakeRegistry{
 		npm:     map[string]fakePackage{"brand-new-dep": {created: now.Add(-1 * 24 * time.Hour), versions: 1, downloads: 0}},
@@ -234,6 +237,7 @@ func TestRegistryFailureMarksCoverageIncomplete(t *testing.T) {
 }
 
 func TestRegistryUnreachableMarksCoverageIncomplete(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.NotFoundHandler())
 	unreachable := server.URL
 	server.Close()
@@ -252,6 +256,7 @@ func TestRegistryUnreachableMarksCoverageIncomplete(t *testing.T) {
 }
 
 func TestAssessReputationThresholds(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 11, 25, 0, 0, 0, 0, time.UTC)
 	day := 24 * time.Hour
 	cases := []struct {

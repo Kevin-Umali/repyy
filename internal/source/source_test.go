@@ -45,6 +45,7 @@ func TestPrepareLocalDirectory(t *testing.T) {
 }
 
 func TestPrepareCanonicalizesDirectorySymlink(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	link := filepath.Join(t.TempDir(), "review")
 	if err := os.Symlink(dir, link); err != nil {
@@ -91,6 +92,7 @@ func TestSecureGitEnvironmentIsNonInteractive(t *testing.T) {
 }
 
 func TestSecureGitEnvironmentAllowsOnlyRequestedSSHProtocol(t *testing.T) {
+	t.Parallel()
 	env := secureGitEnv("git@example.com:team/repo.git")
 	for _, item := range env {
 		if item == "GIT_ALLOW_PROTOCOL=ssh" {
@@ -101,6 +103,7 @@ func TestSecureGitEnvironmentAllowsOnlyRequestedSSHProtocol(t *testing.T) {
 }
 
 func TestRejectsRemoteURLsContainingSecretsWithoutLeakingThem(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		input   string
 		secrets []string
@@ -122,6 +125,7 @@ func TestRejectsRemoteURLsContainingSecretsWithoutLeakingThem(t *testing.T) {
 }
 
 func TestCanonicalRemoteURL(t *testing.T) {
+	t.Parallel()
 	for input, want := range map[string]string{
 		"https://github.com/Example/Repo.git":   "https://github.com/Example/Repo",
 		"git@gitlab.com:group/repo.git":         "https://gitlab.com/group/repo",

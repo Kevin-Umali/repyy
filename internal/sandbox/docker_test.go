@@ -182,6 +182,7 @@ func TestRunContainerRejectsMalformedOversizedAndTrailingJSON(t *testing.T) {
 }
 
 func TestLimitedBufferRejectsOversizedOutput(t *testing.T) {
+	t.Parallel()
 	var b limitedBuffer
 	if _, err := b.Write(make([]byte, maxJSON+1)); err != nil {
 		t.Fatal(err)
@@ -225,6 +226,7 @@ func TestRunContainerRequiresExitStatusToMatchReport(t *testing.T) {
 }
 
 func TestBindMountQuotesSpecialPaths(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		path string
 		want string

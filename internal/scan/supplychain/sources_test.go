@@ -10,6 +10,7 @@ import (
 )
 
 func TestNPMNonRegistrySourcesAcrossDependencyScopesAndOverrides(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, "package.json", `{
   "optionalDependencies": {"optional": "github:team/fork#main"},
   "peerDependencies": {"peer": "file:../peer"},
@@ -31,6 +32,7 @@ func TestNPMNonRegistrySourcesAcrossDependencyScopesAndOverrides(t *testing.T) {
 }
 
 func TestNPMAliasIsReviewedByActualPackageName(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, "package.json", `{"dependencies":{"lodash":"npm:lodahs@1.0.0"},"overrides":{"safe":"npm:other@1.0.0"}}`)
 	for _, id := range []string{"PKG-009", "PKG-008"} {
 		if !hasRule(findings, id) {
@@ -53,6 +55,7 @@ func TestNPMAliasIsReviewedByActualPackageName(t *testing.T) {
 }
 
 func TestPipAlternateLookupSourcesAndBenignLocalOptions(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		path, body string
 		want       bool
@@ -76,6 +79,7 @@ func TestPipAlternateLookupSourcesAndBenignLocalOptions(t *testing.T) {
 }
 
 func TestYarnRuntimeConfigurationAndPassiveConfiguration(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, ".yarnrc.yml", "yarnPath: ./tools/yarn.cjs\nplugins:\n  - path: .yarn/plugins/review.cjs\n    spec: review-plugin\n")
 	if !hasRule(findings, "YARN-001") || !hasRule(findings, "YARN-002") {
 		t.Fatalf("Yarn executable or plugin escaped review: %+v", findings)
@@ -92,6 +96,7 @@ func TestYarnRuntimeConfigurationAndPassiveConfiguration(t *testing.T) {
 }
 
 func TestRubyComposerAndNuGetSourceRedirection(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		path, positive, negative string
 		want                     []string
@@ -120,6 +125,7 @@ func TestRubyComposerAndNuGetSourceRedirection(t *testing.T) {
 }
 
 func TestImplicitCargoBuildScriptRequiresPackageManifest(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, manifest string
 		want           bool
@@ -146,6 +152,7 @@ func TestImplicitCargoBuildScriptRequiresPackageManifest(t *testing.T) {
 }
 
 func TestGoWorkspaceReplacementBlockAndOrdinaryUse(t *testing.T) {
+	t.Parallel()
 	redirected := scanInertPackageFixture(t, "go.work", "go 1.22\nreplace (\n  example.invalid/library => ../fork\n)\n")
 	if !hasRule(redirected, "GO-002") {
 		t.Fatalf("go.work replacement escaped review: %+v", redirected)
@@ -157,6 +164,7 @@ func TestGoWorkspaceReplacementBlockAndOrdinaryUse(t *testing.T) {
 }
 
 func TestMSBuildDirectoryTargetsExecutionAndPassiveTarget(t *testing.T) {
+	t.Parallel()
 	active := scanInertPackageFixture(t, "Directory.Build.targets", `<Project><Target Name="Fixture" BeforeTargets="Build"><Exec Command="echo inert-fixture" /></Target></Project>`)
 	if !hasRule(active, "DOTNET-001") {
 		t.Fatalf("MSBuild command escaped review: %+v", active)
@@ -168,6 +176,7 @@ func TestMSBuildDirectoryTargetsExecutionAndPassiveTarget(t *testing.T) {
 }
 
 func TestNuGetConfigurationCasingDoesNotHidePackageSource(t *testing.T) {
+	t.Parallel()
 	findings := scanInertPackageFixture(t, "NUGET.CONFIG", `<Configuration><PackageSources><Add KEY="Mirror" VALUE="https://fixture.invalid/v3/index.json" /></PackageSources><PackageSourceMapping><PackageSource KEY="mirror"><Package PATTERN="*" /></PackageSource></PackageSourceMapping></Configuration>`)
 	finding, ok := ruleFinding(findings, "NUGET-001")
 	if !ok || finding.Severity != model.SeverityHigh {
@@ -176,6 +185,7 @@ func TestNuGetConfigurationCasingDoesNotHidePackageSource(t *testing.T) {
 }
 
 func TestUndecodableSupplyChainConfigurationIsIncomplete(t *testing.T) {
+	t.Parallel()
 	for _, path := range []string{"NuGet.Config", "go.work", "gradle/wrapper/gradle-wrapper.properties", ".bundle/config", "Directory.Build.targets"} {
 		t.Run(path, func(t *testing.T) {
 			root := t.TempDir()

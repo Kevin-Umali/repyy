@@ -117,6 +117,7 @@ func TestMCPHandshakeListAndScan(t *testing.T) {
 }
 
 func TestMCPNegotiatesUnknownProtocolVersion(t *testing.T) {
+	t.Parallel()
 	replies := runMCPSession(t, `{"jsonrpc":"2.0","id":"a","method":"initialize","params":{"protocolVersion":"1999-01-01"}}`)
 	var initialize struct{ ProtocolVersion string }
 	mustUnmarshal(t, replies[0].Result, &initialize)
@@ -126,6 +127,7 @@ func TestMCPNegotiatesUnknownProtocolVersion(t *testing.T) {
 }
 
 func TestMCPRejectsMalformedMessages(t *testing.T) {
+	t.Parallel()
 	replies := runMCPSession(t,
 		`{not json`,
 		`[{"jsonrpc":"2.0","id":1,"method":"ping"}]`,
@@ -167,6 +169,7 @@ func TestMCPToolInputsAreValidated(t *testing.T) {
 }
 
 func TestMCPAnswersAfterOversizedLine(t *testing.T) {
+	t.Parallel()
 	replies := runMCPSession(t,
 		`{"jsonrpc":"2.0","id":1,"method":"ping","params":{"pad":"`+strings.Repeat("x", mcpMessageLimit)+`"}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"ping"}`,
@@ -224,6 +227,7 @@ func blockedMCPSession(t *testing.T) (send func(string), next func() mcpReply, s
 }
 
 func TestMCPAnswersPingDuringScan(t *testing.T) {
+	t.Parallel()
 	send, next, started, release := blockedMCPSession(t)
 	send(callTool(1, "scan_repository", map[string]any{"target": "/repo"}))
 	<-started
@@ -241,6 +245,7 @@ func TestMCPAnswersPingDuringScan(t *testing.T) {
 }
 
 func TestMCPCancelledCallGetsNoResponse(t *testing.T) {
+	t.Parallel()
 	send, next, started, _ := blockedMCPSession(t)
 	send(callTool(1, "scan_repository", map[string]any{"target": "/repo"}))
 	<-started
@@ -252,6 +257,7 @@ func TestMCPCancelledCallGetsNoResponse(t *testing.T) {
 }
 
 func TestMCPRejectsTargetsOnCommandLine(t *testing.T) {
+	t.Parallel()
 	if code, err := runMCP([]string{"."}, strings.NewReader(""), &bytes.Buffer{}, "test"); code != 3 || err == nil {
 		t.Fatalf("code=%d err=%v", code, err)
 	}
