@@ -133,20 +133,6 @@ jobs:
             .github/actions
             go.mod
             go.sum
-      - id: release
-        uses: ./.github/actions/affected
-        with:
-          paths: |
-            Makefile
-            site/CHANGELOG.md
-            scripts
-            .goreleaser.yaml
-            Dockerfile.sandbox
-            .dockerignore
-            .github/workflows
-            .github/actions
-            go.mod
-            go.sum
       - uses: ./.github/actions/setup-go
         with:
           job: lint
@@ -161,11 +147,63 @@ jobs:
       - name: Vet
         if: ${{ !cancelled() && steps.go.outputs.run == 'true' }}
         run: go vet ./...
-      - name: Scan for known vulnerabilities
-        if: ${{ !cancelled() && steps.go.outputs.run == 'true' }}
+
+  # Branch protection requires vulnerability-scan and release-config by name, so they
+  # stay separate jobs.
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          fetch-depth: 2
+          filter: blob:none
+          persist-credentials: false
+      - id: affected
+        uses: ./.github/actions/affected
+        with:
+          paths: |
+            :(glob)**/*.go
+            Makefile
+            .github/workflows
+            .github/actions
+            go.mod
+            go.sum
+      - uses: ./.github/actions/setup-go
+        if: steps.affected.outputs.run == 'true'
+        with:
+          job: vulnerability-scan
+      - if: steps.affected.outputs.run == 'true'
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
-      - name: Check release configuration
-        if: ${{ !cancelled() && steps.release.outputs.run == 'true' }}
+
+  release-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - id: affected
+        uses: ./.github/actions/affected
+        with:
+          paths: |
+            Makefile
+            site/CHANGELOG.md
+            scripts
+            .goreleaser.yaml
+            Dockerfile.sandbox
+            .dockerignore
+            .github/workflows
+            .github/actions
+            go.mod
+            go.sum
+      - uses: ./.github/actions/setup-go
+        if: steps.affected.outputs.run == 'true'
+        with:
+          job: release-config
+      - if: steps.affected.outputs.run == 'true'
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
@@ -343,7 +381,7 @@ jobs:
 
   passed:
     name: CI passed
-    needs: [site, test, lint, build, sandbox-image, fuzz, analyze, analyze-actions]
+    needs: [site, test, lint, vulnerability-scan, build, sandbox-image, release-config, fuzz, analyze, analyze-actions]
     if: always()
     runs-on: ubuntu-latest
     steps:
