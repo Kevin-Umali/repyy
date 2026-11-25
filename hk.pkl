@@ -1,0 +1,75 @@
+amends "package://github.com/jdx/hk/releases/download/v2.14.0/hk@2.14.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.14.0/hk@2.14.0#/Builtins.pkl"
+
+// Install once per clone with `hk install`. pre-commit formats and lints the staged
+// files; pre-push runs the CI checks for the areas the push changes.
+
+local gofmt = new Step {
+  glob = "**/*.go"
+  check = "test -z \"$(gofmt -l {{files}})\""
+  fix = "gofmt -w {{files}}"
+}
+
+local prettier = new Step {
+  dir = "site"
+  glob = List("**/*.ts", "**/*.mjs", "**/*.js", "**/*.json", "**/*.css", "**/*.md")
+  check = "npx --no-install prettier --check {{files}}"
+  fix = "npx --no-install prettier --write {{files}}"
+}
+
+local actionlint = new Step {
+  glob = List(".github/workflows/*.yml", ".github/actions/**/*.yml")
+  check = "go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12"
+}
+
+local goInputs = List("**/*.go", "go.mod", "go.sum", "Makefile")
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps {
+      ["gofmt"] = gofmt
+      ["prettier"] = prettier
+      ["actionlint"] = actionlint
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["gofmt"] = gofmt
+      ["prettier"] = prettier
+      ["actionlint"] = actionlint
+      ["vet"] {
+        glob = goInputs
+        check = "go vet ./..."
+      }
+      ["test"] {
+        glob = goInputs
+        check = "go test -race -shuffle=on ./..."
+      }
+      ["release-helpers"] {
+        glob = "scripts/**"
+        check = "python3 -m unittest discover -s scripts -p 'test_*.py'"
+      }
+      ["site"] {
+        dir = "site"
+        glob = List("**/*.astro", "**/*.ts", "**/*.mjs")
+        check = "npx --no-install astro check"
+      }
+    }
+  }
+  ["check"] {
+    steps {
+      ["gofmt"] = gofmt
+      ["prettier"] = prettier
+      ["actionlint"] = actionlint
+    }
+  }
+  ["fix"] {
+    fix = true
+    steps {
+      ["gofmt"] = gofmt
+      ["prettier"] = prettier
+    }
+  }
+}
