@@ -248,7 +248,7 @@ func scanOne(parent context.Context, target string, opts scanArgs, rules []scan.
 	defer cancel()
 	if opts.sandbox == "docker" {
 		result.ScanMode = model.ScanModeDocker
-		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
+		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, Profile: string(opts.profile), MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
 		if err != nil {
 			result.Error = err.Error()
 			result.Verdict = model.VerdictIncomplete
@@ -283,7 +283,7 @@ func scanOne(parent context.Context, target string, opts scanArgs, rules []scan.
 	if prepared.Remote && prepared.RepositoryURL != "" && prepared.Revision != "" {
 		result.Source = &model.SourceInfo{RepositoryURL: prepared.RepositoryURL, Revision: prepared.Revision}
 	}
-	scanOptions := scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress}
+	scanOptions := scan.Options{Profile: opts.profile, Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress}
 	if opts.registryCheck {
 		scanOptions.Registry = registry.New()
 	}

@@ -27,6 +27,9 @@ All notable changes are documented here. The project follows Semantic Versioning
   editor tool paths redirected into the repository.
 - Show a real findings queue in the README and docs overview. The CLI reference
   also shows the Home workspace chooser and an opened finding.
+- Add `repyy scan --profile balanced|comprehensive`. `balanced`, the default,
+  tiers capabilities against threats. `comprehensive` keeps every capability at
+  its rule severity for audits. Docker scans pass the profile to the worker.
 - Add a sticky release banner to the landing page and docs.
 
 ### Changed

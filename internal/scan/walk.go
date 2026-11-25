@@ -223,5 +223,7 @@ func (s *Scanner) scanFile(ctx context.Context, confined *os.Root, rel string, i
 	if isArchive(rel, data) {
 		s.scanArchive(ctx, rel, data, 1, step.add, &step.coverage)
 	}
-	corroborateCapabilities(step.findings)
+	if s.opts.Profile != ProfileComprehensive {
+		corroborateCapabilities(step.findings)
+	}
 }

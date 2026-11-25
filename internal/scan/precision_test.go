@@ -342,3 +342,12 @@ func TestNonExecutingThreatSignalsInTestsAreLowered(t *testing.T) {
 		t.Fatalf("CRED-002 at %s in a test file", severity)
 	}
 }
+
+func TestComprehensiveProfileKeepsCapabilitiesHigh(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, root, "src/run.js", "const { spawn } = require('child_process');\nspawn(bin, args);\n")
+	_, findings := New(Options{Profile: ProfileComprehensive}).Scan(context.Background(), root)
+	if severity, _ := highestSeverity(findings, "EXEC-002"); severity != model.SeverityHigh {
+		t.Fatalf("EXEC-002 at %s under the comprehensive profile; want high", severity)
+	}
+}

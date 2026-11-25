@@ -49,6 +49,7 @@ func DefaultLimits() Limits {
 
 // Options configures scanner rules, intelligence, dependency traversal, and limits.
 type Options struct {
+	Profile             Profile
 	Rules               []Rule
 	Intelligence        *intel.Database
 	IncludeDependencies bool
@@ -58,6 +59,17 @@ type Options struct {
 	// keeps the scan offline.
 	Registry *registry.Client
 }
+
+// Profile chooses how capability findings are tiered.
+type Profile string
+
+const (
+	// ProfileBalanced, the default, keeps a capability such as spawning a process
+	// high only beside a threat signal or on an auto-run surface.
+	ProfileBalanced Profile = "balanced"
+	// ProfileComprehensive keeps every capability at its rule severity.
+	ProfileComprehensive Profile = "comprehensive"
+)
 
 // Scanner performs deterministic, read-only static inspection.
 type Scanner struct {
