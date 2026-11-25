@@ -20,7 +20,7 @@ func (s Severity) Rank() int {
 	case SeverityCritical:
 		return 4
 	case SeverityHigh:
-		return 3
+		return 2
 	case SeverityMedium:
 		return 2
 	default:
