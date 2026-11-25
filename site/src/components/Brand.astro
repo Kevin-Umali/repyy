@@ -1,0 +1,20 @@
+---
+interface Props {
+  href: string;
+  section?: string;
+}
+
+const { href, section } = Astro.props;
+---
+
+<a class="brand" href={href}><span class="t-a">r/</span> <b>repyy</b></a>
+{
+  section && (
+    <span class="brand-section">
+      <span class="t-m" aria-hidden="true">
+        /
+      </span>{" "}
+      {section}
+    </span>
+  )
+}

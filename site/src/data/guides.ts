@@ -552,3 +552,9 @@ export function getGuide(slug: string): Guide {
   if (!guide) throw new Error(`Unknown guide: ${slug}`);
   return guide;
 }
+
+export const guideGroups = [
+  { label: "Get started", slugs: ["docs", "installation", "cli", "demo"] },
+  { label: "Reference", slugs: ["configuration", "isolation", "coverage", "rules", "intelligence", "agent-skill"] },
+  { label: "Project", slugs: ["trust", "verification", "security-testing", "changelog", "about"] },
+] as const;

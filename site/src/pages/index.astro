@@ -1,365 +1,337 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import SiteFooter from "../components/SiteFooter.astro";
-import SiteHeader from "../components/SiteHeader.astro";
-import WorkflowAnatomy from "../components/WorkflowAnatomy.astro";
-import RiskMeters from "../components/RiskMeters.astro";
-import EncodingReader from "../components/EncodingReader.astro";
-import BentoAnatomy from "../components/BentoAnatomy.astro";
+import Brand from "../components/Brand.astro";
+import StatusLine from "../components/StatusLine.astro";
+import TermStage from "../components/TermStage.astro";
+import { evidence, faq, formats, installs, limits, matrix, tree } from "../data/landing";
+import { release } from "../data/site";
 import "../styles/landing.css";
-import "../styles/bento-anatomy.css";
-import "../styles/experience.css";
 
-const title = "repyy | A closer look before you run";
-const description =
-  "Inspect take-home assignments before installing dependencies, starting the project or opening it in your IDE. Repyy reports risks and limitations.";
+const title = "repyy · scan a repository before you run it";
+const description = "A CLI that statically scans an unfamiliar repository before you install dependencies, start it, or open it in your IDE.";
+
+const sections = [
+  { id: "top", label: "Overview" },
+  { id: "replay", label: "Replay" },
+  { id: "surfaces", label: "Surfaces" },
+  { id: "formats", label: "Formats" },
+  { id: "limits", label: "Limits" },
+  { id: "trust", label: "Trust" },
+  { id: "help", label: "Help" },
+];
+const n = (id: string) => String(sections.findIndex((s) => s.id === id) + 1).padStart(2, "0");
+const status = (id: string) => `${sections.findIndex((s) => s.id === id) + 1} ${sections.find((s) => s.id === id)?.label}`;
+
+const md = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/\{([abm]):([^}]*)\}/g, (_, k, t) => `<span class="t-${k}">${t}</span>`);
 ---
 
 <BaseLayout {title} {description} rootClass="landing-root" bodyClass="landing-page">
-  <SiteHeader slot="header" />
+  <header class="tabbar" slot="header">
+    <a class="skip" href="#main">Skip to content</a>
+    <nav aria-label="Primary">
+      <Brand href="/" />
+      <span class="t-m sep" aria-hidden="true">/</span>
+      <ol class="tabs">
+        {
+          sections.map((s, i) => (
+            <li>
+              <a href={`#${s.id}`} data-section-link={s.id}>
+                <span class="dot" aria-hidden="true">
+                  ●
+                </span>{" "}
+                {i + 1} {s.label}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="ext">
+        <a href="/docs/">docs</a>
+        <a href="https://github.com/Kevin-Umali/repyy">github ↗</a>
+      </div>
+    </nav>
+  </header>
+
   <main id="main">
-    <section class="hero" id="top">
-      <div class="hero-copy">
-        <p class="context-line">Repository preflight. Free and open source.</p>
-        <h1>
-          A closer look.<span>Before you run.</span>
-        </h1>
-        <p class="hero-lede">Repyy reviews unfamiliar take-home repositories before you install dependencies, start the project, or open it in your IDE.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="./demo/sample/sample.html">
-            View the demo report
-          </a>
-          <a class="text-link" href="#install">
-            Install Repyy <span aria-hidden="true">↓</span>
-          </a>
-        </div>
-        <p class="hero-limitation">Static analysis can identify risks, but it cannot prove that a repository is safe.</p>
+    <section class="hero" id="top" aria-labelledby="hero-title" data-section data-status-label={status("top")}>
+      <div class="hero-meta">
+        <span>repository preflight</span>
+        <span>{release.version}</span>
+        <span>MIT</span>
+        <span>written in Go</span>
+        <span class="t-a">static · nothing in the target runs</span>
       </div>
-    </section>
-    <section class="workflow" id="workflow">
-      <div class="workflow-intro">
-        <div class="section-head">
-          <p class="section-label">How it works</p>
-          <h2>Files in. Evidence out.</h2>
-          <p>Start with a local folder or Git URL. Keep assignment-controlled commands unexecuted while you review.</p>
-        </div>
-        <WorkflowAnatomy />
-      </div>
-    </section>
-    <section class="coverage" id="coverage">
-      <div class="section-head coverage-heading">
+      <pre class="wordmark" aria-hidden="true" data-wordmark></pre>
+      <div class="hero-row">
         <div>
-          <p class="section-label">What the scan checks</p>
-          <h2>Look beyond the source files.</h2>
+          <h1 id="hero-title"><span class="t-a" aria-hidden="true">›</span> Scan the repo before you run it.</h1>
+          <p class="lede">
+            repyy reads an unfamiliar checkout for install hooks, encoded payloads, credentials and editor tasks, then shows each finding with its source location
+            and how much of the repo it covered.
+          </p>
         </div>
-        <p>Static checks look for patterns across install paths, automation, encoded payloads, credentials, metadata, and archives.</p>
-      </div>
 
-      <div class="coverage-grid">
-        <article class="coverage-card coverage-primary">
-          <div class="card-meta">
-            <span>01 / Execution paths</span>
-            <strong>Install paths</strong>
-          </div>
-          <p class="scan-caption">A closer look at the paths that can execute.</p>
-          <BentoAnatomy kind="install" />
-          <div class="coverage-probe">
-            <span>
-              <b>package.json</b>
-              <small>lifecycle scripts</small>
-              <i>2 signals</i>
-            </span>
-            <span>
-              <b>.github/workflows</b>
-              <small>automation</small>
-              <i>checked</i>
-            </span>
-            <span>
-              <b>.vscode/tasks.json</b>
-              <small>editor tasks</small>
-              <i>checked</i>
-            </span>
-            <span>
-              <b>fixtures/sample.zip</b>
-              <small>archive depth 1</small>
-              <i>checked</i>
-            </span>
-          </div>
-          <p>Lifecycle scripts, custom registries, unexpected binaries, and download-to-execute chains are evaluated together.</p>
-        </article>
-
-        <article class="coverage-card coverage-confidence">
-          <div class="card-meta">
-            <span>02 / Finding model</span>
-            <strong>Severity ≠ confidence</strong>
-          </div>
-          <RiskMeters />
-          <p>Severity and confidence remain separate so review signals are not presented as proof of compromise.</p>
-        </article>
-
-        <article class="coverage-card coverage-signal">
-          <div class="card-meta">
-            <span>03 / Encoded behavior</span>
-            <strong>
-              Hidden code.
-              <br />
-              Visible intent.
-            </strong>
-          </div>
-          <EncodingReader />
-          <p>Code can hide what it does behind encoded text. Repyy flags decoding and execution patterns for you to inspect.</p>
-        </article>
-
-        <article class="coverage-card coverage-secrets">
-          <div class="credentials-copy">
-            <div class="card-meta">
-              <span>04 / Redacted evidence</span>
-              <strong>Credentials</strong>
+        <div class="install" data-tabs>
+          <div class="install-head">
+            <span class="t-m">install with</span>
+            <div class="install-tabs" role="tablist" aria-label="Install with">
+              {
+                installs.map((item, i) => (
+                  <button
+                    type="button"
+                    class="kbtn"
+                    role="tab"
+                    id={`tab-${item.id}`}
+                    aria-selected={i === 0 ? "true" : "false"}
+                    aria-controls="install-cmd"
+                    data-value={item.command}
+                  >
+                    {item.id}
+                  </button>
+                ))
+              }
             </div>
-            <div class="redaction" aria-hidden="true">
-              <span>ghp_</span>
-              <i></i>
-              <i></i>
-              <i></i>
-            </div>
-            <p>Recognized credential-shaped values are redacted. Review reports for sensitive content before sharing.</p>
           </div>
-          <BentoAnatomy kind="secrets" />
-        </article>
-
-        <article class="coverage-card coverage-surface">
-          <div class="surface-copy">
-            <div class="card-meta">
-              <span>05 / Repository surfaces</span>
-              <strong>Beyond the app folder</strong>
-            </div>
-            <p>CI, editor tasks, agent instructions, containers, Git hooks, archives, and social-engineering signals remain in scope.</p>
+          <div class="install-cmd" id="install-cmd" role="tabpanel" aria-labelledby="tab-brew">
+            <code><span class="t-a">$</span> <span data-output>{installs[0].command}</span></code>
+            <button type="button" class="kbtn primary" data-copy aria-label="Copy install command"><kbd class="t-a">i</kbd> <span data-copy-label>copy</span></button>
           </div>
-          <BentoAnatomy kind="surface" />
-        </article>
-      </div>
-    </section>
-    <section class="limits">
-      <div class="limits-heading">
-        <h2>Coverage limits</h2>
-        <p>Every scan has a boundary. If a timeout, limit, or read error reduces coverage, repyy reports the scan as incomplete.</p>
-      </div>
-      <div class="limit-grid">
-        <div class="limit">
-          <strong>10 min</strong>
-          <span>Default timeout</span>
-        </div>
-        <div class="limit">
-          <strong>100,000</strong>
-          <span>Default file limit</span>
-        </div>
-        <div class="limit">
-          <strong>50 MiB</strong>
-          <span>Default per file</span>
-        </div>
-        <div class="limit">
-          <strong>3 levels</strong>
-          <span>Archive depth</span>
-        </div>
-      </div>
-      <p class="limits-note">These defaults are adjustable. They are not detection guarantees.</p>
-    </section>
-
-    <section class="trust-evidence" id="trust" aria-labelledby="trust-title">
-      <div class="trust-intro section-head">
-        <p class="section-label">Trust, with evidence</p>
-        <h2 id="trust-title">
-          A clear boundary.
-          <br />
-          An inspectable tool.
-        </h2>
-        <p>
-          Local scans keep source and reports on your machine. Remote retrieval needs network access. Static analysis can miss malicious behavior and flag
-          legitimate code.
-        </p>
-        <a class="text-link" href="./trust/">
-          Read Trust and Limitations ↗
-        </a>
-      </div>
-      <div class="evidence-register">
-        <a href="./verification/">
-          <span class="evidence-number" aria-hidden="true">
-            01
-          </span>
-          <span>
-            <strong>Trace the release.</strong>
-            <small>Signatures, SBOMs and build provenance. Check which evidence exists for your version.</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a href="./security-testing/">
-          <span class="evidence-number" aria-hidden="true">
-            02
-          </span>
-          <span>
-            <strong>Inspect the testing.</strong>
-            <small>CodeQL, regression tests and bounded fuzzing, with known gaps documented.</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a href="./demo/">
-          <span class="evidence-number" aria-hidden="true">
-            03
-          </span>
-          <span>
-            <strong>Reproduce the results.</strong>
-            <small>Inert fixtures, paired controls and visible misses. No universal accuracy claim.</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <div>
-          <span class="evidence-number" aria-hidden="true">
-            04
-          </span>
-          <span>
-            <strong>Independent review is pending.</strong>
-            <small>A prepared scope is available. No external audit is claimed.</small>
-          </span>
+          <p class="then"><span class="t-m">then</span> <code>repyy scan ./take-home --format tui</code></p>
         </div>
       </div>
     </section>
-    <section class="reports" id="outputs">
-      <div class="report-lab" data-report-lab>
-        <div class="report-heading">
-          <div>
-            <p class="section-label">Report formats</p>
-            <h2>The same evidence. A view that fits.</h2>
-            <p>
-              Read it in your terminal, pass it to automation, or keep an offline report. Recognized sensitive values are redacted. Review the report before
-              sharing.
-            </p>
-          </div>
-          <div class="report-tabs" role="tablist" aria-label="Report formats">
-            <button class="is-active" type="button" role="tab" aria-selected="true" data-report-format="terminal">
-              Terminal
-            </button>
-            <button type="button" role="tab" aria-selected="false" data-report-format="json">
-              JSON
-            </button>
-            <button type="button" role="tab" aria-selected="false" data-report-format="sarif">
-              SARIF
-            </button>
-            <button type="button" role="tab" aria-selected="false" data-report-format="html">
-              HTML
-            </button>
-          </div>
-        </div>
-        <div class="report-screen">
-          <div class="report-screen-bar">
-            <span>
-              <i></i>
-              <i></i>
-              <i></i>
-            </span>
-            <strong data-report-title>Terminal text</strong>
-            <button type="button" class="copy-button light" data-report-copy>
-              Copy command
-            </button>
-          </div>
-          <pre><code data-report-preview><span class="code-muted">$</span> repyy scan ./assignment --format terminal
 
-<b>REVIEW REQUIRED</b>
-2 findings need context
+    <div class="replay" data-section id="replay" data-status-label={status("replay")}>
+      <TermStage flow="tour" number={n("replay")} caption="A replay of repyy scan with the tui format: the scan runs, three findings appear with a recommended action, and the report is exported as HTML." />
+    </div>
 
-HIGH  PKG-001   package.json:12
-MED   OBFS-003   src/setup.js:48</code></pre>
-        </div>
-        <aside class="report-notes">
-          <p class="section-label">Abbreviated format examples</p>
-          <div>
-            <strong data-report-use>Human review</strong>
-            <p data-report-description>Prioritized findings with context and a clear verdict.</p>
+    <div class="grid">
+      <section class="pane pane-surfaces" id="surfaces" aria-labelledby="surfaces-title" data-section data-status-label={status("surfaces")}>
+        <h2 class="pane-label" id="surfaces-title"><span class="t-a">{n("surfaces")}</span> surfaces <span class="t-m">· what it reads</span></h2>
+        <p class="pane-lede">The files that run on install, on commit, in CI and in your editor, not just <code>src/</code>.</p>
+        <div class="tree" data-tree>
+          <p class="tree-head"><b>take-home/</b> <span class="t-m" data-tree-count aria-live="off"></span></p>
+          <div class="tree-body">
+            <span class="tree-cursor" data-tree-cursor aria-hidden="true"></span>
+            <ul>
+            {
+              tree.map(({ path, note, finding, hitByDefault }) => (
+                <li data-row data-hit={hitByDefault ? "" : undefined} data-state="read">
+                  <span class="path">{path}</span>
+                  <span class="note note-check">
+                    <span class="mark" aria-hidden="true">✓</span> {note}
+                  </span>
+                  <span class="note note-hit">
+                    <span class="mark" aria-hidden="true">●</span> {finding}
+                  </span>
+                </li>
+              ))
+            }
+            </ul>
           </div>
-          <code data-report-command>repyy scan ./assignment --format terminal</code>
-          <a href="./cli/#reports">
-            Report reference <span aria-hidden="true">↗</span>
-          </a>
-        </aside>
-      </div>
+        </div>
+      </section>
 
-      <div class="sample-invitation">
-        <div>
-          <p class="section-label">See it before installing</p>
-          <h3>See the report before you install.</h3>
-          <p>Explore 11 inert risk examples and their paired controls, scanned with the 0.6.0 preview code.</p>
-        </div>
-        <a class="button primary" href="./demo/">
-          Open the demo ↗
-        </a>
-      </div>
-      <p class="report-limitation">
-        Check coverage before acting on a scan. <a href="./trust/#incomplete-scans-and-exit-codes">Report statuses and incomplete coverage ↗</a>
-      </p>
-    </section>
-    <section class="install" id="install">
-      <div class="section-head">
-        <p class="section-label">Get started</p>
-        <h2>Start with a scan.</h2>
-        <p>Install repyy. Scan the assignment. Review what comes back.</p>
-      </div>
-      <div class="install-panel" data-install-tabs>
-        <div class="install-tabs" role="tablist" aria-label="Installation methods">
-          <button class="is-active" type="button" role="tab" aria-selected="true" data-install-command="brew install --cask Kevin-Umali/tap/repyy">
-            Homebrew
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected="false"
-            data-install-command="scoop bucket add repyy https://github.com/Kevin-Umali/scoop-bucket; scoop install repyy/repyy"
-          >
-            Scoop
-          </button>
-          <button type="button" role="tab" aria-selected="false" data-install-command="go install github.com/Kevin-Umali/repyy/cmd/repyy@latest">
-            Go
-          </button>
-        </div>
-        <div class="install-command">
-          <code>
-            <span>$</span> <b data-install-output>brew install --cask Kevin-Umali/tap/repyy</b>
-          </code>
-          <button class="install-copy-button" data-install-copy type="button">
-            <span data-copy-label>Copy command</span>
-            <i class="copy-icon" aria-hidden="true">
-              <span class="copy-icon-default">↗</span>
-              <span class="copy-icon-success">✓</span>
-            </i>
-          </button>
-        </div>
-      </div>
+      <section class="pane pane-model" aria-labelledby="model-title">
+        <h2 class="pane-label" id="model-title"><span class="t-a">{n("surfaces")}</span> severity ≠ confidence</h2>
+        <p class="pane-lede">Each finding sits on both axes, so a weak signal is never presented as proof.</p>
+        <pre class="matrix" aria-describedby="matrix-desc" set:html={matrix} />
+        <ul class="legend" id="matrix-desc">
+          <li><span class="t-a">●</span> PKG-002 · non-registry source</li>
+          <li><b>●</b> PKG-001 · lifecycle script</li>
+          <li><b>●</b> REPO-002 · no license</li>
+        </ul>
+        <p class="pane-foot">Credential-shaped values are redacted in every format. A timeout or read error marks the scan <code class="t-a">SCAN INCOMPLETE</code>.</p>
+      </section>
 
-      <div class="install-links">
-        <a href="./installation/">Installation guide ↗</a>
-        <a href="./verification/">Verify your download ↗</a>
-      </div>
-    </section>
-    <section class="faq" aria-labelledby="questions-title">
-      <h2 id="questions-title">Before you begin.</h2>
-      <div class="faq-list">
-        <details>
-          <summary>Does “No findings” mean the repository is safe?</summary>
-          <p>No. It means the completed scan matched no enabled rule. Static analysis can miss malicious behavior and can report harmless code.</p>
-        </details>
-        <details>
-          <summary>Can I scan private repositories?</summary>
-          <p>Yes. HTTPS clones can use supported provider tokens. SSH remotes use your existing SSH agent.</p>
-        </details>
-        <details>
-          <summary>Can a repository weaken its own scan?</summary>
-          <p>No. Repository-owned .repyy.yaml files are ignored. Pass a configuration file you trust with the --config flag.</p>
-        </details>
-      </div>
+      <section class="pane pane-formats" id="formats" aria-labelledby="formats-title" data-section data-status-label={status("formats")}>
+        <h2 class="pane-label" id="formats-title"><span class="t-a">{n("formats")}</span> formats <span class="t-m">· one scan, four outputs</span></h2>
+        <div class="formats" data-tabs>
+          <div class="format-tabs" role="tablist" aria-label="Report format">
+            {
+              formats.map((f, i) => (
+                <button type="button" class="kbtn" role="tab" id={`fmt-${f.id}`} aria-selected={i === 0 ? "true" : "false"} aria-controls={`panel-${f.id}`}>
+                  --format {f.id} <small>{f.use}</small>
+                </button>
+              ))
+            }
+          </div>
+          {
+            formats.map((f, i) => (
+              <div class="format-panel" role="tabpanel" id={`panel-${f.id}`} aria-labelledby={`fmt-${f.id}`} hidden={i !== 0}>
+                <pre set:html={`<span class="t-a">$</span> ${f.command}\n\n${md(f.preview)}`} />
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="pane pane-limits" id="limits" aria-labelledby="limits-title" data-section data-status-label={status("limits")}>
+        <h2 class="pane-label" id="limits-title"><span class="t-a">{n("limits")}</span> limits <span class="t-m">· every scan has a boundary</span></h2>
+        <table class="flags">
+          <thead>
+            <tr><th scope="col">flag</th><th scope="col">default</th><th scope="col">scope</th></tr>
+          </thead>
+          <tbody>
+            {
+              limits.map(([flag, value, scope]) => (
+                <tr>
+                  <td>
+                    <code>{flag}</code>
+                  </td>
+                  <td>{value}</td>
+                  <td>{scope}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+        <p class="pane-foot">Limits on work, not detection guarantees. <a href="/coverage/">coverage →</a></p>
+      </section>
+
+      <section class="pane pane-trust" id="trust" aria-labelledby="trust-title" data-section data-status-label={status("trust")}>
+        <h2 class="pane-label" id="trust-title"><span class="t-a">{n("trust")}</span> trust <span class="t-m">· check the tool too</span></h2>
+        <ul class="checks">
+          {
+            evidence.map(([done, name, note, href]) => (
+              <li class={done === "x" ? "" : "pending"}>
+                <span class="box" aria-hidden="true">
+                  [{done}]
+                </span>
+                {href ? <a href={href}>{name}</a> : <span class="name">{name}</span>}
+                <span class="note">{note}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="pane-foot">Local scans keep source and reports on your machine. <a href="/trust/">trust and limitations →</a></p>
+      </section>
+
+      <section class="pane pane-faq" id="help" aria-labelledby="faq-title" data-section data-status-label={status("help")}>
+        <h2 class="pane-label" id="faq-title"><span class="t-a">{n("help")}</span> repyy --help <span class="t-m">· before you begin</span></h2>
+        <div class="faq">
+          {
+            faq.map(([q, a]) => (
+              <details>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+    </div>
+
+    <section class="end" aria-label="Get started">
+      <p class="end-line"><span class="t-a">~/take-home ❯</span> repyy scan . --format tui<span class="caret" aria-hidden="true"></span></p>
+      <nav class="end-links" aria-label="More">
+        <a href="/installation/">install guide</a>
+        <a href="/verification/">verify a download</a>
+        <a href="/agent-skill/">agent skill</a>
+        <a href="/rules/">rule catalog</a>
+        <a href="/changelog/">changelog</a>
+        <a href="/about/">about</a>
+      </nav>
     </section>
   </main>
-  <SiteFooter />
+
+  <StatusLine
+    mode="REVIEW"
+    where={status("top")}
+    keys={[
+      { key: "1–7", label: "jump to a section" },
+      { key: "i", label: "copy install" },
+      { key: "p", label: "pause replay" },
+      { key: "d", label: "docs" },
+    ]}
+  />
 </BaseLayout>
 
 <script>
-  import "../scripts/site.js";
-  import "../scripts/landing.js";
+  import { mountWordmark } from "../scripts/term/ascii-wordmark.js";
+  import { mountTreeScan } from "../scripts/term/tree-scan.js";
+  import { jumpTo, mountKeys, mountStatus } from "../scripts/term/term-keys.js";
+
+  const wordmark = document.querySelector<HTMLPreElement>("[data-wordmark]");
+  if (wordmark) mountWordmark(wordmark);
+  const tree = document.querySelector<HTMLElement>("[data-tree]");
+  if (tree) mountTreeScan(tree);
+
+  const swap = (el: Element) => {
+    el.classList.remove("is-swapping");
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("is-swapping");
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-tabs]").forEach((group) => {
+    const tabs = [...group.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const output = group.querySelector<HTMLElement>("[data-output]");
+    const select = (tab: HTMLButtonElement) => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        const panel = document.getElementById(t.getAttribute("aria-controls") ?? "");
+        if (panel && !output && panel.hidden === on) {
+          panel.hidden = !on;
+          if (on) swap(panel);
+        }
+      });
+      if (output && tab.dataset.value) {
+        output.textContent = tab.dataset.value;
+        swap(output);
+        group.querySelector('[role="tabpanel"]')?.setAttribute("aria-labelledby", tab.id);
+      }
+    };
+    tabs.forEach((tab, i) => {
+      tab.tabIndex = i === 0 ? 0 : -1;
+      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("keydown", (e) => {
+        const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        const next = tabs[(i + step + tabs.length) % tabs.length];
+        next.focus();
+        select(next);
+      });
+    });
+  });
+
+  const copyButton = document.querySelector<HTMLButtonElement>("[data-copy]");
+  const copyLabel = copyButton?.querySelector("[data-copy-label]");
+  const copyInstall = async () => {
+    if (!copyLabel) return;
+    const text = document.querySelector("[data-output]")?.textContent ?? "";
+    try {
+      await navigator.clipboard.writeText(text);
+      copyLabel.textContent = "copied ✓";
+      swap(copyLabel);
+    } catch {
+      copyLabel.textContent = "select + copy";
+    }
+    setTimeout(() => {
+      copyLabel.textContent = "copy";
+      swap(copyLabel);
+    }, 1600);
+  };
+  copyButton?.addEventListener("click", copyInstall);
+
+  const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
+  mountStatus({
+    sections,
+    links: [...document.querySelectorAll<HTMLAnchorElement>("[data-section-link]")],
+    where: document.querySelector("[data-status-section]"),
+    pos: document.querySelector("[data-status-pos]"),
+  });
+
+  const keymap: Record<string, () => void> = {
+    i: copyInstall,
+    p: () => document.querySelector<HTMLButtonElement>("[data-tui-toggle]")?.click(),
+    d: () => (location.href = "/docs/"),
+  };
+  sections.forEach((section, i) => (keymap[String(i + 1)] = () => jumpTo(section)));
+  mountKeys(keymap);
 </script>

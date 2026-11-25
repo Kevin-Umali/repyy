@@ -36,7 +36,6 @@ if (input) {
   results.hidden = true;
   box?.appendChild(results);
   input.setAttribute("aria-controls", results.id);
-  input.setAttribute("aria-expanded", "false");
   let index = [];
   let indexPromise;
   let loadingTimer;
@@ -48,7 +47,6 @@ if (input) {
     surfaceAnimation?.cancel();
     results.hidden = false;
     results.inert = false;
-    input.setAttribute("aria-expanded", "true");
     if (opening) {
       surfaceAnimation = animate(results, [
         { opacity: 0, transform: `scale(${motionToken("--scale-dropdown-open")})` },
@@ -60,7 +58,6 @@ if (input) {
     revision++;
     clearTimeout(loadingTimer);
     surfaceAnimation?.cancel();
-    input.setAttribute("aria-expanded", "false");
     results.inert = true;
     if (results.hidden) return;
     surfaceAnimation = animate(
@@ -203,6 +200,5 @@ if (input) {
     surfaceAnimation?.cancel();
     results.hidden = true;
     results.inert = true;
-    input.setAttribute("aria-expanded", "false");
   });
 }

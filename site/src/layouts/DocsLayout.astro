@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
-import { getGuide, guides, type Guide } from "../data/guides";
+import Brand from "../components/Brand.astro";
+import StatusLine from "../components/StatusLine.astro";
+import { getGuide, guideGroups, guides, type Guide } from "../data/guides";
+import { release } from "../data/site";
 import "../styles/docs.css";
 
 interface Props {
@@ -13,91 +16,129 @@ const previous = currentIndex > 0 ? guides[currentIndex - 1] : undefined;
 const next = currentIndex < guides.length - 1 ? guides[currentIndex + 1] : undefined;
 const isDocsHome = guide.slug === "docs";
 const bodyClass = isDocsHome ? "docs-page docs-home" : "docs-page";
-const guideGroups = [
-  { label: "Get started", slugs: ["docs", "installation", "cli", "demo"] },
-  { label: "Reference", slugs: ["configuration", "isolation", "coverage", "rules", "intelligence", "agent-skill"] },
-  { label: "Project", slugs: ["trust", "verification", "security-testing", "changelog", "about"] },
-];
+const sectionLabel = (id: string, label: string) => (id === "overview" ? "Overview" : label);
 ---
 
 <BaseLayout title={guide.title} description={guide.description} rootClass="docs-root" {bodyClass}>
-  <Fragment slot="header">
-    <a class="skip-link" href="#docs-main">
-      Skip to {guide.label}
-    </a>
-    <header class="docs-header">
-      <a class="brand" href="/docs/" aria-label="Repyy documentation">
-        repyy<span aria-hidden="true">/</span>
-        <small>Docs</small>
-      </a>
+  <header class="tabbar docs-header" slot="header">
+    <a class="skip" href="#docs-main">Skip to {guide.label}</a>
+    <div>
+      <span class="docs-brand"><Brand href="/" section="docs" /></span>
       <div class="docs-search">
         <label for="docs-search">
           <span>Search documentation</span>
-          <input id="docs-search" type="search" placeholder="Search documentation" autocomplete="off" />
+          <kbd class="docs-search-key" aria-hidden="true">/</kbd>
+          <input id="docs-search" type="search" placeholder="search the docs" autocomplete="off" />
         </label>
         <p id="docs-search-status" class="visually-hidden" role="status" aria-atomic="true"></p>
       </div>
-      <div class="docs-header-links">
-        <a href="/">Website</a>
-        <a href="https://github.com/Kevin-Umali/repyy">GitHub ↗</a>
-      </div>
-    </header>
-  </Fragment>
+      <nav class="ext" aria-label="Site">
+        <a href={release.notes}>{release.version}</a>
+        <a href="https://github.com/Kevin-Umali/repyy">github ↗</a>
+      </nav>
+    </div>
+  </header>
+
   <div class="docs-shell">
     <aside class="docs-sidebar">
-      <nav aria-label="Documentation guides" tabindex="0">
-        {guideGroups.map(({ label, slugs }) => (
-          <div class="docs-nav-group">
-            <strong>{label}</strong>
-            {slugs.map(getGuide).map((item) => (
-              <a href={item.route} aria-current={item.slug === guide.slug ? "page" : undefined}>
-                {item.slug === "docs" ? "Overview" : item.label}
-              </a>
-            ))}
-          </div>
-        ))}
+      <nav aria-label="Documentation guides">
+        {
+          guideGroups.map(({ label, slugs }) => (
+            <div class="docs-nav-group">
+              <strong>{label}</strong>
+              {slugs.map(getGuide).map((item) => (
+                <a href={item.route} aria-current={item.slug === guide.slug ? "page" : undefined}>
+                  {item.slug === "docs" ? "Overview" : item.label}
+                </a>
+              ))}
+            </div>
+          ))
+        }
       </nav>
     </aside>
+
     <main class="docs-main" id="docs-main">
       <div class="docs-compact-nav">
         {!isDocsHome && <a class="docs-guide-link" href="/docs/">All guides</a>}
         <details class="docs-section-menu">
           <summary>On this page</summary>
           <div class="docs-toc-links">
-            {guide.sections.map((section) => (
-              <a href={`#${section.id}`}>{section.id === "overview" ? "Overview" : section.label}</a>
-            ))}
+            {guide.sections.map((section) => <a href={`#${section.id}`}>{sectionLabel(section.id, section.label)}</a>)}
           </div>
         </details>
       </div>
-      {!isDocsHome && (
-        <p class="docs-breadcrumb">
-          <a href="/docs/">Documentation</a>
-          <span aria-hidden="true">/</span>
-          <span>{guide.label}</span>
-        </p>
-      )}
+      {
+        !isDocsHome && (
+          <p class="docs-breadcrumb">
+            <a href="/docs/">docs</a>
+            <span aria-hidden="true">/</span>
+            <span>{guide.slug}</span>
+          </p>
+        )
+      }
       <slot />
-      {!isDocsHome && (
-        <footer class="docs-footer">
-          <p>{previous ? <a href={previous.route}>← {previous.label}</a> : "repyy documentation"}</p>
-          {next ? <a href={next.route}>{next.label} →</a> : <a href="/docs/">All documentation →</a>}
-        </footer>
-      )}
+      {
+        !isDocsHome && (
+          <footer class="docs-footer">
+            {previous ? (
+              <a href={previous.route} data-guide-prev>
+                <kbd>[</kbd> {previous.label}
+              </a>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <a href={next.route} data-guide-next>
+                {next.label} <kbd>]</kbd>
+              </a>
+            ) : (
+              <a href="/docs/">All documentation</a>
+            )}
+          </footer>
+        )
+      }
     </main>
+
     <aside class="docs-toc">
-      <nav aria-label="On this page" tabindex="0">
+      <nav aria-label="On this page">
         <strong>On this page</strong>
         <div class="docs-toc-links">
-          {guide.sections.map((section) => (
-            <a href={`#${section.id}`}>{section.id === "overview" ? "Overview" : section.label}</a>
-          ))}
+          {guide.sections.map((section) => <a href={`#${section.id}`}>{sectionLabel(section.id, section.label)}</a>)}
         </div>
       </nav>
     </aside>
   </div>
+
+  <StatusLine
+    mode="DOCS"
+    where={guide.label}
+    keys={[
+      { key: "/", label: "search" },
+      { key: "[", label: "previous guide" },
+      { key: "]", label: "next guide" },
+      { key: "p", label: "pause replay" },
+    ]}
+  />
 </BaseLayout>
 
 <script>
   import "../scripts/site.js";
+  import { mountKeys, mountStatus } from "../scripts/term/term-keys.js";
+
+  mountStatus({
+    sections: [],
+    links: [],
+    where: null,
+    pos: document.querySelector("[data-status-pos]"),
+  });
+
+  const follow = (selector: string) => {
+    const link = document.querySelector<HTMLAnchorElement>(selector);
+    if (link) location.href = link.href;
+  };
+  mountKeys({
+    "[": () => follow("[data-guide-prev]"),
+    "]": () => follow("[data-guide-next]"),
+    p: () => document.querySelector<HTMLButtonElement>("[data-tui-toggle]")?.click(),
+  });
 </script>

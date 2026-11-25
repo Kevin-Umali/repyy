@@ -62,6 +62,9 @@ export default defineConfig({
   output: "static",
   trailingSlash: "always",
   build: { format: "directory" },
+  // Astro 7 defaults to JSX whitespace rules, which drop the space in prose wrapped before a link
+  // ("See the\n<a>" renders "See the<a>"). Lossless compression keeps that space.
+  compressHTML: true,
   markdown: { syntaxHighlight: false },
   security: {
     csp: {

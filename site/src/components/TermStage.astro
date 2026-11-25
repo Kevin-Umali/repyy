@@ -1,0 +1,50 @@
+---
+import { flows } from "../scripts/term/tui-flows.js";
+import { COLS, ROWS, toHTML } from "../scripts/term/tui-screens.js";
+
+interface Props {
+  flow: keyof typeof flows;
+  number?: string;
+  id?: string;
+  caption: string;
+}
+
+const { flow: name, number, id, caption } = Astro.props;
+const flow = flows[name];
+---
+
+<section class="pane pane-stage" id={id} aria-label={caption} data-section={id ? "" : undefined}>
+  <p class="pane-label" aria-hidden="true">
+    {number && <span class="t-a">{number}</span>} replay <span class="t-m">· {flow.title}</span>
+  </p>
+  <figure class="stage" data-tui data-flow={name} data-state="playing">
+    <div class="term">
+      <pre class="term-screen" style={`--cols:${COLS};--rows:${ROWS}`} data-tui-screen set:html={toHTML(flow.poster.render())} />
+    </div>
+    <kbd class="keycap" data-tui-key data-empty aria-hidden="true"><span class="keycap-label"></span></kbd>
+    <figcaption class="steps">
+      <p class="visually-hidden">{caption}</p>
+      <p class="steps-head t-m" aria-hidden="true">what's happening</p>
+      <div class="steps-track">
+        <span class="steps-pill" data-steps-pill aria-hidden="true"></span>
+        <ol>
+        {
+          flow.steps.map(([key, text], i) => (
+            <li data-step={i} data-current={i === flow.poster.step ? "" : undefined}>
+              <kbd>{key}</kbd>
+              <span>{text}</span>
+            </li>
+          ))
+        }
+        </ol>
+      </div>
+      <button type="button" class="kbtn toggle" data-tui-toggle aria-pressed="false">pause</button>
+    </figcaption>
+  </figure>
+</section>
+
+<script>
+  import { mountAllTui } from "../scripts/term/tui-player.js";
+
+  mountAllTui();
+</script>

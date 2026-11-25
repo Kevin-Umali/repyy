@@ -10,7 +10,7 @@ locations and scan coverage. Review the result before deciding whether to run th
 
 [Documentation](https://repyy.dev/docs/) · [Sample HTML report](https://repyy.dev/demo/sample/sample.html) · [Trust and limitations](https://repyy.dev/trust/)
 
-![Repyy’s terminal review of a sample checkout, showing scan coverage, a findings queue, and the recommended action for the selected finding.](site/public/images/terminal-review.png)
+![Repyy’s terminal review of a demo checkout: a findings queue with severity badges, and a sidebar with the status, severity counts, coverage and the selected finding’s next step.](site/public/images/terminal-review.png)
 
 ## Quick start
 
@@ -36,7 +36,7 @@ repyy version
 repyy scan ./unfamiliar-repository --format tui
 ```
 
-Press Enter to inspect a finding or `e` to export the report. [Interactive review controls](https://repyy.dev/cli/#interactive-review)
+Press Enter to inspect a finding, `h` for a Markdown handoff brief, `e` to export the report, or `?` for every key. [Interactive review controls](https://repyy.dev/cli/#interactive-review)
 
 To save an HTML report from the command line, run the scan with an output path.
 
