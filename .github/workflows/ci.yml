@@ -124,10 +124,9 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
-          cache: true
+          job: test
       - run: test -z "$(gofmt -l .)"
       - run: go vet ./...
       - run: go test -race ./...
@@ -140,10 +139,9 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
-          cache: true
+          job: workflow-lint
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
@@ -156,10 +154,9 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
-          cache: true
+          job: vulnerability-scan
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
   build:
@@ -175,11 +172,10 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-go
         if: needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true'
         with:
-          go-version-file: go.mod
-          cache: true
+          job: build
       - name: Build and run CLI
         if: needs.changes.outputs.go == 'true' || needs.changes.outputs.security == 'true'
         shell: bash
@@ -236,10 +232,9 @@ jobs:
           ref: ${{ inputs.source_ref || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-go
         with:
-          go-version-file: go.mod
-          cache: true
+          job: release-config
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
