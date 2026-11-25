@@ -72,7 +72,14 @@ func (d Detector) scanNPMDependencies(path string, data []byte, pkg packageJSON,
 			add(f)
 		}
 		if source, ok := nonRegistryNPMSource(version); ok {
-			add(d.finding("PKG-002", "suspicious-dependency-source", model.SeverityHigh, model.ConfidenceMedium, path, lineForToken(data, name), "Dependency uses a non-registry source: "+name, "source type: "+source, "Verify the dependency source and pin it to an immutable trusted revision."))
+			line := lineForToken(data, name)
+			if _, target, _ := strings.Cut(strings.TrimSpace(version), ":"); repositoryDirectory(path, target) {
+				f := d.finding("PKG-002", "suspicious-dependency-source", model.SeverityLow, model.ConfidenceHigh, path, line, "Dependency resolves to a directory inside the repository: "+name, "source type: "+source, "The directory is part of this scan; review it like the rest of the repository.")
+				f.Context = "manifest"
+				add(f)
+				continue
+			}
+			add(d.finding("PKG-002", "suspicious-dependency-source", model.SeverityHigh, model.ConfidenceMedium, path, line, "Dependency uses a non-registry source: "+name, "source type: "+source, "Verify the dependency source and pin it to an immutable trusted revision."))
 		}
 		if version == "0.0.0" || version == "0.0.1" {
 			add(d.finding("PKG-003", "suspicious-dependency-version", model.SeverityMedium, model.ConfidenceMedium, path, lineForToken(data, name), "Dependency uses a placeholder-like version: "+name, "version: "+version, "Verify the package name and version."))

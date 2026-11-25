@@ -34,7 +34,7 @@ func (s *Scanner) scanActiveContent(path string, data []byte, add func(model.Fin
 
 func contextualizeStructuredFinding(path string, finding *model.Finding, disposition model.Disposition) {
 	finding.Context = classifyContext(path, nil)
-	finding.Severity, finding.Confidence = contextualize(Rule{}, finding.Context, finding.Severity, finding.Confidence)
+	finding.Severity, finding.Confidence = contextualize(true, finding.Context, finding.Severity, finding.Confidence)
 	finding.Disposition = disposition
 	if isContextualContext(finding.Context) {
 		finding.Disposition = model.DispositionInformational

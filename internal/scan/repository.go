@@ -53,7 +53,7 @@ func (s *Scanner) scanSymlink(root, path, rel string, add func(model.Finding)) {
 	}
 }
 
-func (s *Scanner) scanGitMetadata(ctx context.Context, root, gitRel string, add func(model.Finding), coverage *model.Coverage) {
+func (s *Scanner) scanGitMetadata(ctx context.Context, root, gitRel string, fileBudget int, add func(model.Finding), coverage *model.Coverage) {
 	confined, err := os.OpenRoot(root)
 	if err != nil {
 		coverage.Complete = false
@@ -76,7 +76,7 @@ func (s *Scanner) scanGitMetadata(ctx context.Context, root, gitRel string, add 
 			coverage.Skipped = append(coverage.Skipped, path+" (unreadable or non-regular Git metadata)")
 			return
 		}
-		if coverage.FilesScanned >= s.opts.Limits.MaxFiles {
+		if coverage.FilesScanned >= fileBudget {
 			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, path+" (file-count limit)")
 			return

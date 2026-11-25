@@ -388,3 +388,44 @@ func TestDisplayFiltersDoNotChangeScanExitCode(t *testing.T) {
 		t.Fatalf("code=%d err=%v output=%s", code, err, stdout.String())
 	}
 }
+
+func TestRuleAndPathSuppressionHidesReviewedFindings(t *testing.T) {
+	t.Setenv("REPYY_CACHE_DIR", t.TempDir())
+	repo := t.TempDir()
+	for name, body := range map[string]string{
+		"README.md":                 "fixture\n",
+		"LICENSE":                   "fixture\n",
+		"tests/certs/server.key":    "-----BEGIN PRIVATE KEY-----\nfixture\n-----END PRIVATE KEY-----\n",
+		"src/deploy/production.key": "-----BEGIN PRIVATE KEY-----\nfixture\n-----END PRIVATE KEY-----\n",
+	} {
+		path := filepath.Join(repo, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	configPath := filepath.Join(t.TempDir(), "repyy.yaml")
+	config := "version: 1\nsuppressions:\n  - rule: SECRET-001\n    path: \"tests/certs/**\"\n    reason: generated TLS fixtures\n"
+	if err := os.WriteFile(configPath, []byte(config), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	if _, err := Run([]string{"scan", repo, "--format", "json", "--config", configPath}, &stdout, &bytes.Buffer{}, "test"); err != nil {
+		t.Fatal(err)
+	}
+	var report model.Report
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	paths := map[string]bool{}
+	for _, f := range report.Results[0].Findings {
+		if f.RuleID == "SECRET-001" {
+			paths[f.Path] = true
+		}
+	}
+	if paths["tests/certs/server.key"] || !paths["src/deploy/production.key"] {
+		t.Fatalf("suppression scope wrong; SECRET-001 reported at %v", paths)
+	}
+}
