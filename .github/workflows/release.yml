@@ -249,6 +249,10 @@ jobs:
           file: source/Dockerfile.sandbox
           platforms: linux/amd64,linux/arm64
           push: true
+          # Provenance is attested by actions/attest below (what `gh attestation verify` checks).
+          # BuildKit's own copy would add two more untagged manifests to every release.
+          provenance: false
+          sbom: false
           tags: ghcr.io/kevin-umali/repyy-sandbox:${{ env.RELEASE_TAG }}
           build-args: |
             VERSION=${{ steps.image_metadata.outputs.version }}
