@@ -90,6 +90,116 @@ const guide = getGuide("agent-skill");
             paste credential-shaped evidence into chat.
           </p>
         </section>
+        <section
+          class="docs-section docs-searchable"
+          id="mcp"
+          data-search="mcp server model context protocol claude code codex cursor gemini cli copilot opencode scan_repository explain_rule"
+        >
+          <h2>Connect repyy to any agent with MCP</h2>
+          <p>
+            <code>repyy mcp</code> is a Model Context Protocol server over stdio. It gives the agent two read-only tools. <code>scan_repository</code> takes a
+            local directory or Git URL and returns the verdict, severity counts, coverage completeness, and the highest-severity findings as compact JSON.
+            <code>explain_rule</code> returns the catalog entry for a rule ID. Scan options after <code>repyy mcp</code>, such as <code>--fail-on</code>,
+            <code>--timeout</code>, <code>--config</code>, or <code>--sandbox=docker</code>, apply to every tool call.
+          </p>
+          <div class="docs-command">
+            <div><span>Claude Code</span><button type="button" data-copy="claude mcp add --scope user repyy -- repyy mcp">Copy</button></div>
+            <code>claude mcp add --scope user repyy -- repyy mcp</code>
+          </div>
+          <p>Codex reads MCP servers from <code>~/.codex/config.toml</code>:</p>
+          <pre class="docs-example" aria-label="Codex MCP configuration"><code>{`[mcp_servers.repyy]
+command = "repyy"
+args = ["mcp"]`}</code></pre>
+          <p>
+            Cursor (<code>.cursor/mcp.json</code> in a project or <code>~/.cursor/mcp.json</code>) and Gemini CLI (<code>.gemini/settings.json</code> or
+            <code>~/.gemini/settings.json</code>) use the same <code>mcpServers</code> shape:
+          </p>
+          <pre class="docs-example" aria-label="Cursor and Gemini CLI MCP configuration"><code>{`{
+  "mcpServers": {
+    "repyy": { "command": "repyy", "args": ["mcp"] }
+  }
+}`}</code></pre>
+          <p>
+            Any other harness that launches stdio MCP servers takes the same command, <code>repyy mcp</code>. Use an absolute path to a trusted repyy binary
+            when the harness does not inherit your <code>PATH</code>.
+          </p>
+        </section>
+        <section
+          class="docs-section docs-searchable"
+          id="guard"
+          data-search="guard hook pretooluse beforetool codex gemini git clone gh repo clone npm install pnpm yarn bun pip install code cursor docker compose block exit 2"
+        >
+          <h2>Gate clones and installs with a hook</h2>
+          <p>
+            MCP lets the agent ask for a scan. <code>repyy guard</code> makes the scan happen whether or not the agent asks. Run it from a harness's
+            pre-command hook. It reads the shell command the agent is about to run, scans the repository that command would touch, and exits <code>2</code>
+            with a short reason on stderr when the command should not run. Other commands return <code>0</code> at once without a scan.
+          </p>
+          <div class="docs-table compact" role="table" aria-label="Commands repyy guard checks">
+            <div role="row"><b role="rowheader">git clone, gh repo clone</b><span role="cell">Scans the Git URL before the clone happens.</span></div>
+            <div role="row">
+              <b role="rowheader">npm, pnpm, yarn, bun install</b><span role="cell">Scans the project directory before lifecycle scripts run.</span>
+            </div>
+            <div role="row">
+              <b role="rowheader">pip install . / -e / -r</b><span role="cell">Scans the local project, or the working directory for -r.</span>
+            </div>
+            <div role="row"><b role="rowheader">code, cursor DIR</b><span role="cell">Scans the folder before an editor opens it as a workspace.</span></div>
+            <div role="row"><b role="rowheader">docker compose up</b><span role="cell">Scans the compose project before containers are built.</span></div>
+          </div>
+          <p>
+            In Claude Code, add a <code>PreToolUse</code> hook to <code>.claude/settings.json</code> or <code>~/.claude/settings.json</code>. Claude Code
+            sends the command as JSON on stdin and shows the agent the stderr reason when the hook exits <code>2</code>. repyy guard stops its scan after two
+            minutes and blocks the command. Set the hook timeout longer than that, because Claude Code lets a command through when it has to kill the hook.
+          </p>
+          <pre class="docs-example" aria-label="Claude Code PreToolUse hook"><code>{`{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "repyy guard", "timeout": 180 }]
+      }
+    ]
+  }
+}`}</code></pre>
+          <p>
+            Codex and Gemini CLI send the same JSON shape, with <code>tool_input.command</code> and <code>cwd</code>, and both block on exit
+            <code>2</code>. Both let the command run when a hook times out. Codex waits 600 seconds by default. Gemini CLI waits 60 seconds, so set its
+            timeout explicitly. Codex runs a project or user hook only after you trust it with <code>/hooks</code>.
+          </p>
+          <pre class="docs-example" aria-label="Codex hooks.json"><code>{`// ~/.codex/hooks.json or .codex/hooks.json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "repyy guard", "timeout": 180 }] }
+    ]
+  }
+}`}</code></pre>
+          <pre class="docs-example" aria-label="Gemini CLI settings.json"><code>{`// Gemini CLI settings.json (timeout in milliseconds)
+{
+  "hooks": {
+    "BeforeTool": [
+      { "matcher": "run_shell_command", "hooks": [{ "type": "command", "command": "repyy guard", "timeout": 180000 }] }
+    ]
+  }
+}`}</code></pre>
+          <p>
+            Any other harness that can run a command before a shell command works the same way. Pass the command text with <code>--command</code>, after
+            <code>--</code>, or as hook JSON on stdin. repyy reads <code>tool_input.command</code> or a top-level <code>command</code> field, and
+            <code>cwd</code> when present. Add <code>--format json</code> to also print the decision as JSON on stdout.
+          </p>
+          <div class="docs-command">
+            <div>
+              <span>Generic pre-command hook</span><button type="button" data-copy='repyy guard --cwd "$PWD" --command "$COMMAND"'>Copy</button>
+            </div>
+            <code>repyy guard --cwd "$PWD" --command "$COMMAND"</code>
+          </div>
+          <p>
+            <code>--fail-on</code> sets the blocking severity (default <code>high</code>), as with <code>repyy scan</code>. The guard fails closed: an
+            incomplete scan, a clone URL repyy cannot fetch, unreadable hook input, and a misconfigured guard all block. <code>--allow-incomplete</code> lets those commands through. The guard sees only the command text. It
+            does not expand shell variables, and it cannot stop a program that clones or installs on its own. A remote repository is fetched twice, once into
+            a private temporary checkout for the scan and again by the agent's own command.
+          </p>
+        </section>
         <section class="docs-section docs-searchable" id="docker" data-search="docker sandbox digest signed image remote https ssh keep workdir isolation">
           <h2>Use the opt-in Docker backend</h2>
           <p>

@@ -22,6 +22,8 @@ Usage:
   repyy scan [options] <path-or-git-url>...
   repyy report [options] <report.json|->
   repyy report             pick a saved report in a terminal
+  repyy guard [options] [--command CMD | -- CMD...]
+  repyy mcp [scan options]  serve scan_repository and explain_rule over MCP stdio
   repyy rules validate <rules.yaml>
   repyy rules check
   repyy rules list [--format terminal|json]
@@ -39,6 +41,7 @@ Scan options:
   --jobs N                 concurrent repositories (default 4)
   --config PATH            trusted external config/rules/suppressions
   --include-dependencies   include dependency and cache directories
+  --registry-check         look up declared npm/PyPI packages online (off by default)
   --history N|all          remote Git history depth (default 1)
   --keep-workdir           retain remote checkouts after scanning
   --fail-on LEVEL          low|medium|high|critical (default high)
@@ -52,6 +55,14 @@ Scan options:
   --min-confidence LEVEL   low|medium|high display filter only
   --group-by severity|file|rule
   --sandbox host|docker       run scans in Docker (default host)
+
+Guard options (plus scan options such as --fail-on and --timeout):
+  --command CMD            shell command to check; otherwise read hook JSON
+                           from stdin (tool_input.command or command, and cwd)
+  --cwd DIR                directory the command runs in (default: hook cwd)
+  --format text|json       json writes the decision to stdout
+  --allow-incomplete       allow commands whose scan is incomplete
+  Exit 0 allows the command; exit 2 blocks it with the reason on stderr.
 
 Report options:
   --format terminal|html|sarif|tui (HTML outside an interactive session)
@@ -84,6 +95,10 @@ func Run(args []string, stdout, stderr io.Writer, version string) (int, error) {
 		return runIntel(args[1:], stdout)
 	case "scan":
 		return runScan(args[1:], stdout, stderr, version)
+	case "guard":
+		return runGuard(args[1:], os.Stdin, stdout, stderr, version)
+	case "mcp":
+		return runMCP(args[1:], os.Stdin, stdout, version)
 	default:
 		return 3, fmt.Errorf("unknown command %q; use 'repyy help'", args[0])
 	}

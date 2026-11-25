@@ -19,6 +19,8 @@ repyy
 repyy scan [options] &lt;path-or-git-url&gt;...
 repyy report [options] &lt;report.json|-&gt;
 repyy report --format tui
+repyy guard [scan options] [--format text|json] [--command CMD | -- CMD...]
+repyy mcp [scan options]
 repyy rules validate &lt;rules.yaml&gt;
 repyy rules check
 repyy rules list [--format terminal|json]
@@ -32,6 +34,10 @@ repyy version</pre
           <p>
             Flags can appear before or after targets. A value flag accepts either a space or an equals sign, for example <code>--format html</code> and
             <code>--format=html</code>. Boolean flags such as <code>--include-dependencies</code> do not take a value.
+          </p>
+          <p>
+            <code>guard</code> and <code>mcp</code> connect Repyy to coding agents. Setup for each harness is in the
+            <a href="/agent-skill/#mcp">agent integration guide</a>.
           </p>
         </section>
 
@@ -184,6 +190,11 @@ https://github.com/org/assignment-b</pre
             ><span
               >Include dependency and cache trees such as <code>node_modules</code>, <code>.venv</code>, <code>vendor</code>, <code>target</code>, and
               <code>Pods</code>, which are skipped by default.</span
+            >
+            <code>--registry-check</code
+            ><span
+              >Look up declared npm and PyPI packages on their public registries and report new, rarely used, or missing packages (<code>PKG-010</code>,
+              <code>PKG-011</code>). Off by default; sends package names to the registries. Unsupported with <code>--sandbox docker</code>.</span
             >
             <code>--history N|all</code><span>Remote Git history depth; default <code>1</code>. <code>all</code> requests full history.</span>
             <code>--keep-workdir</code><span>Keep a host-mode remote checkout. Unsupported with <code>--sandbox docker</code>.</span>

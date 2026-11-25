@@ -4,14 +4,54 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-26
+
 ### Added
 
+- Add `repyy guard`, a pre-command hook for any agent harness. It scans the
+  repository a `git clone`, package install, editor open, or `docker compose up`
+  would touch, and exits `2` to block the command. It fails closed: an incomplete
+  scan, unreadable hook input, or a misconfigured hook also blocks.
+- Add `repyy mcp`, a stdio MCP server with `scan_repository` and `explain_rule`
+  tools. It runs tool calls concurrently, and a client can cancel them.
+- Add opt-in `repyy scan --registry-check`, which looks up declared npm and PyPI
+  packages on their public registries. `PKG-010` reports newly published or rarely
+  used packages. `PKG-011` reports packages that are missing, unpublished, or
+  replaced by npm's security placeholder. Scans stay offline without the flag.
+- Add `EXEC-007` for a `Function` constructor handed `require`, the loader used by
+  fake job-interview repositories, and `OBFS-010` for obfuscator.io output.
+- Detect Python `exec` of decoded payloads, variation-selector and tag-character
+  payloads, `data:` imports, literal-concatenated `require`, constructor-chain access
+  to `Function`, agent instructions that pipe the environment to the network or hide
+  actions from the user, `direnv` remote sources, PHP superglobal execution, and
+  editor tool paths redirected into the repository.
 - Show a real findings queue in the README and docs overview. The CLI reference
   also shows the Home workspace chooser and an opened finding.
-- Add a sticky v0.7.3 banner to the landing page and docs that links to interactive review.
+- Add a sticky release banner to the landing page and docs.
 
 ### Changed
 
+- Report capabilities separately from threats. Process launch, dynamic code and
+  imports, deserialization, network and cookie access, decoding, and host lookups
+  alone report at medium. They stay high beside a threat signal in the same file,
+  such as obfuscation, staged execution, or a known indicator, and in files that run
+  automatically, such as `setup.py`, `build.rs`, and tool configuration. Decoding
+  keeps code execution in the same file high. On eight popular open-source
+  repositories, high findings fall from 1,165 to 26 with the same malware recall.
+- Report GitHub Actions pinned to a tag or branch (`CICD-003`) at medium. They are
+  hardening advice for the repository owner and no longer block `repyy guard`.
+- Report MCP servers that a package runner starts from a pinned version, devcontainer
+  commands that run inside the container without a download, and launches of `git`,
+  compilers, and formatters by literal name at medium.
+- Report `file:`, `link:`, and Cargo `path` dependencies that stay inside the
+  repository at low. Their code is part of the scan.
+- Apply path context to every finding. Manifest and archive findings in tests,
+  examples, and documentation now downgrade like content findings. Threats that run
+  code keep their severity in test files.
+- Scan files in parallel within a fixed memory budget, and skip rules whose required
+  literals a file or line lacks. Reports are unchanged, and scans of large
+  repositories run up to 13 times faster.
+- Update built-in rules to `2026.11.26`.
 - Make the website the primary documentation. Correct command examples, describe
   scan limits, and update release verification guidance.
 - Lead the docs overview with installation and a first scan, with direct links
@@ -28,6 +68,17 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ### Fixed
 
+- Stop reporting ordinary JavaScript `function(` and method calls named `exec` as
+  dynamic execution (`EXEC-001`).
+- Stop reporting Python parenthesized `from` imports as runtime imports (`IMPORT-001`).
+- Stop reporting invisible characters in translation catalogs and a byte-order
+  mark at the start of a file as hidden code (`UNICODE-001`).
+- Stop matching provider key formats in any letter case (`SECRET-002`), emulator
+  and CI names inside other words (`EVADE-001`), `FormData` handling as credential
+  theft (`EXFIL-002`), and package manifests or CI workflows as agent configuration
+  (`AGENT-001`).
+- Keep lines aligned when a string continues across a line break, so code rules
+  report the right line.
 - Build the changelog when Dokploy receives only the `site/` directory.
 
 ## [0.7.3] - 2026-11-20

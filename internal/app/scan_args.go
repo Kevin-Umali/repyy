@@ -18,7 +18,7 @@ type scanArgs struct {
 	format, output, file, config, history, failOn                string
 	detail, progress, color, minSeverity, minConfidence, groupBy string
 	jobs                                                         int
-	includeDeps, keep                                            bool
+	includeDeps, keep, registryCheck                             bool
 	sandbox                                                      string
 	version                                                      string
 	timeout                                                      time.Duration
@@ -39,6 +39,7 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	fs.BoolVar(&o.includeDeps, "include-dependencies", false, "")
 	fs.StringVar(&o.history, "history", o.history, "")
 	fs.BoolVar(&o.keep, "keep-workdir", false, "")
+	fs.BoolVar(&o.registryCheck, "registry-check", false, "")
 	fs.StringVar(&o.sandbox, "sandbox", "host", "")
 	fs.StringVar(&o.failOn, "fail-on", o.failOn, "")
 	fs.DurationVar(&o.timeout, "timeout", o.timeout, "")
@@ -59,7 +60,7 @@ func parseScanArgs(args []string) (scanArgs, error) {
 			continue
 		}
 		flagArgs = append(flagArgs, a)
-		if strings.Contains(a, "=") || a == "--include-dependencies" || a == "--keep-workdir" {
+		if strings.Contains(a, "=") || a == "--include-dependencies" || a == "--keep-workdir" || a == "--registry-check" {
 			continue
 		}
 		if i+1 >= len(args) {
@@ -83,6 +84,9 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	if o.sandbox == "docker" {
 		if o.keep {
 			return o, errors.New("--keep-workdir is not supported with --sandbox=docker")
+		}
+		if o.registryCheck {
+			return o, errors.New("--registry-check is not supported with --sandbox=docker, whose scan stage has no network")
 		}
 		for _, target := range o.targets {
 			if strings.HasPrefix(target, "git@") || strings.HasPrefix(target, "ssh://") {
