@@ -37,20 +37,22 @@ jobs:
           fetch-depth: 2
           filter: blob:none
           persist-credentials: false
+      # Inline rather than the local affected action: this workflow also runs from
+      # release validation, and CodeQL treats a local action from the checked-out ref
+      # as able to poison the cache this job writes.
       - id: affected
-        uses: ./.github/actions/affected
-        with:
-          paths: |
-            :(glob)**/*.go
-            Makefile
-            scripts
-            demo
-            keys
-            test
-            .github/workflows
-            .github/actions
-            go.mod
-            go.sum
+        shell: bash
+        env:
+          SELECTIVE: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          if [[ "$SELECTIVE" != true ]] || ! git rev-parse --verify --quiet HEAD^1 >/dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only HEAD^1 HEAD -- ':(glob)**/*.go' Makefile scripts demo keys test .github/workflows .github/actions go.mod go.sum)"
+          if [[ -n "$changed" ]]; then echo "run=true"; else echo "run=false"; fi >> "$GITHUB_OUTPUT"
+          printf 'Changed inputs:\n%s\n' "${changed:-none}"
       - name: Set Go cache paths
         if: steps.affected.outputs.run == 'true'
         run: |
