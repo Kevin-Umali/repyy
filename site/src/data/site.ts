@@ -6,6 +6,6 @@ export const siteMetadata = {
 } as const;
 
 export const release = {
-  version: "v0.7.3",
+  version: "v0.8.0",
   notes: "/changelog/",
 } as const;

@@ -93,7 +93,7 @@ func (s *Store) LoadActiveSnapshot(now time.Time) (Snapshot, Status) {
 	snapshot, err := s.loadPointer("active")
 	if err == nil {
 		if snapshotOlderThan(snapshot, builtin) {
-			return builtin, statusFor(builtin, "embedded", true, s.Dir, now, "cached intelligence predates the embedded snapshot")
+			return builtin, statusFor(builtin, "embedded", true, s.Dir, now, "")
 		}
 		return snapshot, statusFor(snapshot, "cache", true, s.Dir, now, "")
 	}

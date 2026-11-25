@@ -3,6 +3,7 @@ package scan
 import (
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/Kevin-Umali/repyy/internal/model"
 )
@@ -93,6 +94,8 @@ func categoryLegitimateUse(category string) string {
 		return "Version tags are common and convenient, but they are not immutable."
 	case "repository-hygiene":
 		return "Private or early-stage repositories may intentionally omit public documentation."
+	case "dependency-reputation":
+		return "New and niche packages are often legitimate, and internal packages may exist only on a private registry."
 	case "remote-fetch":
 		return "Installers and update tools may retrieve content from reviewed, pinned sources."
 	case "dynamic-execution":
@@ -206,6 +209,8 @@ func structuredRuleCatalog() []RuleInfo {
 		{"PKG-007", "package-script", "Package script downloads and executes content", "Review the script before running package-manager commands.", model.SeverityHigh, model.ConfidenceMedium},
 		{"PKG-008", "dependency-override", "Dependency override changes package source or identity", "Review the override and pin it to a trusted immutable artifact.", model.SeverityHigh, model.ConfidenceMedium},
 		{"PKG-009", "package-alias", "Dependency name resolves to a different registry package", "Verify the alias target, publisher, and resolved artifact.", model.SeverityMedium, model.ConfidenceMedium},
+		{"PKG-010", "dependency-reputation", "Dependency is newly published or rarely used", "Review the package source, publisher, and install scripts before installing dependencies.", model.SeverityMedium, model.ConfidenceLow},
+		{"PKG-011", "dependency-reputation", "Dependency is missing, unpublished, or quarantined on its public registry", "Confirm the package source before installing dependencies.", model.SeverityHigh, model.ConfidenceMedium},
 		{"PHP-002", "composer-package-source", "Composer defines alternate package repositories", "Review repository precedence and the resolved composer.lock.", model.SeverityMedium, model.ConfidenceMedium},
 		{"PHP-003", "composer-plugin-execution", "Composer permits every dependency plugin to execute", "Replace wildcard permission with explicit reviewed plugin names.", model.SeverityHigh, model.ConfidenceHigh},
 		{"PY-003", "python-package-source", "pip configuration changes package lookup sources", "Verify the source and avoid mixing public and private indexes for the same package names.", model.SeverityMedium, model.ConfidenceMedium},
@@ -235,10 +240,23 @@ func structuredRuleCatalog() []RuleInfo {
 			info.Rationale = "Hidden instruction-like text can attempt to influence an agent reading markup."
 			info.LegitimateUse = "Hidden text can serve accessibility, examples, or styling; inspect its context."
 		}
+		if value.category == "dependency-reputation" {
+			info.Rationale = "Runs only with --registry-check. Fake-assignment repositories often declare a freshly published or since-removed package that no offline intelligence lists yet."
+		}
 		items = append(items, info)
 	}
 	return items
 }
+
+// structuredContextDowngrade maps each structured rule to whether path context may
+// lower its severity. Content rules carry the same flag on Rule.
+var structuredContextDowngrade = sync.OnceValue(func() map[string]bool {
+	allowed := map[string]bool{}
+	for _, info := range structuredRuleCatalog() {
+		allowed[info.ID] = info.AllowContextDowngrade
+	}
+	return allowed
+})
 
 func structuredApplicablePaths(id string) []string {
 	switch {

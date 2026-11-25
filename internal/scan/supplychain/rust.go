@@ -72,7 +72,12 @@ func (d Detector) scanRustManifest(path string, data []byte, add func(model.Find
 	lines := rustLines(data)
 	seen := make(map[string]bool)
 	for _, line := range lines {
-		if rustUsesAlternateDependencySource(line) {
+		if target, ok := rustPathOnlySource(line); ok && repositoryDirectory(path, target) {
+			finding := d.finding("RUST-005", "rust-dependency-source", model.SeverityLow, model.ConfidenceHigh, path, line.number,
+				"Cargo dependency resolves to a directory inside the repository", "Cargo dependency path source", "The directory is part of this scan; review it like the rest of the repository.")
+			finding.Context = "manifest"
+			add(finding)
+		} else if rustUsesAlternateDependencySource(line) {
 			finding := d.finding("RUST-005", "rust-dependency-source", model.SeverityHigh, model.ConfidenceMedium, path, line.number,
 				"Cargo dependency uses a non-default source", "Cargo dependency git/path/registry source", "Verify the dependency source and pin remote revisions before building.")
 			finding.Context = "manifest"
@@ -127,7 +132,26 @@ type rustLine struct {
 	value   string
 }
 
-var rustInlineSource = regexp.MustCompile(`(?i)\b(?:git|path|registry)\s*=`)
+var (
+	rustInlineSource = regexp.MustCompile(`(?i)\b(?:git|path|registry)\s*=`)
+	rustRemoteSource = regexp.MustCompile(`(?i)\b(?:git|registry)\s*=`)
+	rustInlinePath   = regexp.MustCompile(`(?i)\bpath\s*=\s*"([^"]*)"`)
+)
+
+// rustPathOnlySource returns the path of a dependency line whose only source is a
+// local path.
+func rustPathOnlySource(line rustLine) (string, bool) {
+	if !rustDependencySection(line.section) || rustRemoteSource.MatchString(line.value) {
+		return "", false
+	}
+	if rustDependencySubtable(line.section) && line.key == "path" {
+		return strings.Trim(strings.TrimSpace(line.value), `"`), true
+	}
+	if match := rustInlinePath.FindStringSubmatch(line.value); match != nil {
+		return match[1], true
+	}
+	return "", false
+}
 
 func rustDependencySection(section string) bool {
 	return section == "dependencies" || section == "dev-dependencies" || section == "build-dependencies" || section == "workspace.dependencies" ||

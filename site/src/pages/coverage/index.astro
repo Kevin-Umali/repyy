@@ -131,7 +131,7 @@ const guide = getGuide("coverage");
         <section
           class="docs-section docs-searchable"
           id="precision"
-          data-search="precision context scope raw code structured file roles correlation downgrade false positives locations filters severity confidence detail"
+          data-search="precision context scope raw code structured file roles capability threat tier correlation downgrade false positives locations filters severity confidence detail"
         >
           <h2>How repyy improves precision</h2>
           <p>
@@ -161,9 +161,19 @@ const guide = getGuide("coverage");
               >
             </div>
             <div role="row">
+              <b role="rowheader">Capabilities and threats</b
+              ><span role="cell"
+                >Process launch, dynamic code and imports, deserialization, network and cookie access, decoding, and host lookups are capabilities that ordinary
+                programs use. Alone they report at medium. A threat signal in the same file, such as obfuscation, staged execution, or a known indicator, keeps
+                them high, as does a file that runs automatically, such as <code>setup.py</code>, <code>build.rs</code>, or tool configuration. Decoding keeps
+                code execution in the same file high.</span
+              >
+            </div>
+            <div role="row">
               <b role="rowheader">Context downgrade</b
               ><span role="cell"
-                >Documentation, tests, fixtures, and signature corpora may be downgraded. Confirmed IOCs are never silenced by contextual downgrades.</span
+                >repyy may downgrade findings in documentation, tests, fixtures, and signature corpora, whichever detector reported them. Threats that run code
+                keep their severity in tests, and context never lowers a confirmed IOC.</span
               >
             </div>
             <div role="row">
@@ -230,6 +240,10 @@ const guide = getGuide("coverage");
             <div role="row"><b role="rowheader">Per archive</b><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span></div>
             <div role="row">
               <b role="rowheader">Dependency trees</b><span role="cell">Skipped by default; opt in with <code>--include-dependencies</code></span>
+            </div>
+            <div role="row">
+              <b role="rowheader">Registry reputation</b
+              ><span role="cell">Offline by default; opt in with <code>--registry-check</code> to look up declared npm and PyPI packages</span>
             </div>
           </div>
           <div class="docs-command">

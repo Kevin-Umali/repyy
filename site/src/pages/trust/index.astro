@@ -81,6 +81,21 @@ const guide = getGuide("trust");
             <td>File/parser failures are reported; host mode has no network sandbox</td>
           </tr>
           <tr>
+            <td>Dependency registry check</td>
+            <td>
+              Opt-in <code>repyy scan --registry-check</code> only
+            </td>
+            <td>
+              registry.npmjs.org, api.npmjs.org and pypi.org; names of npm and PyPI packages declared in the repository's manifests, user-agent and connection
+              metadata
+            </td>
+            <td>None</td>
+            <td>
+              Lookup failure marks coverage incomplete; host mode only; at most 200 packages, 4 concurrent requests, 15-second request timeout, 90-second total
+              budget, 64 MiB per response
+            </td>
+          </tr>
+          <tr>
             <td>Host remote scan</td>
             <td>Only when a remote target is supplied</td>
             <td>Requested HTTPS or SSH Git host; repository path, Git negotiation and connection metadata</td>
