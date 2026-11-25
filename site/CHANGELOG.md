@@ -11,7 +11,9 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Add `repyy guard`, a pre-command hook for any agent harness. It scans the
   repository a `git clone`, package install, editor open, or `docker compose up`
   would touch, and exits `2` to block the command. It fails closed: an incomplete
-  scan, unreadable hook input, or a misconfigured hook also blocks.
+  scan, unreadable hook input, or a misconfigured hook also blocks. The agent
+  skill page shows hook settings for Claude Code, Codex, and Gemini CLI, with
+  timeouts longer than the guard's own scan limit.
 - Add `repyy mcp`, a stdio MCP server with `scan_repository` and `explain_rule`
   tools. It runs tool calls concurrently, and a client can cancel them.
 - Add opt-in `repyy scan --registry-check`, which looks up declared npm and PyPI
@@ -27,6 +29,9 @@ All notable changes are documented here. The project follows Semantic Versioning
   editor tool paths redirected into the repository.
 - Show a real findings queue in the README and docs overview. The CLI reference
   also shows the Home workspace chooser and an opened finding.
+- Suppress a reviewed finding by `rule` and `path` as well as by `fingerprint`.
+  A path is a file, a glob, or `dir/**`, so the suppression survives line edits.
+  Every suppression still needs a `reason` and may set `expires`.
 - Add `repyy scan --profile balanced|comprehensive`. `balanced`, the default,
   tiers capabilities against threats. `comprehensive` keeps every capability at
   its rule severity for audits. Docker scans pass the profile to the worker.
@@ -58,6 +63,8 @@ All notable changes are documented here. The project follows Semantic Versioning
   literals a file or line lacks. Reports are unchanged, and scans of large
   repositories run up to 13 times faster.
 - Update built-in rules to `2026.11.26`.
+- Use the embedded intelligence snapshot without a warning when the local cache is
+  older than it. Every scan after an upgrade previously reported a stale cache.
 - Make the website the primary documentation. Correct command examples, describe
   scan limits, and update release verification guidance.
 - Lead the docs overview with installation and a first scan, with direct links
