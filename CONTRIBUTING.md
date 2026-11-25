@@ -25,6 +25,11 @@ make security
 make build
 ```
 
+Install the Git hooks once per clone with [hk](https://hk.jdx.dev) (`brew install hk` or
+`mise use -g hk`), then run `hk install`. pre-commit formats and lints the staged files;
+pre-push runs the CI checks for the areas your push changes. `hk check --all` runs the
+formatters and linters on the whole tree.
+
 Keep changes focused and use `gofmt`. The CLI entry point stays tiny; put logic in the package that
 owns the responsibility. Avoid generic `utils` packages, unnecessary interfaces, hidden global
 state, and exported APIs used by only one internal package.
@@ -61,6 +66,16 @@ Prefer structured parsing and correlated behaviors over broad token regexes. Doc
 security tools, and signature definitions legitimately contain dangerous-looking strings. Do not
 silence those matches globally; classify and downgrade their context. Never use comment language or
 contributor nationality as a malicious signal.
+
+### Run the benchmark
+
+`make bench` writes every evasion fixture and benign control in `scripts/hard_benchmark/cases.py`
+to a temporary directory and scans it. It then fetches the clean repositories pinned in
+`scripts/hard_benchmark/corpus.json` and counts their high and critical findings. It fails when a
+control raises a high finding, fewer than 58 fixtures are detected, or the clean total exceeds
+`max_high`. The Benchmark workflow runs it on pull requests that touch detection code. Add a fixture
+and a control with each new detection. When a change lowers the clean total, lower the baselines and
+`max_high` with it.
 
 ### Update the web rule catalog
 

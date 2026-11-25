@@ -100,6 +100,9 @@ func TestOlderVerifiedCacheCannotHideNewEmbeddedIndicators(t *testing.T) {
 	if status.Source != "embedded" || selected.SnapshotVersion != SnapshotVersion || len(selected.Packages) != len(Packages) {
 		t.Fatalf("legacy cache hid embedded data: %+v", status)
 	}
+	if status.Warning != "" {
+		t.Fatalf("a newer embedded snapshot is the expected state after an upgrade, not a warning: %q", status.Warning)
+	}
 }
 
 func TestUpdateLoadsVerifiedSnapshotWithoutLaterNetwork(t *testing.T) {

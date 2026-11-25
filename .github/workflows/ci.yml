@@ -109,7 +109,7 @@ jobs:
         with:
           job: test
       - if: steps.affected.outputs.run == 'true'
-        run: go test -race -count=1 ./...
+        run: go test -race -shuffle=on -count=1 ./...
 
   # Small checks share one job. Every step runs even after another fails, so a red run
   # lists every failure at once.
@@ -210,12 +210,19 @@ jobs:
           version: "v2.18.0"
           args: check
 
+  # The check names stay build (<os>) because branch protection requires them. macOS
+  # runs on the Intel pool: jobs on GitHub's arm64 macOS pool waited 15 minutes and were
+  # cancelled four times on 2026-11-25. Release builds still cross-compile darwin/arm64.
   build:
+    name: build (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        include:
+          - os: macos-latest
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner || matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

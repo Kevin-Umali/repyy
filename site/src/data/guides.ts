@@ -331,6 +331,14 @@ export const guides = [
         label: "What the skill tells an agent to do",
       },
       {
+        id: "mcp",
+        label: "Connect repyy to any agent with MCP",
+      },
+      {
+        id: "guard",
+        label: "Gate clones and installs with a hook",
+      },
+      {
         id: "docker",
         label: "Use the opt-in Docker backend",
       },

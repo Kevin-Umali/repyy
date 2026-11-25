@@ -40,6 +40,7 @@ type Options struct {
 	Timeout             time.Duration
 	History             string
 	IncludeDependencies bool
+	Profile             string
 	MaxFiles            int
 	MaxFileBytes        int64
 	Config              string
@@ -252,6 +253,9 @@ func runContainer(ctx context.Context, image, path string, remote bool, opts Opt
 	}
 	if opts.IncludeDependencies {
 		args = append(args, "--include-dependencies")
+	}
+	if opts.Profile != "" {
+		args = append(args, "--profile", opts.Profile)
 	}
 	if opts.MaxFiles > 0 {
 		args = append(args, "--max-files", fmt.Sprint(opts.MaxFiles))

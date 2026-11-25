@@ -4,6 +4,7 @@
 /site/node_modules/
 /site/.astro/
 /work/
+/.bench/
 /outputs/
 *.sarif
 *.scan.json

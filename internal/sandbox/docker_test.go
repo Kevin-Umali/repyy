@@ -36,6 +36,7 @@ oversized)
 	exit 0
 	;;
 *)
+	[ -n "${FAKE_DOCKER_ARGS:-}" ] && printf '%s\n' "$@" > "$FAKE_DOCKER_ARGS"
 	printf '%s' "${FAKE_DOCKER_STDOUT:-}"
 	printf '%s' "${FAKE_DOCKER_STDERR:-}" >&2
 	exit "${FAKE_DOCKER_EXIT:-0}"
@@ -111,6 +112,24 @@ func TestRunContainerAcceptsValidWorkerJSON(t *testing.T) {
 	}
 	if result.Isolation == nil || result.Isolation.ImageDigest != "sha256:"+strings.Repeat("a", 64) {
 		t.Fatalf("unexpected isolation: %#v", result.Isolation)
+	}
+}
+
+func TestRunContainerPassesTheProfile(t *testing.T) {
+	installFakeDocker(t)
+	setWorkerOutput(t, validReport(), 0)
+	argsPath := filepath.Join(t.TempDir(), "args")
+	t.Setenv("FAKE_DOCKER_ARGS", argsPath)
+
+	if _, err := runContainer(context.Background(), validImage(), "/tmp/repository", false, Options{Profile: "comprehensive"}); err != nil {
+		t.Fatalf("runContainer() error = %v", err)
+	}
+	args, err := os.ReadFile(argsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(args), "--profile\ncomprehensive\n") {
+		t.Fatalf("worker arguments do not carry the profile:\n%s", args)
 	}
 }
 

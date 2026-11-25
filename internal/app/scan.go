@@ -9,6 +9,7 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/config"
 	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/model"
+	"github.com/Kevin-Umali/repyy/internal/registry"
 	"github.com/Kevin-Umali/repyy/internal/sandbox"
 	"github.com/Kevin-Umali/repyy/internal/scan"
 	"github.com/Kevin-Umali/repyy/internal/source"
@@ -123,7 +124,7 @@ func executeScan(ctx context.Context, opts scanArgs, version string, progress *s
 	}
 
 	rules := scan.BuiltinRules()
-	suppressions := map[string]bool{}
+	var suppressions config.Suppressions
 	if opts.config != "" {
 		cfg, err := config.Load(opts.config)
 		if err != nil {
@@ -178,7 +179,7 @@ func executeScan(ctx context.Context, opts scanArgs, version string, progress *s
 	return report, notice, err
 }
 
-func scanTargets(ctx context.Context, report *model.Report, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress *scanProgress, onComplete func()) error {
+func scanTargets(ctx context.Context, report *model.Report, opts scanArgs, rules []scan.Rule, suppressions config.Suppressions, progress *scanProgress, onComplete func()) error {
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for range opts.jobs {
@@ -240,14 +241,14 @@ func exitCodeForResults(results []model.RepoResult, threshold model.Severity) in
 	return 0
 }
 
-func scanOne(parent context.Context, target string, opts scanArgs, rules []scan.Rule, suppressions map[string]bool, progress func(files int, bytes int64)) (result model.RepoResult) {
+func scanOne(parent context.Context, target string, opts scanArgs, rules []scan.Rule, suppressions config.Suppressions, progress func(files int, bytes int64)) (result model.RepoResult) {
 	started := time.Now()
 	result = model.RepoResult{Target: displayTarget(target), ScanMode: model.ScanModeHost, Findings: []model.Finding{}}
 	ctx, cancel := context.WithTimeout(parent, opts.timeout)
 	defer cancel()
 	if opts.sandbox == "docker" {
 		result.ScanMode = model.ScanModeDocker
-		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
+		sandboxResult, err := sandbox.Scan(ctx, target, sandbox.Options{Version: opts.version, Timeout: opts.timeout, History: opts.history, IncludeDependencies: opts.includeDeps, Profile: string(opts.profile), MaxFiles: opts.limits.MaxFiles, MaxFileBytes: opts.limits.MaxFileBytes, Config: opts.config})
 		if err != nil {
 			result.Error = err.Error()
 			result.Verdict = model.VerdictIncomplete
@@ -282,11 +283,15 @@ func scanOne(parent context.Context, target string, opts scanArgs, rules []scan.
 	if prepared.Remote && prepared.RepositoryURL != "" && prepared.Revision != "" {
 		result.Source = &model.SourceInfo{RepositoryURL: prepared.RepositoryURL, Revision: prepared.Revision}
 	}
-	scanner := scan.New(scan.Options{Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress})
+	scanOptions := scan.Options{Profile: opts.profile, Rules: rules, Intelligence: opts.intelligence, IncludeDependencies: opts.includeDeps, Limits: opts.limits, Progress: progress}
+	if opts.registryCheck {
+		scanOptions.Registry = registry.New()
+	}
+	scanner := scan.New(scanOptions)
 	result.Coverage, result.Findings = scanner.Scan(ctx, prepared.Path)
 	filtered := result.Findings[:0]
 	for _, finding := range result.Findings {
-		if !suppressions[finding.Fingerprint] {
+		if !suppressions.Covers(finding) {
 			filtered = append(filtered, finding)
 		}
 	}
