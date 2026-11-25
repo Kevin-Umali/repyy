@@ -24,6 +24,7 @@ func highestSeverity(findings []model.Finding, id string) (model.Severity, bool)
 }
 
 func TestCommonBenignCodeStaysBelowHigh(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -55,6 +56,7 @@ func TestCommonBenignCodeStaysBelowHigh(t *testing.T) {
 }
 
 func TestRiskyTwinsOfBenignCodeStayHigh(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -87,6 +89,7 @@ func TestRiskyTwinsOfBenignCodeStayHigh(t *testing.T) {
 }
 
 func TestStructuredFindingsFollowPathContext(t *testing.T) {
+	t.Parallel()
 	local := `{"name":"fixture","dependencies":{"helper":"link:../helper"}}`
 	cases := []struct {
 		name, path, rule string
@@ -107,6 +110,7 @@ func TestStructuredFindingsFollowPathContext(t *testing.T) {
 }
 
 func TestDirectoryDependenciesInsideTheRepositoryStayBelowHigh(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, path, spec string
 		wantHigh         bool
@@ -133,6 +137,7 @@ func TestDirectoryDependenciesInsideTheRepositoryStayBelowHigh(t *testing.T) {
 // Capability rules report what code can do. Alone in ordinary source they are medium;
 // a threat signal in the same file, or a file that runs automatically, keeps them high.
 func TestCapabilityAloneInOrdinarySourceIsMedium(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -155,6 +160,7 @@ func TestCapabilityAloneInOrdinarySourceIsMedium(t *testing.T) {
 }
 
 func TestCapabilityWithThreatOrAutorunStaysHigh(t *testing.T) {
+	t.Parallel()
 	obfuscated := "const _0x3f2a=['log'];function _0x1b9c(_0x5e1d){return _0x3f2a[_0x5e1d];}\nwhile(!![]){break;}\n"
 	cases := []struct {
 		name  string
@@ -196,6 +202,7 @@ func scanSeverity(t *testing.T, files map[string]string, rule string) model.Seve
 // A tag-pinned action is hardening advice for the repository's owner. It does not put
 // someone who clones the repository at risk, so it must not reach the default gate.
 func TestMutableActionReferenceIsHardeningAdvice(t *testing.T) {
+	t.Parallel()
 	files := map[string]string{".github/workflows/ci.yml": "jobs:\n  test:\n    steps:\n      - uses: actions/checkout@v4\n      - uses: pnpm/action-setup@v4\n"}
 	if severity := scanSeverity(t, files, "CICD-003"); severity != model.SeverityMedium {
 		t.Fatalf("CICD-003 at %s; want medium", severity)
@@ -203,6 +210,7 @@ func TestMutableActionReferenceIsHardeningAdvice(t *testing.T) {
 }
 
 func TestCargoPathDependenciesInsideTheRepositoryStayBelowHigh(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, path, dependency string
 		wantHigh               bool
@@ -225,6 +233,7 @@ func TestCargoPathDependenciesInsideTheRepositoryStayBelowHigh(t *testing.T) {
 }
 
 func TestRoutineTextDoesNotTriggerThreatRules(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -255,6 +264,7 @@ func TestRoutineTextDoesNotTriggerThreatRules(t *testing.T) {
 }
 
 func TestThreatRulesKeepTheirAttackForms(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -281,6 +291,7 @@ func TestThreatRulesKeepTheirAttackForms(t *testing.T) {
 }
 
 func TestTestDirectoriesLowerCapabilitiesButNotThreats(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name     string
 		files    map[string]string
@@ -303,6 +314,7 @@ func TestTestDirectoriesLowerCapabilitiesButNotThreats(t *testing.T) {
 }
 
 func TestNetworkPrimitivesAreCapabilities(t *testing.T) {
+	t.Parallel()
 	if severity := scanSeverity(t, map[string]string{"src/client.js": "const socket = new WebSocket(url);\n"}, "EXFIL-001"); severity != model.SeverityMedium {
 		t.Fatalf("EXFIL-001 at %s; want medium", severity)
 	}
@@ -313,6 +325,7 @@ func TestNetworkPrimitivesAreCapabilities(t *testing.T) {
 }
 
 func TestWeakSignalsDoNotVouchForCapabilities(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		files map[string]string
@@ -332,6 +345,7 @@ func TestWeakSignalsDoNotVouchForCapabilities(t *testing.T) {
 }
 
 func TestNonExecutingThreatSignalsInTestsAreLowered(t *testing.T) {
+	t.Parallel()
 	files := map[string]string{"tests/unit/http.test.js": "const key = fs.readFileSync(new URL('./key.pem', import.meta.url));\n"}
 	root := t.TempDir()
 	for name, body := range files {
@@ -344,6 +358,7 @@ func TestNonExecutingThreatSignalsInTestsAreLowered(t *testing.T) {
 }
 
 func TestComprehensiveProfileKeepsCapabilitiesHigh(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "src/run.js", "const { spawn } = require('child_process');\nspawn(bin, args);\n")
 	_, findings := New(Options{Profile: ProfileComprehensive}).Scan(context.Background(), root)

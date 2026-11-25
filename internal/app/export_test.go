@@ -12,6 +12,7 @@ import (
 )
 
 func TestConcurrentExportsPreserveFirstReport(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "review.json")
 	reports := []model.Report{
 		{SchemaVersion: "1", ToolVersion: "first"},

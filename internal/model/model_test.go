@@ -3,6 +3,7 @@ package model
 import "testing"
 
 func TestIncompleteDecisionOverridesFindings(t *testing.T) {
+	t.Parallel()
 	for _, verdict := range []string{VerdictNoFindings, VerdictReview, VerdictDoNotRun} {
 		result := RepoResult{Verdict: verdict, Coverage: Coverage{Complete: false}}
 		if result.DecisionStatus() != "SCAN INCOMPLETE" {

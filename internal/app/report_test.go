@@ -14,6 +14,7 @@ import (
 )
 
 func TestReportConvertsLegacyJSONToSelfContainedHTML(t *testing.T) {
+	t.Parallel()
 	report := model.Report{
 		SchemaVersion: "1", ToolVersion: "test", RulesVersion: "test-rules",
 		Intelligence: model.IntelligenceInfo{Version: "test-intel", Date: "2026-09-12", Source: "embedded"},
@@ -57,6 +58,7 @@ func TestReportConvertsLegacyJSONToSelfContainedHTML(t *testing.T) {
 }
 
 func TestReportRejectsForgedVerdictAndPreservesExitPolicy(t *testing.T) {
+	t.Parallel()
 	report := model.Report{SchemaVersion: "1", Results: []model.RepoResult{{
 		Target: "fixture", Verdict: model.VerdictNoFindings, Coverage: model.Coverage{Complete: true},
 		Findings: []model.Finding{{RuleID: "TEST-001", Path: "main.js", Severity: model.SeverityHigh, Confidence: model.ConfidenceHigh, Message: "danger"}},
@@ -90,6 +92,7 @@ func TestReportRejectsForgedVerdictAndPreservesExitPolicy(t *testing.T) {
 }
 
 func TestReportConversionRedactsSourceDerivedMessage(t *testing.T) {
+	t.Parallel()
 	token := "ghp_" + strings.Repeat("A", 36)
 	report := model.Report{
 		SchemaVersion: "1", ToolVersion: "test", RulesVersion: "test-rules",
@@ -115,6 +118,7 @@ func TestReportConversionRedactsSourceDerivedMessage(t *testing.T) {
 }
 
 func TestReportOutputPreservesExistingFileOnRenderFailure(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "report.html")
 	if err := os.WriteFile(path, []byte("previous report"), 0o600); err != nil {
 		t.Fatal(err)
@@ -132,6 +136,7 @@ func TestReportOutputPreservesExistingFileOnRenderFailure(t *testing.T) {
 }
 
 func TestReportRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	unsupported := filepath.Join(root, "unsupported.json")
 	if err := os.WriteFile(unsupported, []byte(`{"schema_version":"2"}`), 0o600); err != nil {
@@ -165,6 +170,7 @@ func TestReportRejectsInvalidInput(t *testing.T) {
 }
 
 func TestReportConversionReappliesLocationLimits(t *testing.T) {
+	t.Parallel()
 	locations := make([]model.Location, model.MaxLocationsPerFinding+2)
 	for index := range locations {
 		locations[index] = model.Location{Path: "main.js", StartLine: index + 1, Evidence: "eval(value)"}

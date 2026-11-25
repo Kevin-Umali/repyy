@@ -71,6 +71,7 @@ func testNewerSnapshot(days, revision int) Snapshot {
 }
 
 func TestOlderVerifiedCacheCannotHideNewEmbeddedIndicators(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -106,6 +107,7 @@ func TestOlderVerifiedCacheCannotHideNewEmbeddedIndicators(t *testing.T) {
 }
 
 func TestUpdateLoadsVerifiedSnapshotWithoutLaterNetwork(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -131,6 +133,7 @@ func TestUpdateLoadsVerifiedSnapshotWithoutLaterNetwork(t *testing.T) {
 }
 
 func TestInvalidSignatureDoesNotActivate(t *testing.T) {
+	t.Parallel()
 	public, _, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -152,6 +155,7 @@ func TestInvalidSignatureDoesNotActivate(t *testing.T) {
 }
 
 func TestFailedUpdatePreservesLastKnownGoodSnapshot(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -180,6 +184,7 @@ func TestFailedUpdatePreservesLastKnownGoodSnapshot(t *testing.T) {
 }
 
 func TestRollbackSwapsVerifiedSnapshots(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -206,6 +211,7 @@ func TestRollbackSwapsVerifiedSnapshots(t *testing.T) {
 }
 
 func TestCorruptCacheFallsBackToEmbedded(t *testing.T) {
+	t.Parallel()
 	key, err := embeddedPublicKey()
 	if err != nil {
 		t.Fatal(err)
@@ -221,6 +227,7 @@ func TestCorruptCacheFallsBackToEmbedded(t *testing.T) {
 }
 
 func TestUpdateRejectsOlderSnapshot(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -238,6 +245,7 @@ func TestUpdateRejectsOlderSnapshot(t *testing.T) {
 }
 
 func TestUpdateRejectsLowerRevisionFromSameDate(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -260,6 +268,7 @@ func TestUpdateRejectsLowerRevisionFromSameDate(t *testing.T) {
 }
 
 func TestUpdateRejectsFutureDatedSnapshot(t *testing.T) {
+	t.Parallel()
 	public, private, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -274,6 +283,7 @@ func TestUpdateRejectsFutureDatedSnapshot(t *testing.T) {
 }
 
 func TestDecodeSnapshotRejectsUnknownAndTrailingContent(t *testing.T) {
+	t.Parallel()
 	valid, err := json.Marshal(testSnapshot("2026-09-27.1", "2026-09-27"))
 	if err != nil {
 		t.Fatal(err)
@@ -292,6 +302,7 @@ func TestDecodeSnapshotRejectsUnknownAndTrailingContent(t *testing.T) {
 }
 
 func TestDecodeSnapshotRejectsDuplicateAdvisoryAliases(t *testing.T) {
+	t.Parallel()
 	snapshot := testSnapshot("2026-09-27.1", "2026-09-27")
 	snapshot.Packages[0].Aliases = []string{"MAL-duplicate", "MAL-duplicate"}
 	data, err := json.Marshal(snapshot)
@@ -316,6 +327,7 @@ func TestDefaultStoreUsesPrivateCacheSubdirectory(t *testing.T) {
 }
 
 func TestPublishedPublicKeyMatchesEmbeddedKey(t *testing.T) {
+	t.Parallel()
 	published, err := os.ReadFile(filepath.Join("..", "..", "keys", "intelligence-ed25519.pem"))
 	if err != nil {
 		t.Fatal(err)

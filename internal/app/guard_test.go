@@ -12,6 +12,7 @@ import (
 )
 
 func TestGateTargetsRecognizesRepositoryCommands(t *testing.T) {
+	t.Parallel()
 	cwd := t.TempDir()
 	project := filepath.Join(cwd, "project")
 	if err := os.Mkdir(project, 0o755); err != nil {
@@ -108,6 +109,7 @@ func stdinTarget(kind, trigger string) gateTarget {
 }
 
 func TestShellSegmentsHonorsQuotes(t *testing.T) {
+	t.Parallel()
 	got := shellSegments(`git clone "https://a.example/x y.git" 'dir;name' && echo a\ b # git clone c`)
 	want := [][]string{{"git", "clone", "https://a.example/x y.git", "dir;name"}, {"echo", "a b"}}
 	if !reflect.DeepEqual(got, want) {
@@ -226,6 +228,7 @@ func TestGuardFailsClosed(t *testing.T) {
 }
 
 func TestGuardFailsClosedWithJSONDecision(t *testing.T) {
+	t.Parallel()
 	var stdout, stderr bytes.Buffer
 	code, err := runGuard([]string{"--format", "json", "--fail-on", "severe", "--command", "ls"}, strings.NewReader(""), &stdout, &stderr, "test")
 	if code != 2 || err != nil {
@@ -241,6 +244,7 @@ func TestGuardFailsClosedWithJSONDecision(t *testing.T) {
 }
 
 func TestGuardBlocksUnverifiableTargetsWithoutScanning(t *testing.T) {
+	t.Parallel()
 	for _, tt := range []struct {
 		args     []string
 		wantCode int
@@ -261,6 +265,7 @@ func TestGuardBlocksUnverifiableTargetsWithoutScanning(t *testing.T) {
 }
 
 func TestGuardTimeoutDefaultsBelowHookTimeout(t *testing.T) {
+	t.Parallel()
 	g, err := parseGuardArgs([]string{"--command", "ls"})
 	if err != nil || g.scan.timeout != guardDefaultTimeout {
 		t.Fatalf("default timeout=%v err=%v", g.scan.timeout, err)

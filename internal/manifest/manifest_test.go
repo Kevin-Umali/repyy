@@ -3,6 +3,7 @@ package manifest
 import "testing"
 
 func TestParseSupportedAndUnknownManifests(t *testing.T) {
+	t.Parallel()
 	tests := []struct{ path, body, ecosystem, name, version string }{
 		{"package.json", `{"dependencies":{"cors-parser":"1.0.0"}}`, "npm", "cors-parser", "1.0.0"},
 		{"requirements.txt", "openaii==1.2.3\n", "pip", "openaii", "==1.2.3"},
@@ -28,6 +29,7 @@ func TestParseSupportedAndUnknownManifests(t *testing.T) {
 }
 
 func TestDeclarationLineUsesIdentifierBoundaries(t *testing.T) {
+	t.Parallel()
 	data := []byte("{\n  \"foobar\": \"1.0.0\",\n  \"foo\": \"2.0.0\"\n}\n")
 	if got := DeclarationLine(data, "foo"); got != 3 {
 		t.Fatalf("DeclarationLine(foo) = %d, want 3", got)
@@ -38,6 +40,7 @@ func TestDeclarationLineUsesIdentifierBoundaries(t *testing.T) {
 }
 
 func TestNPMAliasExposesResolvedPackageIdentity(t *testing.T) {
+	t.Parallel()
 	data := []byte(`{"dependencies":{"expected":"npm:@fixture/actual@1.2.3"}}`)
 	got, ok := Parse("package.json", data)
 	if !ok || len(got) != 2 {
@@ -55,6 +58,7 @@ func TestNPMAliasExposesResolvedPackageIdentity(t *testing.T) {
 }
 
 func TestLegacyNPMLockIncludesNestedResolvedDependencies(t *testing.T) {
+	t.Parallel()
 	data := []byte(`{"lockfileVersion":1,"dependencies":{"parent":{"version":"1.0.0","dependencies":{"process-log":{"version":"2.0.0"}}}}}`)
 	for _, path := range []string{"package-lock.json", "npm-shrinkwrap.json"} {
 		dependencies, supported := Parse(path, data)
