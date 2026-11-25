@@ -25,6 +25,11 @@ make security
 make build
 ```
 
+Install the Git hooks once per clone with [hk](https://hk.jdx.dev) (`brew install hk` or
+`mise use -g hk`), then run `hk install`. pre-commit formats and lints the staged files;
+pre-push runs the CI checks for the areas your push changes. `hk check --all` runs the
+formatters and linters on the whole tree.
+
 Keep changes focused and use `gofmt`. The CLI entry point stays tiny; put logic in the package that
 owns the responsibility. Avoid generic `utils` packages, unnecessary interfaces, hidden global
 state, and exported APIs used by only one internal package.
