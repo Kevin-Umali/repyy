@@ -65,6 +65,7 @@ func FuzzScreenAdmitsEveryMatch(f *testing.F) {
 }
 
 func TestScreenSkipsTextWithoutRequiredLiterals(t *testing.T) {
+	t.Parallel()
 	sc := newScreen(`(?i)(curl|wget)\s+[^\n]*\|\s*(ba)?sh`)
 	if sc.admitsFile(foldText([]byte("echo hello\nmake build\n"))) {
 		t.Fatal("a file without curl or wget cannot match and should be skipped")

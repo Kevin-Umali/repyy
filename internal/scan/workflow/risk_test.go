@@ -49,6 +49,7 @@ func scanFixture(t *testing.T, root string) []model.Finding {
 }
 
 func TestWorkflowRunArtifactExecutionRisk(t *testing.T) {
+	t.Parallel()
 	const download = "      - uses: actions/download-artifact@0123456789012345678901234567890123456789\n        with:\n          run-id: ${{ github.event.workflow_run.id }}\n"
 	cases := []struct {
 		name, trigger, steps string
@@ -78,6 +79,7 @@ func TestWorkflowRunArtifactExecutionRisk(t *testing.T) {
 }
 
 func TestLowTrustCacheWriteOverride(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, body string
 		want       bool
@@ -105,6 +107,7 @@ func TestLowTrustCacheWriteOverride(t *testing.T) {
 }
 
 func TestPullRequestOnSelfHostedRunner(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, trigger, runner string
 		want                  bool
@@ -130,6 +133,7 @@ func TestPullRequestOnSelfHostedRunner(t *testing.T) {
 }
 
 func TestMultilineWorkflowRunInterpolation(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, steps string
 		want        []string

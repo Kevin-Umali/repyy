@@ -7,6 +7,7 @@ import (
 )
 
 func TestRustSupplyChainDetectsRegistryRedirectionAndDependencyOverrides(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -47,6 +48,7 @@ index = "https://example.invalid/registry-index"
 }
 
 func TestRustSupplyChainIgnoresOrdinaryCargoConfiguration(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -70,6 +72,7 @@ git-fetch-with-cli = true
 }
 
 func TestRustDependencyGitAndPathSourcesAreReviewed(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")

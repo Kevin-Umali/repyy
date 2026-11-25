@@ -11,6 +11,7 @@ import (
 )
 
 func TestCleanupFailurePreservesFindingsAndFailsVisibly(t *testing.T) {
+	t.Parallel()
 	result := model.RepoResult{
 		Target:   "assignment",
 		Verdict:  model.VerdictReview,

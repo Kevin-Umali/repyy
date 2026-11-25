@@ -14,6 +14,7 @@ import (
 )
 
 func TestCancelWaitsForScanCleanup(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -66,6 +67,7 @@ func TestCancelWaitsForScanCleanup(t *testing.T) {
 }
 
 func TestReviewDoesNotChangeReportUsedForExitPolicy(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -92,6 +94,7 @@ func TestReviewDoesNotChangeReportUsedForExitPolicy(t *testing.T) {
 }
 
 func TestTailWithinPreservesShortPathsAndLongPathLocations(t *testing.T) {
+	t.Parallel()
 	short := "package-lock.json:18"
 	if got := tailWithin(short, 30); got != short {
 		t.Fatalf("short path changed: %q", got)
@@ -139,6 +142,7 @@ func finding(rule string, severity model.Severity, path string, line int) model.
 }
 
 func TestFindingsHeaderCountsSeverities(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1), finding("B", model.SeverityHigh, "b.js", 2), finding("C", model.SeverityMedium, "c.js", 3))
 	if got := ansi.Strip(s.View().Content); !strings.Contains(got, "high 2 · medium 1") {
 		t.Fatalf("severity counts missing: %q", got)
@@ -146,6 +150,7 @@ func TestFindingsHeaderCountsSeverities(t *testing.T) {
 }
 
 func TestDetailStepsThroughFindingsInPlace(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1), finding("B", model.SeverityMedium, "b.js", 2))
 	press(s, "enter")
 	if got := ansi.Strip(s.View().Content); !strings.Contains(got, "Finding 1 of 2") || !strings.Contains(got, "Message for A") {
@@ -166,6 +171,7 @@ func TestDetailStepsThroughFindingsInPlace(t *testing.T) {
 }
 
 func TestCopyLocationConfirmsUntilNextKey(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "src/a.js", 12))
 	if cmd := press(s, "y"); cmd == nil {
 		t.Fatal("y did not return a clipboard command")
@@ -180,6 +186,7 @@ func TestCopyLocationConfirmsUntilNextKey(t *testing.T) {
 }
 
 func TestHandoffListsFindingsHiddenByDisplayFilters(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1), finding("LOW-1", model.SeverityLow, "low.js", 9))
 	s.review.minSeverity = model.SeverityHigh
 	s.review.selectRepo(0)
@@ -200,6 +207,7 @@ func TestHandoffListsFindingsHiddenByDisplayFilters(t *testing.T) {
 }
 
 func TestKeyHelpCoversEveryReviewKey(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1))
 	press(s, "?")
 	view := ansi.Strip(s.View().Content)
@@ -218,6 +226,7 @@ func TestKeyHelpCoversEveryReviewKey(t *testing.T) {
 }
 
 func TestClickSelectsThenOpensFindingRow(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1), finding("B", model.SeverityMedium, "b.js", 2))
 	s.resize(120, 32)
 	s.View()
@@ -236,6 +245,7 @@ func TestClickSelectsThenOpensFindingRow(t *testing.T) {
 }
 
 func TestClickTabSwitchesPane(t *testing.T) {
+	t.Parallel()
 	s := reviewSession(t, finding("A", model.SeverityHigh, "a.js", 1))
 	s.resize(120, 32)
 	view := ansi.Strip(s.View().Content)
@@ -248,6 +258,7 @@ func TestClickTabSwitchesPane(t *testing.T) {
 }
 
 func TestHomeCardsOpenWorkspaces(t *testing.T) {
+	t.Parallel()
 	s := newSession(context.Background(), Options{Home: true}, nil)
 	s.resize(120, 32)
 	press(s, "l")

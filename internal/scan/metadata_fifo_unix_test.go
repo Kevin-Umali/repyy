@@ -12,6 +12,7 @@ import (
 )
 
 func TestGitMetadataFIFODoesNotBlockPastTimeout(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	if err := os.Mkdir(filepath.Join(repo, ".git"), 0o700); err != nil {
 		t.Fatal(err)

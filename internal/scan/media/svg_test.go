@@ -201,6 +201,7 @@ func ruleFinding(findings []model.Finding, id string) (model.Finding, bool) {
 }
 
 func TestSVGActiveContentIsDetectedWithoutRendering(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -222,6 +223,7 @@ func TestSVGActiveContentIsDetectedWithoutRendering(t *testing.T) {
 }
 
 func TestSVGCommentsAndDataScriptsAreNotActive(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -237,6 +239,7 @@ func TestSVGCommentsAndDataScriptsAreNotActive(t *testing.T) {
 }
 
 func TestSVGActiveURLSchemes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -254,6 +257,7 @@ func TestSVGActiveURLSchemes(t *testing.T) {
 }
 
 func TestBinaryFontsAreInventoriedAndMalformedTablesAreRejected(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name        string
 		font        []byte
@@ -283,6 +287,7 @@ func TestBinaryFontsAreInventoriedAndMalformedTablesAreRejected(t *testing.T) {
 }
 
 func TestFontTableGraphIntegrity(t *testing.T) {
+	t.Parallel()
 	duplicate := sfntFixture(
 		fontFixtureTable{tag: "name", body: []byte("one")},
 		fontFixtureTable{tag: "name", body: []byte("two")},
@@ -372,6 +377,7 @@ func TestFontTableGraphIntegrity(t *testing.T) {
 }
 
 func TestFontProgramsAndEmbeddedSVGAreReported(t *testing.T) {
+	t.Parallel()
 	var compressedSVG bytes.Buffer
 	writer := gzip.NewWriter(&compressedSVG)
 	if _, err := writer.Write([]byte(`<svg xmlns="http://www.w3.org/2000/svg"><path onload="void 0"/></svg>`)); err != nil {
@@ -418,6 +424,7 @@ func TestFontProgramsAndEmbeddedSVGAreReported(t *testing.T) {
 }
 
 func TestBoundedWOFF2DirectoryIsAccepted(t *testing.T) {
+	t.Parallel()
 	body := woff2Fixture(5, 1, []byte{0}, false)
 
 	root := t.TempDir()
@@ -431,6 +438,7 @@ func TestBoundedWOFF2DirectoryIsAccepted(t *testing.T) {
 }
 
 func TestTransformedHmtxWOFF2IsAccepted(t *testing.T) {
+	t.Parallel()
 	body := woff2Fixture(0x43, 1, []byte{0}, true)
 
 	root := t.TempDir()
@@ -444,6 +452,7 @@ func TestTransformedHmtxWOFF2IsAccepted(t *testing.T) {
 }
 
 func TestInvalidWOFF2BrotliStreamIsRejected(t *testing.T) {
+	t.Parallel()
 	body := woff2Fixture(5, 1, []byte{0}, false)
 	body[len(body)-1] ^= 0xff
 	root := t.TempDir()
@@ -457,6 +466,7 @@ func TestInvalidWOFF2BrotliStreamIsRejected(t *testing.T) {
 }
 
 func TestWOFF2TablePayloadIsInspected(t *testing.T) {
+	t.Parallel()
 	payload := ttfWithEmbeddedPE()[28:128]
 	body := woff2Fixture(5, byte(len(payload)), payload, false)
 	root := t.TempDir()
@@ -470,6 +480,7 @@ func TestWOFF2TablePayloadIsInspected(t *testing.T) {
 }
 
 func TestDuplicateWOFF2TableIsRejected(t *testing.T) {
+	t.Parallel()
 	var compressed bytes.Buffer
 	writer := brotli.NewWriter(&compressed)
 	_, _ = writer.Write([]byte{0, 0})
@@ -493,6 +504,7 @@ func TestDuplicateWOFF2TableIsRejected(t *testing.T) {
 }
 
 func TestWOFF2CollectionDirectoryIsAccepted(t *testing.T) {
+	t.Parallel()
 	var compressed bytes.Buffer
 	writer := brotli.NewWriter(&compressed)
 	_, _ = writer.Write([]byte{0})
@@ -525,6 +537,7 @@ func TestWOFF2CollectionDirectoryIsAccepted(t *testing.T) {
 }
 
 func TestTransformedWOFF2LocaPayloadMustBeEmpty(t *testing.T) {
+	t.Parallel()
 	directory := []byte{10, 1, 1, 11, 1, 1}
 	body := make([]byte, 48+len(directory)+1)
 	copy(body[:4], "wOF2")
@@ -544,6 +557,7 @@ func TestTransformedWOFF2LocaPayloadMustBeEmpty(t *testing.T) {
 }
 
 func TestWrappedSFNTTablesReceiveStructuralValidation(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name string
 		body []byte
@@ -565,6 +579,7 @@ func TestWrappedSFNTTablesReceiveStructuralValidation(t *testing.T) {
 }
 
 func TestWOFF2TotalSizeLowerBoundIsValidated(t *testing.T) {
+	t.Parallel()
 	body := woff2Fixture(5, 1, []byte{0}, false)
 	binary.BigEndian.PutUint32(body[16:20], 1)
 	root := t.TempDir()
@@ -578,6 +593,7 @@ func TestWOFF2TotalSizeLowerBoundIsValidated(t *testing.T) {
 }
 
 func TestActiveSVGDoesNotHideLaterMalformedDocument(t *testing.T) {
+	t.Parallel()
 	active := []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>void 0</script></svg>`)
 	invalidGzip := []byte{0x1f, 0x8b, 0, 0}
 	docList := make([]byte, 26+len(active)+len(invalidGzip))
@@ -602,6 +618,7 @@ func TestActiveSVGDoesNotHideLaterMalformedDocument(t *testing.T) {
 }
 
 func TestTrueTypeCollectionAggregateTableLimit(t *testing.T) {
+	t.Parallel()
 	const tableCount = 4096
 	const faceCount = 17
 	fontOffset := 12 + 4*faceCount
@@ -630,6 +647,7 @@ func TestTrueTypeCollectionAggregateTableLimit(t *testing.T) {
 }
 
 func TestMalformedFontFixtureIsContextual(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -642,6 +660,7 @@ func TestMalformedFontFixtureIsContextual(t *testing.T) {
 }
 
 func TestOpenTypeSVGAggregateExpansionLimit(t *testing.T) {
+	t.Parallel()
 	document := []byte(`<svg xmlns="http://www.w3.org/2000/svg"><!--` + strings.Repeat("a", 5<<20) + `--></svg>`)
 	var compressed bytes.Buffer
 	writer := gzip.NewWriter(&compressed)

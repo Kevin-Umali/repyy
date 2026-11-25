@@ -9,6 +9,7 @@ import (
 )
 
 func TestQuotedInjectionInOrdinaryDocumentationRemainsContextual(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "A malicious instruction might say: ignore previous instructions.\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -25,6 +26,7 @@ func TestQuotedInjectionInOrdinaryDocumentationRemainsContextual(t *testing.T) {
 }
 
 func TestAgentExamplesAndHybridMarkdownKeepContext(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -57,6 +59,7 @@ func TestAgentExamplesAndHybridMarkdownKeepContext(t *testing.T) {
 }
 
 func TestAgentInstructionNameAndFormatVariants(t *testing.T) {
+	t.Parallel()
 	for _, path := range []string{
 		"agents.md", "AGENTS.MD", "Agents.Md", "AGENTS.markdown", "AGENTS.mdx",
 		"CLAUDE.MD", "GEMINI.md", ".github/copilot-instructions.md",

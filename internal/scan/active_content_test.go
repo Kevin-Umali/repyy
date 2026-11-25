@@ -33,6 +33,7 @@ func writeZIPFixture(t *testing.T, root, name string, entries map[string]string)
 }
 
 func TestEncodedStagedAndProxyExecution(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -49,6 +50,7 @@ func TestEncodedStagedAndProxyExecution(t *testing.T) {
 }
 
 func TestPowerShellEncodedCommandAliases(t *testing.T) {
+	t.Parallel()
 	for _, alias := range []string{"-e", "-en", "-enc", "-enco", "-encod", "-encode", "-encoded", "-encodedc", "-encodedco", "-encodedcom", "-encodedcomm", "-encodedcomma", "-encodedcomman", "-encodedcommand"} {
 		t.Run(alias, func(t *testing.T) {
 			root := t.TempDir()
@@ -64,6 +66,7 @@ func TestPowerShellEncodedCommandAliases(t *testing.T) {
 }
 
 func TestPassiveDownloadTextIsNotStagedExecution(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, path, body string
 	}{
@@ -88,6 +91,7 @@ func TestPassiveDownloadTextIsNotStagedExecution(t *testing.T) {
 }
 
 func TestNestedExecutionWrappersAreCorrelated(t *testing.T) {
+	t.Parallel()
 	for _, command := range []string{"sudo bash payload", "& powershell payload"} {
 		t.Run(command, func(t *testing.T) {
 			root := t.TempDir()
@@ -103,6 +107,7 @@ func TestNestedExecutionWrappersAreCorrelated(t *testing.T) {
 }
 
 func TestExtensionlessStagedExecutionIsDetected(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name string
 		mode os.FileMode
@@ -128,6 +133,7 @@ func TestExtensionlessStagedExecutionIsDetected(t *testing.T) {
 }
 
 func TestDownloadedPathsAreCorrelatedWithExecution(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, command string
 	}{
@@ -150,6 +156,7 @@ func TestDownloadedPathsAreCorrelatedWithExecution(t *testing.T) {
 }
 
 func TestStagedExecutionFixtureIsContextual(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -162,6 +169,7 @@ func TestStagedExecutionFixtureIsContextual(t *testing.T) {
 }
 
 func TestDocumentActiveContent(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -181,6 +189,7 @@ func TestDocumentActiveContent(t *testing.T) {
 }
 
 func TestSplitAndEncodedOfficeDDEFieldIsDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -194,6 +203,7 @@ func TestSplitAndEncodedOfficeDDEFieldIsDetected(t *testing.T) {
 }
 
 func TestRenamedOfficeVBAProjectIsDetectedFromMetadata(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -208,6 +218,7 @@ func TestRenamedOfficeVBAProjectIsDetectedFromMetadata(t *testing.T) {
 }
 
 func TestNamespacedEncodedOfficeExternalRelationshipIsDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -221,6 +232,7 @@ func TestNamespacedEncodedOfficeExternalRelationshipIsDetected(t *testing.T) {
 }
 
 func TestOrdinaryDDETextIsNotAField(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -234,6 +246,7 @@ func TestOrdinaryDDETextIsNotAField(t *testing.T) {
 }
 
 func TestUnrelatedOfficeFieldsAreNotConcatenated(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -247,6 +260,7 @@ func TestUnrelatedOfficeFieldsAreNotConcatenated(t *testing.T) {
 }
 
 func TestPDFActionDetectionIgnoresPassiveSyntaxAndFindsActiveObjects(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, body string
 		wantAction bool
@@ -274,6 +288,7 @@ func TestPDFActionDetectionIgnoresPassiveSyntaxAndFindsActiveObjects(t *testing.
 }
 
 func TestActiveDocumentFixtureIsContextual(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -286,6 +301,7 @@ func TestActiveDocumentFixtureIsContextual(t *testing.T) {
 }
 
 func TestVSIXCapabilitiesAndInstallScripts(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -306,6 +322,7 @@ func TestVSIXCapabilitiesAndInstallScripts(t *testing.T) {
 }
 
 func TestVSIXInstallNamedConfigurationIsNotLifecycleScript(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -319,6 +336,7 @@ func TestVSIXInstallNamedConfigurationIsNotLifecycleScript(t *testing.T) {
 }
 
 func TestVSIXDependencyManifestIsNotExtensionManifest(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -334,6 +352,7 @@ func TestVSIXDependencyManifestIsNotExtensionManifest(t *testing.T) {
 }
 
 func TestVSIXEscapedCapabilityKeyIsDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -347,6 +366,7 @@ func TestVSIXEscapedCapabilityKeyIsDetected(t *testing.T) {
 }
 
 func TestVSIXExecutableEntryPointIsDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -360,6 +380,7 @@ func TestVSIXExecutableEntryPointIsDetected(t *testing.T) {
 }
 
 func TestBuildHooksAndPersistenceConfigurations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")

@@ -3,6 +3,7 @@ package intel
 import "testing"
 
 func TestDatabasePackageMatching(t *testing.T) {
+	t.Parallel()
 	d := Builtin()
 	if got := d.MatchPackage("npm", "tailwind-form-kit", "1.0.0"); len(got) != 1 {
 		t.Fatalf("expected package match, got %#v", got)
@@ -13,6 +14,7 @@ func TestDatabasePackageMatching(t *testing.T) {
 }
 
 func TestDatabasePackageMatchingIsUnaffectedByCallerMutation(t *testing.T) {
+	t.Parallel()
 	packages := []Package{{Ecosystem: "npm", Name: "sample", Affected: []string{"= 1.0.0"}, References: []string{"https://example.invalid/advisory"}}}
 	database := NewDatabase(packages, nil)
 	packages[0].Affected[0] = "= 2.0.0"
@@ -30,6 +32,7 @@ func TestDatabasePackageMatchingIsUnaffectedByCallerMutation(t *testing.T) {
 }
 
 func TestDatabaseHashMatchingIsUnaffectedByCallerMutation(t *testing.T) {
+	t.Parallel()
 	hashes := []FileHash{{SHA256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", References: []string{"https://example.invalid/report"}}}
 	database := NewDatabase(nil, hashes)
 	hashes[0].References[0] = "changed source"
@@ -45,6 +48,7 @@ func TestDatabaseHashMatchingIsUnaffectedByCallerMutation(t *testing.T) {
 }
 
 func TestAffectedExactAndAllVersions(t *testing.T) {
+	t.Parallel()
 	if !affected("1.2.3", []string{"= 1.2.3"}) {
 		t.Fatal("exact version should match")
 	}
@@ -66,6 +70,7 @@ func TestAffectedExactAndAllVersions(t *testing.T) {
 }
 
 func TestOctoberExactPackageVersions(t *testing.T) {
+	t.Parallel()
 	d := Builtin()
 	for _, tc := range []struct {
 		ecosystem, name, compromised, safe string

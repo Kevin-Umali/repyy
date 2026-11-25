@@ -10,6 +10,7 @@ import (
 )
 
 func TestLoadCustomRuleAndExpiringSuppression(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "rules.yaml")
 	body := `version: 1
 rules:
@@ -41,6 +42,7 @@ suppressions:
 }
 
 func TestRejectsStructuredCustomRule(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "rules.yaml")
 	body := "version: 1\nrules:\n  - id: LOCAL-001\n    category: local\n    severity: high\n    confidence: high\n    description: local marker\n    pattern: marker\n    match_scope: structured\n"
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
@@ -52,6 +54,7 @@ func TestRejectsStructuredCustomRule(t *testing.T) {
 }
 
 func TestRejectsExecutableRuleConcepts(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "rules.yaml")
 	if err := os.WriteFile(path, []byte("version: 1\nrules:\n  - id: bad\n    category: x\n    severity: high\n    confidence: high\n    description: x\n    pattern: '[unterminated'\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -71,6 +74,7 @@ func loadConfig(t *testing.T, body string) (File, error) {
 }
 
 func TestRuleAndPathSuppressionSurvivesLineChanges(t *testing.T) {
+	t.Parallel()
 	cfg, err := loadConfig(t, `version: 1
 suppressions:
   - rule: SECRET-001
@@ -103,6 +107,7 @@ suppressions:
 }
 
 func TestSuppressionNeedsANarrowTarget(t *testing.T) {
+	t.Parallel()
 	for name, entry := range map[string]string{
 		"rule without path":    "rule: EXEC-001",
 		"path without rule":    "path: src/**",
@@ -119,6 +124,7 @@ func TestSuppressionNeedsANarrowTarget(t *testing.T) {
 }
 
 func TestExpiredRuleSuppressionIsInactive(t *testing.T) {
+	t.Parallel()
 	cfg, err := loadConfig(t, "version: 1\nsuppressions:\n  - rule: EXEC-001\n    path: src/a.js\n    reason: reviewed\n    expires: \"2020-01-01\"\n")
 	if err != nil {
 		t.Fatal(err)

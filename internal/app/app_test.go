@@ -57,6 +57,7 @@ func TestMultipleTargetsAndFlagsAfterTargets(t *testing.T) {
 }
 
 func TestBehavioralCatalogJSONMatchesSiteArtifact(t *testing.T) {
+	t.Parallel()
 	var stdout bytes.Buffer
 	code, err := Run([]string{"rules", "catalog", "--format", "json"}, &stdout, &bytes.Buffer{}, "test")
 	if err != nil || code != 0 {
@@ -199,6 +200,7 @@ func TestScanProgressFollowsOutputFormat(t *testing.T) {
 }
 
 func TestScanProgressUpdateIncludesWorkCompleted(t *testing.T) {
+	t.Parallel()
 	var stderr bytes.Buffer
 	progress := &scanProgress{w: &stderr, mode: "plain", active: map[int]*scanProgressState{}}
 	progress.start(0, "fixture")
@@ -210,6 +212,7 @@ func TestScanProgressUpdateIncludesWorkCompleted(t *testing.T) {
 }
 
 func TestScanProgressSanitizesTarget(t *testing.T) {
+	t.Parallel()
 	var stderr bytes.Buffer
 	progress := &scanProgress{w: &stderr, mode: "plain", active: map[int]*scanProgressState{}}
 	progress.start(0, "repo\x1b[2J\napi_key=secret")
@@ -220,6 +223,7 @@ func TestScanProgressSanitizesTarget(t *testing.T) {
 }
 
 func TestInteractiveProgressCompactsConcurrentTargets(t *testing.T) {
+	t.Parallel()
 	var stderr bytes.Buffer
 	progress := &scanProgress{w: &stderr, mode: "interactive", active: map[int]*scanProgressState{}}
 	progress.start(0, "one")
@@ -230,6 +234,7 @@ func TestInteractiveProgressCompactsConcurrentTargets(t *testing.T) {
 }
 
 func TestColorModeHonorsNoColor(t *testing.T) {
+	t.Parallel()
 	if resolveColorMode("auto", true, true) {
 		t.Fatal("auto color ignored NO_COLOR")
 	}
@@ -242,6 +247,7 @@ func TestColorModeHonorsNoColor(t *testing.T) {
 }
 
 func TestDisplayTargetRemovesURLSecrets(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ input, want string }{
 		{"https://user:secret@example.com/repo.git", "https://[REDACTED]@example.com/repo.git"},
 		{"https://example.com/repo.git?token=secret#fragment", "https://example.com/repo.git"},
@@ -360,6 +366,7 @@ func TestScanCanRenderHTMLDirectly(t *testing.T) {
 }
 
 func TestRulesExplainSupportsTerminalAndJSON(t *testing.T) {
+	t.Parallel()
 	for _, format := range []string{"terminal", "json"} {
 		var stdout bytes.Buffer
 		args := []string{"rules", "explain", "EXEC-001", "--format", format}

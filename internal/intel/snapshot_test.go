@@ -7,6 +7,7 @@ import (
 )
 
 func TestSnapshotEntriesAreValidAndUnique(t *testing.T) {
+	t.Parallel()
 	packages := map[string]bool{}
 	for _, entry := range Packages {
 		key := entry.Ecosystem + "\x00" + entry.Name
@@ -36,6 +37,7 @@ func TestSnapshotEntriesAreValidAndUnique(t *testing.T) {
 }
 
 func TestBuiltinSnapshotDoesNotShareIndicatorSlices(t *testing.T) {
+	t.Parallel()
 	snapshot := BuiltinSnapshot()
 	foundAxios := false
 	for index := range snapshot.Packages {
@@ -79,6 +81,7 @@ func TestBuiltinSnapshotDoesNotShareIndicatorSlices(t *testing.T) {
 }
 
 func TestWithdrawnAdvisoryIsNotSelected(t *testing.T) {
+	t.Parallel()
 	for _, entry := range Packages {
 		if entry.AdvisoryID == "GHSA-rwq7-v7c7-27gx" {
 			t.Fatal("withdrawn advisory remained selected")
@@ -87,6 +90,7 @@ func TestWithdrawnAdvisoryIsNotSelected(t *testing.T) {
 }
 
 func TestSnapshotStaleness(t *testing.T) {
+	t.Parallel()
 	if Stale(SnapshotTime().AddDate(0, 0, 30)) {
 		t.Fatal("snapshot became stale too early")
 	}

@@ -15,6 +15,7 @@ import (
 )
 
 func TestArchiveDeclaredSizesRespectExpandedByteLimit(t *testing.T) {
+	t.Parallel()
 	t.Run("ZIP64 declared size", func(t *testing.T) {
 		var archive bytes.Buffer
 		writer := zip.NewWriter(&archive)
@@ -72,6 +73,7 @@ func TestArchiveDeclaredSizesRespectExpandedByteLimit(t *testing.T) {
 }
 
 func TestArchiveLinkTraversalIsDetected(t *testing.T) {
+	t.Parallel()
 	t.Run("tar-directory", func(t *testing.T) {
 		repo := t.TempDir()
 		var buf bytes.Buffer
@@ -160,6 +162,7 @@ func TestArchiveLinkTraversalIsDetected(t *testing.T) {
 }
 
 func TestArchivePathsStayWithinExtractionRoot(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		path   string
 		unsafe bool
@@ -199,6 +202,7 @@ func TestArchivePathsStayWithinExtractionRoot(t *testing.T) {
 }
 
 func TestArchiveEntriesUseInnerPathContextAndLocations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -225,6 +229,7 @@ func TestArchiveEntriesUseInnerPathContextAndLocations(t *testing.T) {
 }
 
 func TestStructuredDetectorsInspectRootEntriesInsideArchives(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -259,6 +264,7 @@ func TestStructuredDetectorsInspectRootEntriesInsideArchives(t *testing.T) {
 }
 
 func TestArchivedExecutableExtensionlessStagedExecutionIsDetected(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -286,6 +292,7 @@ func TestArchivedExecutableExtensionlessStagedExecutionIsDetected(t *testing.T) 
 }
 
 func TestNestedArchiveFindingKeepsOuterFixtureContext(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
@@ -303,6 +310,7 @@ func TestNestedArchiveFindingKeepsOuterFixtureContext(t *testing.T) {
 }
 
 func TestNestedDocumentAndVSIXActiveContent(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeFixture(t, root, "README.md", "fixture\n")
 	writeFixture(t, root, "LICENSE", "fixture\n")
