@@ -205,6 +205,11 @@ https://github.com/org/assignment-b</pre
             >
             <code>--fail-on LEVEL</code
             ><span>Exit 1 at or above <code>low</code>, <code>medium</code>, <code>high</code>, or <code>critical</code>; default <code>high</code>.</span>
+            <code>--profile balanced|comprehensive</code
+            ><span
+              ><code>balanced</code> (default) reports a capability such as process launch at medium unless a threat signal or an auto-run file
+              corroborates it. <code>comprehensive</code> keeps every capability at its rule severity, for audits that review each one.</span
+            >
             <code>--timeout DURATION</code
             ><span>Per-repository limit; default <code>10m</code>. Use positive durations such as <code>30s</code>, <code>20m</code>, or <code>1h</code>.</span>
             <code>--max-files N</code><span>Maximum files per repository; default <code>100000</code>.</span> <code>--max-file-size BYTES</code

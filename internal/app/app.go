@@ -45,6 +45,9 @@ Scan options:
   --history N|all          remote Git history depth (default 1)
   --keep-workdir           retain remote checkouts after scanning
   --fail-on LEVEL          low|medium|high|critical (default high)
+  --profile balanced|comprehensive
+                           comprehensive keeps uncorroborated capabilities
+                           such as process spawning at high (default balanced)
   --timeout DURATION       per-repository timeout (default 10m)
   --max-files N            maximum files per repository
   --max-file-size BYTES    maximum bytes per file

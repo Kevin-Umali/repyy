@@ -20,6 +20,7 @@ type scanArgs struct {
 	jobs                                                         int
 	includeDeps, keep, registryCheck                             bool
 	sandbox                                                      string
+	profile                                                      scan.Profile
 	version                                                      string
 	timeout                                                      time.Duration
 	limits                                                       scan.Limits
@@ -28,7 +29,7 @@ type scanArgs struct {
 }
 
 func parseScanArgs(args []string) (scanArgs, error) {
-	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", detail: "review", progress: "auto", color: "auto", minSeverity: "low", minConfidence: "low", groupBy: "severity", timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
+	o := scanArgs{format: "terminal", jobs: 4, history: "1", failOn: "high", detail: "review", progress: "auto", color: "auto", minSeverity: "low", minConfidence: "low", groupBy: "severity", profile: scan.ProfileBalanced, timeout: 10 * time.Minute, limits: scan.DefaultLimits()}
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&o.file, "file", "", "")
@@ -41,6 +42,7 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	fs.BoolVar(&o.keep, "keep-workdir", false, "")
 	fs.BoolVar(&o.registryCheck, "registry-check", false, "")
 	fs.StringVar(&o.sandbox, "sandbox", "host", "")
+	fs.StringVar((*string)(&o.profile), "profile", string(o.profile), "")
 	fs.StringVar(&o.failOn, "fail-on", o.failOn, "")
 	fs.DurationVar(&o.timeout, "timeout", o.timeout, "")
 	fs.IntVar(&o.limits.MaxFiles, "max-files", o.limits.MaxFiles, "")
@@ -77,6 +79,9 @@ func parseScanArgs(args []string) (scanArgs, error) {
 	o.fileSet = flagWasSet(fs, "file")
 	if o.jobs < 1 || o.jobs > 128 {
 		return o, errors.New("--jobs must be between 1 and 128")
+	}
+	if o.profile != scan.ProfileBalanced && o.profile != scan.ProfileComprehensive {
+		return o, errors.New("--profile must be balanced or comprehensive")
 	}
 	if o.sandbox != "host" && o.sandbox != "docker" {
 		return o, errors.New("--sandbox must be host or docker")
