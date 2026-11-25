@@ -1,0 +1,44 @@
+name: Decide whether this job's area changed
+description: >
+  On pull requests, compares the merge commit with its base parent (HEAD^1) and sets
+  run=true when any listed path changed. Every other event (pushes to main, merge-queue
+  groups, release validation) sets run=true, so the full suite runs before anything
+  reaches main. Needs a checkout with fetch-depth 2.
+
+inputs:
+  paths:
+    description: Pathspecs, one per line, whose changes make this job run
+    required: true
+
+outputs:
+  run:
+    description: "true when the job must run"
+    value: ${{ steps.diff.outputs.run }}
+
+runs:
+  using: composite
+  steps:
+    - id: diff
+      shell: bash
+      env:
+        PATHS: ${{ inputs.paths }}
+        SELECTIVE: ${{ github.event_name == 'pull_request' }}
+      run: |
+        set -euo pipefail
+        if [[ "$SELECTIVE" != true ]] || ! git rev-parse --verify --quiet HEAD^1 >/dev/null; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "Full check: ${GITHUB_EVENT_NAME}"
+          exit 0
+        fi
+        pathspecs=()
+        while IFS= read -r line; do
+          [[ -n "${line// /}" ]] && pathspecs+=("$line")
+        done <<< "$PATHS"
+        changed="$(git diff --name-only HEAD^1 HEAD -- "${pathspecs[@]}")"
+        if [[ -n "$changed" ]]; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          printf 'Changed inputs:\n%s\n' "$changed"
+        else
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          echo "No changes under: ${pathspecs[*]}"
+        fi

@@ -34,17 +34,38 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source_ref }}
+          fetch-depth: 2
+          filter: blob:none
           persist-credentials: false
+      # Inline rather than the local affected action: this workflow also runs from
+      # release validation, and CodeQL treats a local action from the checked-out ref
+      # as able to poison the cache this job writes.
+      - id: affected
+        shell: bash
+        env:
+          SELECTIVE: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          if [[ "$SELECTIVE" != true ]] || ! git rev-parse --verify --quiet HEAD^1 >/dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only HEAD^1 HEAD -- ':(glob)**/*.go' Makefile scripts demo keys test .github/workflows .github/actions go.mod go.sum)"
+          if [[ -n "$changed" ]]; then echo "run=true"; else echo "run=false"; fi >> "$GITHUB_OUTPUT"
+          printf 'Changed inputs:\n%s\n' "${changed:-none}"
       - name: Set Go cache paths
+        if: steps.affected.outputs.run == 'true'
         run: |
           echo "GOCACHE=$RUNNER_TEMP/go-build" >> "$GITHUB_ENV"
           echo "GOMODCACHE=$RUNNER_TEMP/go-mod" >> "$GITHUB_ENV"
       - id: go
+        if: steps.affected.outputs.run == 'true'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: false
       - name: Restore fuzz compilation and corpus cache
+        if: steps.affected.outputs.run == 'true'
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
@@ -53,6 +74,7 @@ jobs:
           key: fuzz-${{ runner.os }}-${{ runner.arch }}-${{ steps.go.outputs.go-version }}-${{ matrix.package }}-${{ hashFiles('go.sum') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: fuzz-${{ runner.os }}-${{ runner.arch }}-${{ steps.go.outputs.go-version }}-${{ matrix.package }}-${{ hashFiles('go.sum') }}-
       - name: Fuzz hostile inputs with a fixed execution budget
+        if: steps.affected.outputs.run == 'true'
         env:
           FUZZ_PACKAGE: ${{ matrix.package }}
           FUZZ_TARGETS: ${{ matrix.targets }}
@@ -76,7 +98,7 @@ jobs:
           done
           exit "$failed"
       - name: Preserve fuzz logs and failing inputs
-        if: always()
+        if: always() && steps.affected.outputs.run == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fuzz-${{ matrix.package }}-${{ inputs.source_ref }}
