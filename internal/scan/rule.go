@@ -25,6 +25,7 @@ type Rule struct {
 	MatchScope            string            `yaml:"match_scope,omitempty" json:"match_scope,omitempty"`
 	AllowContextDowngrade *bool             `yaml:"allow_context_downgrade,omitempty" json:"allow_context_downgrade,omitempty"`
 	re                    *regexp.Regexp
+	screen                screen
 }
 
 // Compile validates a rule and prepares its regular expression.
@@ -63,7 +64,12 @@ func (r *Rule) Compile() error {
 		return fmt.Errorf("rule %s: %w", r.ID, err)
 	}
 	r.re = re
+	r.screen = newScreen(r.Pattern)
 	return nil
+}
+
+func (r Rule) allowsContextDowngrade() bool {
+	return r.AllowContextDowngrade == nil || *r.AllowContextDowngrade
 }
 
 // Applies reports whether the rule's optional globs include path.

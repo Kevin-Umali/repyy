@@ -67,6 +67,16 @@ security tools, and signature definitions legitimately contain dangerous-looking
 silence those matches globally; classify and downgrade their context. Never use comment language or
 contributor nationality as a malicious signal.
 
+### Run the benchmark
+
+`make bench` writes every evasion fixture and benign control in `scripts/hard_benchmark/cases.py`
+to a temporary directory and scans it. It then fetches the clean repositories pinned in
+`scripts/hard_benchmark/corpus.json` and counts their high and critical findings. It fails when a
+control raises a high finding, fewer than 58 fixtures are detected, or the clean total exceeds
+`max_high`. The Benchmark workflow runs it on pull requests that touch detection code. Add a fixture
+and a control with each new detection. When a change lowers the clean total, lower the baselines and
+`max_high` with it.
+
 ### Update the web rule catalog
 
 The Go catalog defines the built-in rules. After changing it, regenerate the Astro data and check the rendered site.

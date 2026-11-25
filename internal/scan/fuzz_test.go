@@ -69,7 +69,7 @@ func FuzzGitMetadata(f *testing.F) {
 			t.Fatal(err)
 		}
 		coverage := model.Coverage{Complete: true}
-		scanner.scanGitMetadata(context.Background(), root, ".git", func(model.Finding) {}, &coverage)
+		scanner.scanGitMetadata(context.Background(), root, ".git", scanner.opts.Limits.MaxFiles, func(model.Finding) {}, &coverage)
 		if coverage.BytesScanned > int64(len(data)) {
 			t.Fatal("metadata followed an external include")
 		}

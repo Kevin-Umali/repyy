@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "rules_version": "2026.11.11",
+  "rules_version": "2026.11.26",
   "rules": [
     {
       "id": "AGENT-001",
@@ -299,7 +299,7 @@
     {
       "id": "CICD-003",
       "category": "ci-workflow-integrity",
-      "severity": "high",
+      "severity": "medium",
       "confidence": "high",
       "disposition": "harden",
       "description": "GitHub Action is referenced by a mutable tag or branch",
@@ -682,6 +682,20 @@
       "disposition": "review",
       "description": "Windows system utility can proxy execution or download content",
       "rationale": "This rule identifies proxy execution behavior that can affect repository trust or execution safety.",
+      "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
+      "remediation": "Do not run the repository. Verify the source and intent in an isolated environment.",
+      "match_scope": "raw",
+      "applicable_paths": ["**"],
+      "allow_context_downgrade": true
+    },
+    {
+      "id": "EXEC-007",
+      "category": "loader-injection",
+      "severity": "high",
+      "confidence": "high",
+      "disposition": "review",
+      "description": "Function constructor receives the module loader",
+      "rationale": "This rule identifies loader injection behavior that can affect repository trust or execution safety.",
       "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
       "remediation": "Do not run the repository. Verify the source and intent in an isolated environment.",
       "match_scope": "raw",
@@ -1476,6 +1490,20 @@
       "allow_context_downgrade": true
     },
     {
+      "id": "OBFS-010",
+      "category": "string-obfuscation",
+      "severity": "medium",
+      "confidence": "high",
+      "disposition": "review",
+      "description": "Generated-obfuscator identifiers or loop guard",
+      "rationale": "This rule identifies string obfuscation behavior that can affect repository trust or execution safety.",
+      "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
+      "remediation": "Inspect the surrounding code and remove the behavior if it is not essential.",
+      "match_scope": "raw",
+      "applicable_paths": ["*.js", "*.cjs", "*.mjs", "*.jsx", "*.ts", "*.tsx"],
+      "allow_context_downgrade": true
+    },
+    {
       "id": "PATH-001",
       "category": "path-traversal",
       "severity": "medium",
@@ -1681,6 +1709,34 @@
       "rationale": "This rule identifies package alias behavior that can affect repository trust or execution safety.",
       "legitimate_use": "The behavior may be legitimate when its inputs, destination, and execution context are understood.",
       "remediation": "Verify the alias target, publisher, and resolved artifact.",
+      "match_scope": "structured",
+      "applicable_paths": ["package.json and supported dependency manifests"],
+      "allow_context_downgrade": true
+    },
+    {
+      "id": "PKG-010",
+      "category": "dependency-reputation",
+      "severity": "medium",
+      "confidence": "low",
+      "disposition": "informational",
+      "description": "Dependency is newly published or rarely used",
+      "rationale": "Runs only with --registry-check. Fake-assignment repositories often declare a freshly published or since-removed package that no offline intelligence lists yet.",
+      "legitimate_use": "New and niche packages are often legitimate, and internal packages may exist only on a private registry.",
+      "remediation": "Review the package source, publisher, and install scripts before installing dependencies.",
+      "match_scope": "structured",
+      "applicable_paths": ["package.json and supported dependency manifests"],
+      "allow_context_downgrade": true
+    },
+    {
+      "id": "PKG-011",
+      "category": "dependency-reputation",
+      "severity": "high",
+      "confidence": "medium",
+      "disposition": "review",
+      "description": "Dependency is missing, unpublished, or quarantined on its public registry",
+      "rationale": "Runs only with --registry-check. Fake-assignment repositories often declare a freshly published or since-removed package that no offline intelligence lists yet.",
+      "legitimate_use": "New and niche packages are often legitimate, and internal packages may exist only on a private registry.",
+      "remediation": "Confirm the package source before installing dependencies.",
       "match_scope": "structured",
       "applicable_paths": ["package.json and supported dependency manifests"],
       "allow_context_downgrade": true

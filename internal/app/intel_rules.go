@@ -120,33 +120,9 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		} else if len(args) != 2 {
 			return 3, errors.New("usage: repyy rules explain <rule-id> [--format terminal|json]")
 		}
-		info, ok := scan.LookupRuleInfo(id)
-		if !ok {
-			return 3, fmt.Errorf("unknown rule %q", id)
-		}
-		if strings.HasPrefix(id, "IOC-PKG-") {
-			store, err := intel.NewDefaultStore()
-			if err != nil {
-				return 2, err
-			}
-			snapshot, _ := store.LoadActiveSnapshot(time.Now().UTC())
-			advisoryID := strings.TrimPrefix(id, "IOC-PKG-")
-			for _, record := range snapshot.Packages {
-				if record.AdvisoryID != advisoryID {
-					continue
-				}
-				if record.Description != "" {
-					info.Description = record.Description
-				}
-				info.Rationale = fmt.Sprintf("The active offline intelligence snapshot attributes %s in %s to advisory %s from %s.", record.Name, record.Ecosystem, record.AdvisoryID, record.Source)
-				if len(record.Affected) > 0 {
-					info.LegitimateUse = "Only the sourced affected versions are confirmed; other versions still require package-identity review."
-				} else {
-					info.LegitimateUse = "The package name is a review signal until the resolved version and artifact are verified."
-				}
-				info.Remediation = "Do not install the package until the advisory and resolved artifact are reviewed: " + record.SourceURL
-				break
-			}
+		info, code, err := explainRule(id)
+		if err != nil {
+			return code, err
 		}
 		if format == "json" {
 			return encodeJSON(stdout, info)
@@ -226,4 +202,38 @@ func runRules(args []string, stdout io.Writer) (int, error) {
 		return 0, nil
 	}
 	return 3, errors.New("usage: repyy rules validate <rules.yaml> | check | list [--format terminal|json] | explain <rule-id> [--format terminal|json]")
+}
+
+// explainRule returns the catalog entry for a rule ID, enriched with the active
+// intelligence snapshot for package indicators, and the CLI exit code on error.
+func explainRule(id string) (scan.RuleInfo, int, error) {
+	info, ok := scan.LookupRuleInfo(id)
+	if !ok {
+		return scan.RuleInfo{}, 3, fmt.Errorf("unknown rule %q", id)
+	}
+	if strings.HasPrefix(id, "IOC-PKG-") {
+		store, err := intel.NewDefaultStore()
+		if err != nil {
+			return scan.RuleInfo{}, 2, err
+		}
+		snapshot, _ := store.LoadActiveSnapshot(time.Now().UTC())
+		advisoryID := strings.TrimPrefix(id, "IOC-PKG-")
+		for _, record := range snapshot.Packages {
+			if record.AdvisoryID != advisoryID {
+				continue
+			}
+			if record.Description != "" {
+				info.Description = record.Description
+			}
+			info.Rationale = fmt.Sprintf("The active offline intelligence snapshot attributes %s in %s to advisory %s from %s.", record.Name, record.Ecosystem, record.AdvisoryID, record.Source)
+			if len(record.Affected) > 0 {
+				info.LegitimateUse = "Only the sourced affected versions are confirmed; other versions still require package-identity review."
+			} else {
+				info.LegitimateUse = "The package name is a review signal until the resolved version and artifact are verified."
+			}
+			info.Remediation = "Do not install the package until the advisory and resolved artifact are reviewed: " + record.SourceURL
+			break
+		}
+	}
+	return info, 0, nil
 }

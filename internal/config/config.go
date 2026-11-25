@@ -2,19 +2,75 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path"
+	"strings"
 	"time"
 
+	"github.com/Kevin-Umali/repyy/internal/model"
 	"github.com/Kevin-Umali/repyy/internal/scan"
 	"gopkg.in/yaml.v3"
 )
 
-// Suppression disables one stable finding fingerprint with an auditable reason.
+// Suppression disables reviewed findings with an auditable reason. It names either
+// one finding fingerprint, or a rule and a path glob. A fingerprint includes the line,
+// so a rule and path survive edits elsewhere in the file. A path ending in "/**"
+// covers everything under that directory; any other path is a path.Match pattern.
 type Suppression struct {
-	Fingerprint string `yaml:"fingerprint"`
+	Fingerprint string `yaml:"fingerprint,omitempty"`
+	Rule        string `yaml:"rule,omitempty"`
+	Path        string `yaml:"path,omitempty"`
 	Reason      string `yaml:"reason"`
 	Expires     string `yaml:"expires,omitempty"`
+}
+
+func (s Suppression) validate() error {
+	switch {
+	case s.Reason == "":
+		return errors.New("every suppression needs a reason")
+	case s.Fingerprint != "" && (s.Rule != "" || s.Path != ""):
+		return errors.New("a suppression names a fingerprint or a rule and path, not both")
+	case s.Fingerprint == "" && (s.Rule == "" || s.Path == ""):
+		return errors.New("every suppression needs a fingerprint, or a rule and a path")
+	}
+	if _, err := path.Match(strings.TrimSuffix(s.Path, "/**"), ""); err != nil {
+		return fmt.Errorf("invalid suppression path %q", s.Path)
+	}
+	if s.Expires != "" {
+		if _, err := time.Parse("2006-01-02", s.Expires); err != nil {
+			return fmt.Errorf("invalid suppression expiry %q", s.Expires)
+		}
+	}
+	return nil
+}
+
+func (s Suppression) covers(f model.Finding) bool {
+	if s.Fingerprint != "" {
+		return s.Fingerprint == f.Fingerprint
+	}
+	if s.Rule != f.RuleID {
+		return false
+	}
+	if dir, ok := strings.CutSuffix(s.Path, "/**"); ok {
+		return strings.HasPrefix(f.Path, dir+"/")
+	}
+	matched, _ := path.Match(s.Path, f.Path)
+	return matched
+}
+
+// Suppressions are the suppressions active at one point in time.
+type Suppressions []Suppression
+
+// Covers reports whether any active suppression covers the finding.
+func (active Suppressions) Covers(f model.Finding) bool {
+	for _, s := range active {
+		if s.covers(f) {
+			return true
+		}
+	}
+	return false
 }
 
 // File is the trusted external configuration accepted by the CLI.
@@ -46,21 +102,16 @@ func Load(path string) (File, error) {
 		}
 	}
 	for _, s := range cfg.Suppressions {
-		if s.Fingerprint == "" || s.Reason == "" {
-			return File{}, fmt.Errorf("every suppression needs fingerprint and reason")
-		}
-		if s.Expires != "" {
-			if _, err := time.Parse("2006-01-02", s.Expires); err != nil {
-				return File{}, fmt.Errorf("invalid suppression expiry %q", s.Expires)
-			}
+		if err := s.validate(); err != nil {
+			return File{}, err
 		}
 	}
 	return cfg, nil
 }
 
-// ActiveSuppressions returns unexpired suppression fingerprints.
-func ActiveSuppressions(cfg File, now time.Time) map[string]bool {
-	out := map[string]bool{}
+// ActiveSuppressions returns the suppressions that have not expired.
+func ActiveSuppressions(cfg File, now time.Time) Suppressions {
+	var active Suppressions
 	for _, s := range cfg.Suppressions {
 		if s.Expires != "" {
 			expires, _ := time.Parse("2006-01-02", s.Expires)
@@ -68,7 +119,7 @@ func ActiveSuppressions(cfg File, now time.Time) map[string]bool {
 				continue
 			}
 		}
-		out[s.Fingerprint] = true
+		active = append(active, s)
 	}
-	return out
+	return active
 }

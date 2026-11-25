@@ -1,13 +1,11 @@
 package scan
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"math"
 	"net"
 	"net/url"
@@ -22,6 +20,7 @@ import (
 	"github.com/Kevin-Umali/repyy/internal/intel"
 	"github.com/Kevin-Umali/repyy/internal/manifest"
 	"github.com/Kevin-Umali/repyy/internal/model"
+	"github.com/Kevin-Umali/repyy/internal/registry"
 	"github.com/Kevin-Umali/repyy/internal/scan/media"
 	"github.com/Kevin-Umali/repyy/internal/scan/supplychain"
 	"github.com/Kevin-Umali/repyy/internal/scan/workflow"
@@ -50,12 +49,27 @@ func DefaultLimits() Limits {
 
 // Options configures scanner rules, intelligence, dependency traversal, and limits.
 type Options struct {
+	Profile             Profile
 	Rules               []Rule
 	Intelligence        *intel.Database
 	IncludeDependencies bool
 	Limits              Limits
 	Progress            func(files int, bytes int64)
+	// Registry enables network lookups of declared dependencies. Nil, the default,
+	// keeps the scan offline.
+	Registry *registry.Client
 }
+
+// Profile chooses how capability findings are tiered.
+type Profile string
+
+const (
+	// ProfileBalanced, the default, keeps a capability such as spawning a process
+	// high only beside a threat signal or on an auto-run surface.
+	ProfileBalanced Profile = "balanced"
+	// ProfileComprehensive keeps every capability at its rule severity.
+	ProfileComprehensive Profile = "comprehensive"
+)
 
 // Scanner performs deterministic, read-only static inspection.
 type Scanner struct {
@@ -111,8 +125,13 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 	locationTotal := 0
 	locationDetailTruncated := false
 	cargoBuilds := supplychain.NewCargoBuildInventory()
+	var ledger *dependencyLedger
+	if s.opts.Registry != nil {
+		ledger = newDependencyLedger()
+	}
 
 	add := func(f model.Finding) {
+		applyPathContext(&f)
 		NormalizeFinding(&f)
 		key := f.RuleID + "\x00" + f.Path + "\x00" + f.Message + "\x00" + f.Context + "\x00" + string(f.Severity) + "\x00" + string(f.Confidence)
 		if index, ok := seen[key]; ok {
@@ -155,93 +174,20 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		findings = append(findings, f)
 	}
 
-	err = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
-		if ctx.Err() != nil {
-			return ctx.Err()
+	err = s.walk(ctx, root, confined, func(step *walkStep) {
+		mergeCoverage(&coverage, step.coverage)
+		for _, finding := range step.findings {
+			add(finding)
 		}
-		rel, _ := filepath.Rel(root, path)
-		rel = filepath.ToSlash(rel)
-		if walkErr != nil {
-			coverage.Complete = false
-			coverage.Warnings = append(coverage.Warnings, rel+": "+walkErr.Error())
-			return nil
+		if step.cargoPath != "" {
+			cargoBuilds.Observe(step.cargoPath, step.cargoData)
 		}
-		if rel == "." {
-			return nil
+		if step.manifest != nil {
+			ledger.observe(step.manifest.path, step.manifest.ownName, step.manifest.dependencies)
 		}
-		if d.IsDir() {
-			if d.Name() == ".git" {
-				s.scanGitMetadata(ctx, root, rel, add, &coverage)
-				s.reportProgress(coverage)
-				return filepath.SkipDir
-			}
-			if !s.opts.IncludeDependencies && dependencyDirs[d.Name()] {
-				coverage.Skipped = append(coverage.Skipped, rel+" (dependency/cache tree)")
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		info, err := d.Info()
-		if err != nil {
-			coverage.Complete = false
-			coverage.Warnings = append(coverage.Warnings, rel+": "+err.Error())
-			return nil
-		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			s.scanSymlink(root, path, rel, add)
-			if d.Name() == ".git" {
-				coverage.Complete = false
-				coverage.Skipped = append(coverage.Skipped, rel+" (linked Git metadata directory)")
-			}
-			return nil
-		}
-		if !info.Mode().IsRegular() {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, rel+" (non-regular file)")
-			return nil
-		}
-		if coverage.FilesScanned >= s.opts.Limits.MaxFiles {
-			coverage.Complete = false
-			return fmt.Errorf("file-count limit reached")
-		}
-		coverage.FilesScanned++
-		if info.Size() > s.opts.Limits.MaxFileBytes {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, rel+" (file-size limit)")
+		if step.progress {
 			s.reportProgress(coverage)
-			return nil
 		}
-		file, err := openConfinedNonblocking(confined, rel)
-		if err != nil {
-			coverage.Complete = false
-			coverage.Warnings = append(coverage.Warnings, rel+": cannot open confined file")
-			return nil
-		}
-		openedInfo, err := file.Stat()
-		if err != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
-			file.Close()
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, rel+" (file changed while scanning)")
-			return nil
-		}
-		data, err := io.ReadAll(io.LimitReader(file, s.opts.Limits.MaxFileBytes+1))
-		file.Close()
-		if err != nil || int64(len(data)) > s.opts.Limits.MaxFileBytes || ctx.Err() != nil {
-			coverage.Complete = false
-			coverage.Skipped = append(coverage.Skipped, rel+" (file read or size limit)")
-			return nil
-		}
-		coverage.BytesScanned += int64(len(data))
-		if looksText(data) {
-			cargoBuilds.Observe(rel, data)
-		}
-		s.scanContent(rel, data, info.Mode(), add, &coverage)
-		if isArchive(rel, data) {
-			s.scanArchive(ctx, rel, data, 1, add, &coverage)
-		}
-		s.reportProgress(coverage)
-		return nil
 	})
 	if err != nil {
 		coverage.Complete = false
@@ -252,6 +198,7 @@ func (s *Scanner) Scan(ctx context.Context, root string) (model.Coverage, []mode
 		coverage.Warnings = append(coverage.Warnings, "scan timed out or was cancelled")
 	}
 	cargoBuilds.Report(s.supplyChainDetector(), add)
+	s.reportDependencyReputation(ctx, ledger, add, &coverage)
 	s.scanRepositoryHygiene(root, add)
 	correlate(findings, add)
 	if locationDetailTruncated {
@@ -405,7 +352,9 @@ func correlatedFinding(id, category, path, message, remediation string, hash [32
 	}
 }
 
-func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add func(model.Finding), coverage *model.Coverage) {
+// scanContent runs every content detector on one file and returns the dependencies
+// a supported manifest declares.
+func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add func(model.Finding), coverage *model.Coverage) []manifest.Dependency {
 	if strings.EqualFold(filepath.Ext(innerPath(path)), ".vsix") {
 		finding := s.finding("IDE-007", "editor-extension-package", model.SeverityMedium, model.ConfidenceHigh, path, 0, "Packaged VSIX editor extension is present", fmt.Sprintf("VSIX archive; %d bytes", len(data)), "Verify the extension publisher, signature, package contents, and hash before installing it.")
 		finding.Context = classifyContext(path, nil)
@@ -432,14 +381,14 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			coverage.Complete = false
 			coverage.Skipped = append(coverage.Skipped, path+" (undecodable source or configuration)")
 		}
-		return
+		return nil
 	}
 	// Rule evaluation keeps two line views. Bound their slice metadata before
 	// splitting attacker-controlled files with millions of tiny lines.
 	if bytes.Count(data, []byte{'\n'}) > maxRuleLines {
 		coverage.Complete = false
 		coverage.Skipped = append(coverage.Skipped, path+" (line-count limit)")
-		return
+		return nil
 	}
 	media.ScanSVG(path, data, func(path string) string { return classifyContext(path, nil) }, isContextualContext, s.finding, add)
 	s.scanHiddenInstructions(path, data, add, coverage)
@@ -450,7 +399,8 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 	if ext := strings.ToLower(filepath.Ext(innerPath(path))); ext == ".py" || ext == ".pyw" {
 		s.scanPythonRemoteFlow(path, data, add, coverage)
 	}
-	if dependencies, supported := manifest.Parse(path, data); supported {
+	dependencies, supported := manifest.Parse(path, data)
+	if supported {
 		for _, dependency := range dependencies {
 			confirmed := false
 			for _, match := range s.opts.Intelligence.MatchPackage(dependency.Ecosystem, dependency.Name, dependency.Version) {
@@ -488,8 +438,9 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 	lines := splitLines(data)
 	codeData := codeProjection(path, data)
 	codeLines := splitLines(codeData)
+	folded := foldText(data)
 	for _, rule := range s.opts.Rules {
-		if !rule.Applies(path) {
+		if !rule.Applies(path) || !rule.screen.admitsFile(folded) {
 			continue
 		}
 		if rule.MatchScope == "structured" {
@@ -499,6 +450,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		matchData := data
 		evidenceData := data
 		originalLines := lines
+		lineScreen := rule.screen
 		if rule.ID == "PY-004" && rule.MatchScope != "code" {
 			// Python decodes .pth files with utf-8-sig and uses splitlines.
 			text := strings.TrimPrefix(string(data), "\ufeff")
@@ -512,6 +464,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			evidenceData = matchData
 			matchLines = splitLines(matchData)
 			originalLines = matchLines
+			lineScreen = admitEveryLine
 		}
 		if rule.MatchScope == "code" {
 			matchLines = codeLines
@@ -519,6 +472,9 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 		}
 		matched := false
 		for i, line := range matchLines {
+			if !lineScreen.admitsLine(folded, i, line) {
+				continue
+			}
 			matches := rule.re.FindAllIndex(line, -1)
 			if len(matches) == 0 {
 				continue
@@ -528,7 +484,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			if rule.ID == "GITHOOK-001" && disabledHooksPath(originalLine) {
 				continue
 			}
-			matches = qualifyingLineMatches(rule.ID, originalLine, matches)
+			matches = qualifyingLineMatches(rule.ID, i, originalLine, matches)
 			if len(matches) == 0 {
 				continue
 			}
@@ -540,12 +496,14 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 			if skipContextualRule(rule.ID, findingContext, path) {
 				continue
 			}
-			severity, confidence = contextualize(rule, findingContext, severity, confidence)
+			downgraded := downgradeAllowed(rule.allowsContextDowngrade(), rule.ID, rule.Category, findingContext) && isContextualContext(findingContext)
+			severity, confidence = contextualize(downgraded, findingContext, severity, confidence)
+			severity = refineSeverity(rule.ID, ruleMatch{path: path, line: originalLine, spans: matches, file: data}, severity)
 			finding := s.finding(rule.ID, rule.Category, severity, confidence, path, i+1, rule.Description, safeEvidence(originalLine), rule.Remediation)
 			finding.Occurrences = len(matches)
 			finding.Context = findingContext
 			finding.Disposition = rule.Disposition
-			if isContextualContext(findingContext) {
+			if downgraded {
 				finding.Disposition = model.DispositionInformational
 			}
 			add(finding)
@@ -559,12 +517,15 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 				if skipContextualRule(rule.ID, findingContext, path) {
 					continue
 				}
-				severity, confidence = contextualize(rule, findingContext, severity, confidence)
+				downgraded := downgradeAllowed(rule.allowsContextDowngrade(), rule.ID, rule.Category, findingContext) && isContextualContext(findingContext)
+				severity, confidence = contextualize(downgraded, findingContext, severity, confidence)
+				span := evidenceData[loc[0]:loc[1]]
+				severity = refineSeverity(rule.ID, ruleMatch{path: path, line: span, spans: [][]int{{0, len(span)}}, file: data}, severity)
 				evidence := safeEvidence(evidenceData[loc[0]:loc[1]])
 				finding := s.findingRange(rule.ID, rule.Category, severity, confidence, path, line, endLine, rule.Description, evidence, rule.Remediation)
 				finding.Context = findingContext
 				finding.Disposition = rule.Disposition
-				if isContextualContext(findingContext) {
+				if downgraded {
 					finding.Disposition = model.DispositionInformational
 				}
 				add(finding)
@@ -605,6 +566,7 @@ func (s *Scanner) scanContent(path string, data []byte, mode os.FileMode, add fu
 	}
 	s.scanStructured(path, data, mode, add)
 	s.scanSupplyChain(path, data, add)
+	return dependencies
 }
 
 func isJavaScriptPath(path string) bool {
@@ -623,7 +585,7 @@ func (s *Scanner) scanSupplyChain(path string, data []byte, add func(model.Findi
 	s.supplyChainDetector().ScanFile(path, data, add)
 }
 
-func qualifyingLineMatches(ruleID string, original []byte, matches [][]int) [][]int {
+func qualifyingLineMatches(ruleID string, lineIndex int, original []byte, matches [][]int) [][]int {
 	qualified := matches[:0]
 	for _, match := range matches {
 		if match[0] < 0 || match[1] > len(original) || match[0] >= match[1] {
@@ -636,13 +598,23 @@ func qualifyingLineMatches(ruleID string, original []byte, matches [][]int) [][]
 		if ruleID == "IPURL-001" && !containsPublicIPURL(value) {
 			continue
 		}
-		if ruleID == "IMPORT-001" && literalImportCall.Match(value) {
+		if ruleID == "UNICODE-001" && lineIndex == 0 && match[0] == 0 && string(value) == "\ufeff" {
 			continue
+		}
+		if ruleID == "IMPORT-001" && literalImportCall.Match(value) && !bytes.HasSuffix(bytes.TrimSpace(value), []byte("+")) {
+			continue
+		}
+		if ruleID == "IMPORT-001" {
+			if span := pythonFromImport.FindIndex(original); span != nil && match[0] < span[1] {
+				continue
+			}
 		}
 		qualified = append(qualified, match)
 	}
 	return qualified
 }
+
+var pythonFromImport = regexp.MustCompile(`^\s*from\s+[\w.]+\s+import\s*\(`)
 
 var literalImportCall = regexp.MustCompile(`(?i)^\s*(?:import|require|__import__|Class\.forName)\s*\(\s*["']`)
 
@@ -682,7 +654,7 @@ func (s *Scanner) scanWorkflowActions(path string, data []byte, add func(model.F
 				if key.Value == "uses" && value.Kind == yaml.ScalarNode {
 					ref := strings.TrimSpace(value.Value)
 					if !strings.HasPrefix(ref, "./") && strings.Contains(ref, "@") && !pinnedAction([]byte("uses: "+ref)) {
-						finding := s.finding("CICD-003", "ci-workflow-integrity", model.SeverityHigh, model.ConfidenceHigh, path, value.Line, "GitHub Action is referenced by a mutable tag or branch", safeEvidence([]byte("uses: "+ref)), "Pin third-party actions to a reviewed full commit SHA.")
+						finding := s.finding("CICD-003", "ci-workflow-integrity", model.SeverityMedium, model.ConfidenceHigh, path, value.Line, "GitHub Action is referenced by a mutable tag or branch", safeEvidence([]byte("uses: "+ref)), "Pin third-party actions to a reviewed full commit SHA.")
 						finding.Context = "ci-workflow"
 						finding.Disposition = model.DispositionHarden
 						add(finding)
@@ -771,12 +743,21 @@ func scanRelevantText(path string, data []byte, mode os.FileMode) bool {
 	return false
 }
 
+// splitLines returns views into data with bufio.ScanLines semantics: lines end at
+// "\n", one trailing "\r" is dropped, and a final empty line is not reported.
 func splitLines(data []byte) [][]byte {
-	s := bufio.NewScanner(strings.NewReader(string(data)))
-	s.Buffer(make([]byte, 64*1024), 64*1024*1024)
-	var lines [][]byte
-	for s.Scan() {
-		lines = append(lines, append([]byte(nil), s.Bytes()...))
+	lines := make([][]byte, 0, bytes.Count(data, []byte{'\n'})+1)
+	for len(data) > 0 {
+		line := data
+		if i := bytes.IndexByte(data, '\n'); i >= 0 {
+			line, data = data[:i], data[i+1:]
+		} else {
+			data = nil
+		}
+		if n := len(line); n > 0 && line[n-1] == '\r' {
+			line = line[:n-1]
+		}
+		lines = append(lines, line[:len(line):len(line)])
 	}
 	return lines
 }
@@ -784,6 +765,12 @@ func splitLines(data []byte) [][]byte {
 // codeProjection preserves byte offsets while replacing definite comments and
 // string contents with spaces. Unsupported or ambiguous inputs are returned
 // unchanged so precision improvements never silently create a coverage gap.
+func blankUnlessNewline(out []byte, i int, b byte) {
+	if b != '\n' {
+		out[i] = ' '
+	}
+}
+
 func codeProjection(path string, data []byte) []byte {
 	ext := strings.ToLower(filepath.Ext(innerPath(path)))
 	cLike := map[string]bool{
@@ -843,7 +830,7 @@ func codeProjection(path string, data []byte) []byte {
 				templateDepth = 1
 				state = stateCode
 			} else if data[i] == '\\' && i+1 < len(data) {
-				out[i+1] = ' '
+				blankUnlessNewline(out, i+1, data[i+1])
 				i++
 			} else if data[i] == quote {
 				state = stateCode
@@ -982,6 +969,9 @@ func classifyContext(path string, line []byte) string {
 	if strings.Contains(slashed, "/.local-evidence/") || strings.Contains(slashed, "/evidence/") {
 		return "evidence"
 	}
+	if ext == ".py" && base != "conftest.py" && (strings.HasPrefix(base, "test_") || strings.HasSuffix(base, "_test.py")) {
+		return "test-fixture"
+	}
 	if strings.Contains(slashed, "/testdata/") || strings.Contains(slashed, "/fixtures/") || strings.Contains(slashed, "/fixture/") || strings.Contains(slashed, "/__tests__/") || strings.Contains(slashed, "/snapshots/") || strings.HasSuffix(base, "_test.go") || strings.Contains(base, ".test.") || strings.Contains(base, ".spec.") {
 		return "test-fixture"
 	}
@@ -1012,10 +1002,33 @@ func classifyContext(path string, line []byte) string {
 	if base == "package.json" || base == "pyproject.toml" || base == "setup.py" || base == "composer.json" || base == "cargo.toml" || base == "pom.xml" || strings.HasPrefix(base, "build.gradle") {
 		return "manifest"
 	}
+	if isLocalizationPath(slashed, ext) {
+		return "localization"
+	}
 	if (strings.HasSuffix(base, "_signatures.sh") || base == "scanner.go" || base == "rules.go") && looksLikeSignatureDefinition(line) {
 		return "detection-definition"
 	}
 	return "executable"
+}
+
+var localeCode = regexp.MustCompile(`^[a-z]{2,3}(?:[-_][a-z0-9]{2,4})*$`)
+
+// isLocalizationPath reports translation catalogs. Generic data formats count only
+// under a locale directory and when the file or its parent is named for a locale.
+func isLocalizationPath(slashed, ext string) bool {
+	switch ext {
+	case ".po", ".pot", ".xliff", ".xlf", ".strings", ".stringsdict", ".arb", ".resx", ".ftl":
+		return true
+	case ".json", ".yml", ".yaml", ".properties", ".toml":
+		inLocaleDir := false
+		for _, dir := range []string{"/locale/", "/locales/", "/i18n/", "/l10n/", "/lang/", "/translations/"} {
+			inLocaleDir = inLocaleDir || strings.Contains(slashed, dir)
+		}
+		stem := strings.TrimSuffix(filepath.Base(slashed), ext)
+		parent := filepath.Base(filepath.Dir(slashed))
+		return inLocaleDir && (localeCode.MatchString(stem) || localeCode.MatchString(parent))
+	}
+	return false
 }
 
 func isAgentInstructionPath(slashed, base string) bool {
@@ -1081,18 +1094,14 @@ func innerPath(path string) string {
 
 func isContextualContext(context string) bool {
 	switch context {
-	case "documentation", "example", "test-fixture", "evidence", "generated", "dependency", "detection-definition", "metadata":
+	case "documentation", "example", "test-fixture", "evidence", "generated", "dependency", "detection-definition", "metadata", "localization":
 		return true
 	default:
 		return false
 	}
 }
 
-func contextualize(rule Rule, context string, severity model.Severity, confidence model.Confidence) (model.Severity, model.Confidence) {
-	allow := true
-	if rule.AllowContextDowngrade != nil {
-		allow = *rule.AllowContextDowngrade
-	}
+func contextualize(allow bool, context string, severity model.Severity, confidence model.Confidence) (model.Severity, model.Confidence) {
 	if !allow || !isContextualContext(context) {
 		return severity, confidence
 	}
@@ -1102,7 +1111,34 @@ func contextualize(rule Rule, context string, severity model.Severity, confidenc
 	return severity, model.ConfidenceLow
 }
 
+// applyPathContext gives a finding that a detector left in executable context the same
+// path context, severity cap, and disposition that content rules get. Rules that opt
+// out of context downgrades, such as confirmed indicators, keep their severity.
+func applyPathContext(f *model.Finding) {
+	if f.Context != "executable" {
+		return
+	}
+	context := classifyContext(f.Path, nil)
+	if !isContextualContext(context) || !downgradeAllowed(structuredContextDowngrade()[f.RuleID], f.RuleID, f.Category, context) {
+		return
+	}
+	f.Context = context
+	f.Severity, f.Confidence = contextualize(true, context, f.Severity, f.Confidence)
+	f.Disposition = model.DispositionInformational
+}
+
+// outsideRuleDomain lists contexts a rule's subject cannot appear in. Package manifests
+// and CI workflows are not agent configurations, and CI files name CI and emulators
+// as configuration rather than to detect a sandbox.
+var outsideRuleDomain = map[string]map[string]bool{
+	"AGENT-001": {"manifest": true, "ci-workflow": true},
+	"EVADE-001": {"ci-workflow": true},
+}
+
 func skipContextualRule(ruleID, context, path string) bool {
+	if outsideRuleDomain[ruleID][context] {
+		return true
+	}
 	if context != "generated" && context != "dependency" {
 		return false
 	}
