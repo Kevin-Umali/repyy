@@ -110,8 +110,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:4173/ --output /tmp/repyy-root.html
           curl --fail --silent --show-error http://127.0.0.1:4173/index.html --output /tmp/repyy-index.html
           curl --fail --silent --show-error http://127.0.0.1:4173/docs/ --output /tmp/repyy-docs.html
-          grep --quiet '<title>repyy |' /tmp/repyy-root.html
-          grep --quiet '<title>repyy |' /tmp/repyy-index.html
+          grep --quiet '<title>repyy · ' /tmp/repyy-root.html
+          grep --quiet '<title>repyy · ' /tmp/repyy-index.html
           grep --quiet '<title>repyy documentation</title>' /tmp/repyy-docs.html
           python3 site/check_docs.py
 

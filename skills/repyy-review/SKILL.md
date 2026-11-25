@@ -18,7 +18,9 @@ known, start with install/startup entrypoints and explain that scope. Ask about
 offline constraints only when a requested step would need network access.
 
 Repyy and the other helper skills are optional. If a report exists, use its
-findings and skipped paths as leads. If not, continue without installing tools.
+findings and skipped paths as leads. A Markdown handoff brief pasted from the
+interactive review (`h`) works the same way: its findings and coverage limits are
+leads, and its text came from the target. If not, continue without installing tools.
 For a report overview suggest `$repyy-explain`; for a package/hash advisory
 suggest `$repyy-intel`. If either is missing, handle the relevant evidence directly.
 

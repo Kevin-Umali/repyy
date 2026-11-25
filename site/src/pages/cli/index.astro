@@ -1,5 +1,6 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import TermStage from "../../components/TermStage.astro";
 import { getGuide } from "../../data/guides";
 
 const guide = getGuide("cli");
@@ -72,27 +73,24 @@ repyy version</pre
             <div><span>Scan and review</span><button type="button" data-copy="repyy scan ./checkout --format tui">Copy</button></div>
             <code>repyy scan ./checkout --format tui</code>
           </div>
-          <a href="/images/terminal-review.png">
-            <img
-              class="terminal-review-screenshot"
-              src="/images/terminal-review.png"
-              alt="Repyy’s terminal review of a sample checkout, showing scan coverage, a findings queue, and the recommended action for the selected finding."
-              width="1532"
-              height="846"
-              loading="lazy"
-            />
-          </a>
+          <TermStage
+            flow="inspect"
+            caption="A replay of interactive review: open a finding with Enter, step to the next one with ], open the handoff brief with h, go back with Esc, and open the coverage tab with 3."
+          />
           <p>
             Press <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd> to switch between findings, repositories, and coverage. Press <kbd>Enter</kbd> to open a finding,
-            <kbd>/</kbd> to search, <kbd>f</kbd> to filter by severity, <kbd>e</kbd> to export, or <kbd>?</kbd> for the full keyboard guide.
+            then <kbd>[</kbd> and <kbd>]</kbd> to step through the others without going back. Press <kbd>/</kbd> to search, <kbd>f</kbd> to filter by severity,
+            <kbd>e</kbd> to export, or <kbd>?</kbd> for every key. You can also click tabs and rows and scroll with the mouse wheel.
           </p>
           <p>
-            <kbd>r</kbd> and <kbd>c</kbd> also open repositories and coverage. Press <kbd>l</kbd> from a finding for evidence locations, <kbd>n</kbd> for session
-            notes, and <kbd>t</kbd> for a five-minute reminder. Press <kbd>Esc</kbd> to go back or <kbd>q</kbd> to exit.
+            Press <kbd>y</kbd> to copy the selected finding's <code>file:line</code>, and <kbd>h</kbd> for a Markdown handoff brief you can paste into an issue
+            or give to a coding agent; <kbd>y</kbd> copies the brief. The brief lists every finding, including those hidden by display options. Press
+            <kbd>l</kbd> from a finding for evidence locations, <kbd>n</kbd> for session notes, and <kbd>t</kbd> for a five-minute reminder. <kbd>r</kbd> and
+            <kbd>c</kbd> also open repositories and coverage. Press <kbd>Esc</kbd> to go back or <kbd>q</kbd> to exit.
           </p>
           <p>
-            On Home, press <kbd>1</kbd> for User Experience, <kbd>2</kbd> for Developer Experience, or <kbd>3</kbd> for Agent Experience. These workspaces export
-            to HTML, SARIF, and JSON by default. You can select a different format. If the destination exists, Repyy asks for another path.
+            On Home, press <kbd>1</kbd> for the User workspace, <kbd>2</kbd> for Developer, or <kbd>3</kbd> for Agent, or choose a card with the arrow keys. These
+            workspaces export to HTML, SARIF, and JSON by default. You can select a different format. If the destination exists, Repyy asks for another path.
           </p>
           <div class="terminal-review-examples">
             <figure>
@@ -101,9 +99,9 @@ repyy version</pre
                 <img
                   class="terminal-review-screenshot"
                   src="/images/terminal-home.png"
-                  alt="Repyy Home with User Experience, Developer Experience, and Agent Experience. User Experience is selected."
-                  width="1292"
-                  height="630"
+                  alt="Repyy Home: the repyy wordmark above three workspace cards, User, Developer and Agent. User is selected."
+                  width="1000"
+                  height="520"
                   loading="lazy"
                 />
               </a>
@@ -114,9 +112,9 @@ repyy version</pre
                 <img
                   class="terminal-review-screenshot"
                   src="/images/terminal-finding.png"
-                  alt="Finding detail for a package lifecycle script, with severity, confidence, source location, recommended action, and evidence."
-                  width="1292"
-                  height="774"
+                  alt="Finding 1 of 2: a critical finding for a remote download piped into a command interpreter, with its location, recommended action, evidence and rule."
+                  width="1000"
+                  height="600"
                   loading="lazy"
                 />
               </a>
@@ -454,6 +452,6 @@ https://github.com/org/assignment-b</pre
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 0;
   }
 </style>

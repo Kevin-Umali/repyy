@@ -47,16 +47,16 @@ const guide = {
 <style>
   .changelog-entry :global(li a),
   .changelog-entry :global(p a) {
-    color: #a1381c;
+    color: var(--accent);
     text-decoration: underline;
-    text-decoration-color: #cda99b;
+    text-decoration-color: var(--accent-deep);
     text-underline-offset: 0.18em;
   }
   .changelog-entry :global(code) {
     padding: 0.1rem 0.3rem;
-    border-radius: 4px;
-    background: #ececef;
-    color: #55555a;
+    border-radius: 0;
+    background: var(--raise);
+    color: var(--fg);
     font-size: 0.85em;
     overflow-wrap: anywhere;
   }

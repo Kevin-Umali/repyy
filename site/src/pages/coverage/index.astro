@@ -1,5 +1,6 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import TermStage from "../../components/TermStage.astro";
 import { getGuide } from "../../data/guides";
 import catalog from "../../data/rule-catalog.json";
 
@@ -220,6 +221,10 @@ const guide = getGuide("coverage");
             Timeouts, resource limits, and read errors can leave coverage incomplete. Human reports show <code>SCAN INCOMPLETE</code> and the command exits
             with code <code>2</code>. A qualifying critical finding can still produce <code>DO NOT RUN</code> in the JSON verdict.
           </p>
+          <TermStage
+            flow="incomplete"
+            caption="A replay of a scan that reaches the archive-depth limit: the review shows SCAN INCOMPLETE with partial coverage, and the coverage tab names the skipped archive."
+          />
           <div class="docs-table compact" role="table" aria-label="Default coverage limits">
             <div role="row"><b role="rowheader">Per repository</b><span role="cell">10 minute timeout · 100,000 files · 50 MiB per file</span></div>
             <div role="row"><b role="rowheader">Per archive</b><span role="cell">10,000 entries · 1 GiB uncompressed bytes · 3 nested levels</span></div>

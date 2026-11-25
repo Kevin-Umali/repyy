@@ -1,0 +1,45 @@
+---
+export interface KeyHint {
+  key: string;
+  label: string;
+}
+
+interface Props {
+  mode: string;
+  where: string;
+  keys: KeyHint[];
+}
+
+const { mode, where, keys } = Astro.props;
+const all: KeyHint[] = [...keys, { key: "?", label: "show this list" }, { key: "esc", label: "close" }];
+---
+
+<div class="status">
+  <span class="mode">{mode}</span>
+  <span class="where" data-status-section>{where}</span>
+  <span class="keys" aria-hidden="true">
+    {
+      keys.map(({ key, label }) => (
+        <>
+          <b>{key}</b> {label} <i>•</i>{" "}
+        </>
+      ))
+    }
+    <b>?</b> keys
+  </span>
+  <span class="pos" data-status-pos>top</span>
+</div>
+
+<dialog class="keyhelp" data-keyhelp aria-labelledby="keyhelp-title">
+  <h2 id="keyhelp-title">keys</h2>
+  <dl>
+    {
+      all.map(({ key, label }) => (
+        <div>
+          <dt>{key}</dt>
+          <dd>{label}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</dialog>
