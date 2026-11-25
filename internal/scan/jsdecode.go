@@ -145,8 +145,8 @@ func decodeJS(path string, data []byte) ([]jsRecovered, string) {
 	if len(data) > jsDecodeMaxSource {
 		return nil, "JavaScript decoder source-byte limit"
 	}
-	deadline := time.Now().Add(50 * time.Millisecond)
 	projection := codeProjection(path, data)
+	deadline := time.Now().Add(50 * time.Millisecond)
 	values := make([]jsRecovered, 0)
 	outputBytes := 0
 	add := func(value string, start, end int, method string, origins ...jsSpan) bool {
@@ -259,9 +259,6 @@ func decodeJS(path string, data []byte) ([]jsRecovered, string) {
 			if projection[index[0]] != data[index[0]] {
 				continue
 			}
-			if time.Now().After(deadline) {
-				return values, "JavaScript decoder time limit"
-			}
 			if index[3]-index[2] > jsDecodeMaxLiteral {
 				return values, "JavaScript decoder literal-byte limit"
 			}
@@ -269,6 +266,9 @@ func decodeJS(path string, data []byte) ([]jsRecovered, string) {
 			parts := strings.Split(body, ",")
 			if len(parts) > 8192 {
 				return values, "JavaScript decoder array-item limit"
+			}
+			if time.Now().After(deadline) {
+				return values, "JavaScript decoder time limit"
 			}
 			decoded := make([]byte, 0, len(parts))
 			valid := true
