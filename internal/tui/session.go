@@ -138,6 +138,9 @@ type session struct {
 	picker  filepicker.Model
 	help    help.Model
 	review  review
+
+	homeChoice int
+	hits       *lipgloss.Compositor
 }
 
 func newSession(ctx context.Context, opts Options, load LoadReport) *session {
@@ -195,8 +198,14 @@ func (m *session) resize(width, height int) {
 }
 
 func (m *session) Init() tea.Cmd {
+	return tea.Batch(tea.RequestBackgroundColor, m.initPhase())
+}
+
+func (m *session) initPhase() tea.Cmd {
 	switch m.phase {
-	case home, workspace, enteringTarget:
+	case home:
+		return nil
+	case workspace, enteringTarget:
 		return m.form.Init()
 	case picking:
 		return m.picker.Init()
@@ -239,6 +248,21 @@ func (m *session) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.resize(msg.Width, msg.Height)
 		return m, nil
+	case tea.BackgroundColorMsg:
+		setTheme(msg.IsDark())
+		return m, nil
+	case tea.MouseClickMsg:
+		return m, m.click(msg.Mouse())
+	case tea.MouseWheelMsg:
+		if m.phase == ready {
+			return m, m.review.wheel(msg)
+		}
+		if m.phase == workspaceGuide {
+			var cmd tea.Cmd
+			m.workflowGuide, cmd = m.workflowGuide.Update(msg)
+			return m, cmd
+		}
+		return m, nil
 	case exportResult:
 		return m, m.finishExport(msg)
 	case loadResult:
@@ -274,6 +298,11 @@ func (m *session) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		}
+		if m.phase == home {
+			if cmd, handled := m.homeKey(msg.String()); handled {
+				return m, cmd
+			}
+		}
 		if m.phase == home || m.phase == workspace {
 			switch msg.String() {
 			case "1":
@@ -288,7 +317,7 @@ func (m *session) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch {
 			case m.phase == workspace:
 				m.showHome()
-				return m, m.form.Init()
+				return m, nil
 			case m.phase == workspaceGuide || m.phase == enteringTarget || m.phase == picking ||
 				m.phase == ready && m.review.pane == findingsPane && !m.review.findings.SettingFilter() && !m.review.findings.IsFiltered():
 				return m, m.showWorkspace(m.audience)
@@ -301,7 +330,7 @@ func (m *session) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch m.phase {
-	case home, workspace, enteringTarget, choosingFormat, enteringDestination:
+	case workspace, enteringTarget, choosingFormat, enteringDestination:
 		cmd = m.updateForm(msg)
 	case workspaceGuide:
 		m.workflowGuide, cmd = m.workflowGuide.Update(msg)
@@ -338,6 +367,3 @@ func (m *session) editing() bool {
 	return m.phase == enteringTarget || m.phase == enteringDestination || m.phase == choosingFormat || m.phase == ready && (m.review.pane == notesPane || m.review.pane == filtersPane ||
 		m.review.pane == findingsPane && m.review.findings.SettingFilter())
 }
-
-func (m *session) bodyWidth() int  { return max(1, min(114, m.width-4)) }
-func (m *session) bodyHeight() int { return max(1, m.height-6) }

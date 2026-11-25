@@ -8,7 +8,7 @@ import (
 )
 
 func renderGuide(width int) string {
-	return renderGuideMarkdown(width, reviewGuide)
+	return renderGuideMarkdown(width, keysMarkdown()+"\n"+reviewGuide)
 }
 
 func renderWorkflowGuide(width int, audience experience) string {
@@ -40,19 +40,11 @@ func renderGuideMarkdown(width int, source string) string {
 	return source
 }
 
-const reviewGuide = `## Review a report
-
-**1 / 2 / 3** switch between findings, repositories, and coverage.
-
-Use **↑ ↓** to move, **/** to search, and **Enter** to inspect the selected finding. **F** opens the severity filter. From a finding, use **L** to browse evidence locations.
-
-**E** exports the report as HTML, JSON, or SARIF. **N** opens session notes. **T** starts or dismisses the review reminder. **Esc** returns to the list. **Q** closes the viewer.
-
-## Work with reports
+const reviewGuide = `## Work with reports
 
 Run ` + "`repyy scan ./checkout --format json --output scan.json`" + ` to save a report for later review or a pipeline.
 
-Open it with ` + "`repyy report scan.json --format tui`" + `. Use the coverage view to check skipped areas before drawing a conclusion.
+Open it with ` + "`repyy report scan.json --format tui`" + `. Use the coverage view to check skipped areas before drawing a conclusion. Press **h** for a Markdown brief you can paste into an issue or hand to an agent.
 `
 
 const developerGuide = `## Developer Experience
@@ -75,6 +67,8 @@ Capture the scan's exit status before running another command. Keep the SARIF ar
 ## Check coverage
 
 Read errors, warnings, skipped areas, and omitted evidence locations. A zero exit status does not certify that a repository is safe. Inspect the reported source and revision before acting on a finding.
+
+In a report, **y** copies the selected finding's file:line and **[ ]** step through findings without leaving the detail view.
 `
 
 const agentGuide = `## Agent Experience
@@ -94,6 +88,8 @@ Create the review directory first in a trusted location. Save the scan's exit st
 ## Handoff checklist
 
 Record target and revision, tool and rules versions, intelligence snapshot, coverage limits, supported findings, and the next review action. Include file and line references, confidence, and counterevidence. Keep source and evidence local.
+
+In a report, press **h** for a Markdown brief with these fields, then **y** to copy it. The brief lists every finding, including those hidden by display filters.
 
 **0** means no finding reached the scan threshold; **1** means a finding reached it. **2** means incomplete work or runtime failure; **3** means invalid use or input. Direct interactive cancellation returns **130**. Check errors, warnings, skipped paths, and omitted locations before interpreting the verdict. A clean result is not proof of safety. Saved JSON is not signed.
 

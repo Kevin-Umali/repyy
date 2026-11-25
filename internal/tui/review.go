@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/key"
@@ -36,6 +35,7 @@ const (
 	notesPane
 	helpPane
 	filtersPane
+	handoffPane
 )
 
 type review struct {
@@ -49,6 +49,8 @@ type review struct {
 	width        int
 	height       int
 	fixes        int
+	flash        string
+	handoffFrom  pane
 
 	findings  list.Model
 	repos     table.Model
@@ -75,6 +77,7 @@ func newReview(report model.Report, opts Options) review {
 	search := textinput.StyleState{Prompt: strong, Placeholder: muted}
 	findings.FilterInput.SetStyles(textinput.Styles{Focused: search, Blurred: search, Cursor: textinput.CursorStyle{Color: lipgloss.Color("#f1b199")}})
 
+	findings.SetShowTitle(false)
 	findings.SetShowStatusBar(false)
 	findings.SetShowHelp(false)
 	findings.DisableQuitKeybindings()
@@ -131,24 +134,12 @@ func (r *review) selectRepo(index int) {
 
 func (r *review) resize(width, height int) {
 	r.width, r.height = width, height
-	rows := findingRows{titleLines: 1}
-	if height >= 18 {
-		rows.spacing = 1
-		if r.queueWidth() < 68 {
-			rows.titleLines = 2
-		}
-	}
-	r.findings.SetDelegate(rows)
+	r.findings.SetDelegate(r.rowDelegate())
 	r.findings.SetSize(r.queueWidth(), max(1, height-r.findingsHeaderHeight()))
-	if r.filters != nil {
-		r.filters.WithWidth(min(width, 54))
-	}
 	r.detail.SetWidth(min(width, 84))
 	r.detail.SetHeight(max(1, height-2))
 	switch r.pane {
-	case helpPane:
-		r.detail.SetContent(renderGuide(width))
-	case coveragePane, detailPane:
+	case coveragePane, detailPane, handoffPane:
 		r.detail.SetContent(ansi.Wrap(r.readerText, r.detail.Width(), ""))
 	}
 	r.notes.SetWidth(min(76, width))
@@ -218,6 +209,7 @@ func (r *review) update(msg tea.Msg) tea.Cmd {
 	}
 	k, pressed := msg.(tea.KeyPressMsg)
 	if pressed {
+		r.flash = ""
 		if r.pane == notesPane && k.String() == "esc" {
 			r.notes.Blur()
 			r.pane = findingsPane
@@ -234,7 +226,7 @@ func (r *review) update(msg tea.Msg) tea.Cmd {
 	switch r.pane {
 	case findingsPane:
 		r.findings, cmd = r.findings.Update(msg)
-	case detailPane, coveragePane, helpPane:
+	case detailPane, coveragePane, handoffPane:
 		r.detail, cmd = r.detail.Update(msg)
 	case locationsPane:
 		r.locations, cmd = r.locations.Update(msg)
@@ -254,12 +246,19 @@ func (r *review) update(msg tea.Msg) tea.Cmd {
 }
 
 func (r *review) navigate(action string) (bool, tea.Cmd) {
+	if r.pane == helpPane {
+		if action == "?" || action == "esc" || action == "q" {
+			r.pane = findingsPane
+		}
+		return true, nil
+	}
 	if action == "esc" && r.pane != findingsPane {
-		if r.pane == locationsPane {
+		switch {
+		case r.pane == locationsPane || r.pane == handoffPane && r.handoffFrom == detailPane:
 			if f, ok := r.selectedFinding(); ok {
 				r.showDetail(f)
 			}
-		} else {
+		default:
 			r.pane = findingsPane
 		}
 		return true, nil
@@ -277,6 +276,25 @@ func (r *review) navigate(action string) (bool, tea.Cmd) {
 		if len(r.report.Results) > 0 {
 			r.showCoverage()
 		}
+		return true, nil
+	}
+	switch {
+	case action == "y" && (r.pane == findingsPane || r.pane == detailPane):
+		if f, ok := r.selectedFinding(); ok {
+			location := pathAt(f.Path, f.Line)
+			r.flash = "Copied " + location
+			return true, tea.SetClipboard(location)
+		}
+		return true, nil
+	case action == "y" && r.pane == handoffPane:
+		r.flash = "Copied handoff brief"
+		return true, tea.SetClipboard(r.readerText)
+	case action == "h" && (r.pane == findingsPane || r.pane == detailPane) && len(r.report.Results) > 0:
+		r.handoffFrom = r.pane
+		r.openReader(handoffPane, handoffBrief(r.report, r.report.Results[r.repository]))
+		return true, nil
+	case (action == "[" || action == "]") && r.pane == detailPane:
+		r.stepFinding(map[string]int{"[": -1, "]": 1}[action])
 		return true, nil
 	}
 	if r.pane == detailPane && action == "l" {
@@ -298,7 +316,7 @@ func (r *review) navigate(action string) (bool, tea.Cmd) {
 
 	switch action {
 	case "?":
-		r.openReader(helpPane, renderGuide(r.width))
+		r.pane = helpPane
 	case "enter":
 		if f, ok := r.selectedFinding(); ok {
 			r.showDetail(f)
@@ -332,17 +350,16 @@ func (r *review) screen() (string, string, []key.Binding) {
 		body := fmt.Sprintf("%d repositories  ·  %s\n\n", len(r.report.Results), r.pages.View()) + r.repos.View()
 		return "Repositories", body, []key.Binding{hint("↑↓", "move"), hint("←→", "page"), hint("enter", "open"), back, quitKey}
 	case detailPane:
-		return "Finding details", r.detail.View(), []key.Binding{scroll, hint("l", "locations"), back, quitKey}
+		position := fmt.Sprintf("Finding %d of %d", r.findings.Index()+1, len(r.findings.VisibleItems()))
+		return position, r.detail.View(), []key.Binding{hint("[ ]", "prev/next"), scroll, hint("l", "locations"), hint("y", "copy path"), back, quitKey}
+	case handoffPane:
+		return "Handoff brief", r.detail.View(), []key.Binding{hint("y", "copy brief"), scroll, back, quitKey}
 	case coveragePane:
-		return "Coverage", "Coverage and scan limitations\n\n" + r.detail.View(), []key.Binding{scroll, back, quitKey}
+		return "Coverage", r.detail.View(), []key.Binding{scroll, back, quitKey}
 	case locationsPane:
 		return "Evidence locations", "Expand a file to inspect its matches.\n\n" + r.locations.View(), []key.Binding{hint("↑↓", "move"), hint("enter", "expand"), back, quitKey}
 	case notesPane:
 		return "Review notes", "Scratch notes · kept for this session\n\n" + r.notes.View(), []key.Binding{hint("esc", "return to findings")}
-	case helpPane:
-		return "Keyboard help", r.detail.View(), []key.Binding{scroll, back, quitKey}
-	case filtersPane:
-		return "Display filters", r.filters.View(), []key.Binding{hint("↑↓", "choose"), hint("enter", "apply"), hint("esc", "cancel")}
 	default:
 		return r.findingsScreen()
 	}
@@ -355,7 +372,7 @@ func (r *review) openRepositories() {
 	r.pane = repositoriesPane
 }
 
-func (r *review) tabs() string {
+func (r *review) tabLabels() []string {
 	active := 0
 	switch r.pane {
 	case repositoriesPane:
@@ -374,5 +391,16 @@ func (r *review) tabs() string {
 			labels[i] = muted.Render(label)
 		}
 	}
-	return strings.Join(labels, "  ")
+	return labels
+}
+
+func (r *review) stepFinding(delta int) {
+	next := r.findings.Index() + delta
+	if next < 0 || next >= len(r.findings.VisibleItems()) {
+		return
+	}
+	r.findings.Select(next)
+	if f, ok := r.selectedFinding(); ok {
+		r.showDetail(f)
+	}
 }

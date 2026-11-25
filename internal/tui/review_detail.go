@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/tree"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/Kevin-Umali/repyy/internal/model"
@@ -19,28 +20,31 @@ func (r *review) openReader(view pane, body string) {
 }
 
 func (r *review) showDetail(f model.Finding) {
-	body := "\n" + severityText(f.Severity) + muted.Render(" severity · "+string(f.Confidence)+" confidence") + "\n" +
+	section := func(title string) string { return "\n" + label(title) + "\n" }
+	body := severityBadge(f.Severity) + muted.Render(string(f.Confidence)+" confidence · "+f.RuleID) + "\n\n" +
 		strong.Render(f.Message) + "\n" +
-		muted.Render(pathAt(f.Path, f.Line)) + "\n"
+		accent.Render(pathAt(f.Path, f.Line)) + "\n"
 	if f.Remediation != "" {
-		body += "\n" + accent.Render("Recommended action") + "\n" + f.Remediation + "\n"
+		body += section("recommended action") + f.Remediation + "\n"
 	}
 	if f.Evidence != "" {
-		body += "\n" + strong.Render("Evidence") + "\n" + plainEvidence(f.Evidence) + "\n"
+		gutter := lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).
+			BorderForeground(severityColor(f.Severity)).PaddingLeft(1).Foreground(theme.text)
+		body += section("evidence") + gutter.Render(plainEvidence(f.Evidence)) + "\n"
 	}
-	body += "\n" + strong.Render("Detection") + "\n" +
-		f.RuleID + " · " + strings.ReplaceAll(f.Category, "-", " ")
+	detection := f.RuleID + " · " + strings.ReplaceAll(f.Category, "-", " ")
 	if f.Disposition != "" {
-		body += " · " + string(f.Disposition)
+		detection += " · " + string(f.Disposition)
 	}
+	body += section("detection") + detection
 	if f.Occurrences > 1 {
-		body += fmt.Sprintf("\n%d occurrences", f.Occurrences)
+		body += muted.Render(fmt.Sprintf("\n%d occurrences · l to browse them", f.Occurrences))
 	}
 	if f.LocationsOmitted > 0 {
-		body += fmt.Sprintf("\n%d additional locations omitted", f.LocationsOmitted)
+		body += muted.Render(fmt.Sprintf("\n%d additional locations omitted", f.LocationsOmitted))
 	}
 	if len(f.ContributingRuleIDs) > 0 {
-		body += "\nRelated rules  " + strings.Join(f.ContributingRuleIDs, ", ")
+		body += muted.Render("\nRelated rules  " + strings.Join(f.ContributingRuleIDs, ", "))
 	}
 	r.openReader(detailPane, body)
 }
@@ -78,28 +82,48 @@ func (r *review) showLocations(f model.Finding) {
 
 func (r *review) showCoverage() {
 	result := r.report.Results[r.repository]
-	body := strong.Render(result.Target) + "\n" + result.DecisionStatus() + "\n"
-	body += fmt.Sprintf("%d files · %d bytes · %s elapsed", result.Coverage.FilesScanned, result.Coverage.BytesScanned, result.Duration.Round(time.Millisecond))
+	section := func(title string) string { return "\n\n" + label(title) + "\n" }
+	body := strong.Render(result.Target) + "\n" + statusBadge(result.DecisionStatus()) + "\n"
+	state := lipgloss.NewStyle().Foreground(theme.ok).Render("● complete coverage")
+	if !result.Coverage.Complete {
+		state = lipgloss.NewStyle().Foreground(theme.medium).Render("◐ partial coverage")
+	}
+	body += "\n" + state + muted.Render(fmt.Sprintf(" · %d files · %s · %s", result.Coverage.FilesScanned, humanBytes(result.Coverage.BytesScanned), result.Duration.Round(time.Millisecond)))
 	if result.ScanMode != "" {
-		body += " · " + string(result.ScanMode) + " scan"
+		body += muted.Render(" · " + string(result.ScanMode) + " scan")
 	}
 	if result.Error != "" {
-		body += "\n\n" + warning.Render("Scan error") + "\n" + result.Error
+		body += section("scan error") + lipgloss.NewStyle().Foreground(theme.critical).Render(result.Error)
 	}
 	for _, items := range []struct {
 		title  string
 		values []string
-	}{{"Warnings", result.Coverage.Warnings}, {"Skipped areas", result.Coverage.Skipped}} {
+	}{{"skipped areas", result.Coverage.Skipped}, {"warnings", result.Coverage.Warnings}} {
 		if len(items.values) != 0 {
-			body += "\n\n" + strong.Render(items.title) + "\n" + strings.Join(items.values, "\n")
+			body += section(items.title) + "• " + strings.Join(items.values, "\n• ")
 		}
 	}
 	if result.Resolved != "" {
-		body += "\n\nRetained checkout  " + result.Resolved
+		body += section("retained checkout") + result.Resolved
 	}
 	if r.notice != "" {
-		body += "\n\n" + strong.Render("Intelligence notice") + "\n" + r.notice
+		body += section("intelligence notice") + r.notice
 	}
-	body += "\n\n" + r.report.Limitation
+	body += "\n\n" + muted.Render(r.report.Limitation)
 	r.openReader(coveragePane, body)
+}
+
+func humanBytes(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	value, suffix := float64(n)/unit, "KB"
+	for _, next := range []string{"MB", "GB"} {
+		if value < unit {
+			break
+		}
+		value, suffix = value/unit, next
+	}
+	return fmt.Sprintf("%.1f %s", value, suffix)
 }

@@ -71,17 +71,6 @@ func (m *session) clearWorkspace() {
 	m.loadPath = ""
 }
 
-func (m *session) showHome() {
-	m.clearWorkspace()
-	m.audience = ""
-	m.setForm(home, huh.NewSelect[string]().Key(choiceKey).Title("Choose your workspace").
-		Options(
-			huh.NewOption("1  ◉  User Experience", string(userExperience)),
-			huh.NewOption("2  ⌘  Developer Experience", string(developerExperience)),
-			huh.NewOption("3  ◇  Agent Experience", string(agentExperience)),
-		))
-}
-
 func (m *session) showWorkspace(audience experience) tea.Cmd {
 	m.clearWorkspace()
 	m.audience = audience
@@ -179,8 +168,6 @@ func (m *session) updateForm(msg tea.Msg) tea.Cmd {
 	m.form = nil
 
 	switch m.phase {
-	case home:
-		return m.showWorkspace(experience(value))
 	case workspace:
 		switch value {
 		case "report":
@@ -268,7 +255,7 @@ func (m *session) formScreen() (string, string, []key.Binding) {
 	back := hint("esc", "cancel")
 	switch m.phase {
 	case home:
-		return "Home", "\n" + m.form.View(), []key.Binding{hint("1–3", "open workspace"), hint("↑↓", "choose"), enter, quitKey}
+		return "Home", m.homeView(), m.homeKeys()
 	case workspace:
 		return "Workspace", "\n" + m.form.View(), []key.Binding{hint("↑↓", "choose"), enter, hint("esc", "home"), quitKey}
 	case workspaceGuide:
