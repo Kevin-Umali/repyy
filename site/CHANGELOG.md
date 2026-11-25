@@ -30,6 +30,9 @@ All notable changes are documented here. The project follows Semantic Versioning
 - Add `repyy scan --profile balanced|comprehensive`. `balanced`, the default,
   tiers capabilities against threats. `comprehensive` keeps every capability at
   its rule severity for audits. Docker scans pass the profile to the worker.
+- Add `make bench` and a Benchmark workflow. They fail when a benign control
+  raises a high finding, fixture recall falls, or high findings on eight clean
+  repositories pinned by commit exceed a budget of 30. The 0.8.0 baseline is 26.
 - Add a sticky release banner to the landing page and docs.
 
 ### Changed

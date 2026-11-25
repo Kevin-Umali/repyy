@@ -1,7 +1,7 @@
 BINARY := bin/repyy
 VERSION ?= 0.8.0
 
-.PHONY: build test check security intel install clean site-dev site-check site-build site-preview site-format
+.PHONY: build test check bench security intel install clean site-dev site-check site-build site-preview site-format
 
 build:
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BINARY) ./cmd/repyy
@@ -13,6 +13,10 @@ check:
 	test -z "$$(gofmt -l .)"
 	go vet ./...
 	go test -race ./...
+
+# Fixture recall, benign controls, and high findings on pinned clean repositories.
+bench: build
+	python3 scripts/hard_benchmark/run.py --binary $(BINARY) --work .bench fixtures noise --check --min-detected 58
 
 security:
 	go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
